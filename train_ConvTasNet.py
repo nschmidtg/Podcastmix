@@ -32,8 +32,8 @@ system = System(model, optimizer, loss, train_loader, val_loader)
 
 # Train for 1 epoch using a single GPU. If you're running this on Google Colab,
 # be sure to select a GPU runtime (Runtime → Change runtime type → Hardware accelarator).
-model = Trainer(max_epochs=1, gpus=1)
-model.fit(system)
+trainer = Trainer(max_epochs=1, gpus=1)
+trainer.fit(system)
 
 # get the test file from console
 test_path = input("enter the path of the file to test:")
