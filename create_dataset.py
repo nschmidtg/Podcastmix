@@ -4,30 +4,24 @@ from asteroid.data import LibriMix
 
 # import musdb to create the mixtures: https://github.com/sigsep/sigsep-mus-db
 import musdb
+
 # Asteroid's System is a convenience wrapper for PyTorch-Lightning.
 from asteroid.engine import System
 
 from IPython.display import display, Audio
-
 import soundfile as sf
-
+import librosa, os
 # download the musdb library
 mus = musdb.DB(download=True)
 
-# To use the full dataset, set a dataset root directory
-# mus = musdb.DB(root="/path/to/musdb)
-
-# To work directly with wav: https://github.com/sigsep/sigsep-mus-db#using-wav-files-optional
-
 # This will automatically download MiniLibriMix from Zenodo on the first run.
-#train_loader, val_loader = LibriMix.loaders_from_mini(task="sep_clean", batch_size=8)
+train_loader, val_loader = LibriMix.loaders_from_mini(task="sep_clean", batch_size=8)
 
-"""# Create the augmented dataset
-
-using the LibriMix and the Musdb18 datasets, an augmented podcast/radioshow like dataset is created
 """
-
-import librosa, os
+Create the augmented dataset
+using the LibriMix and the Musdb18 datasets, an augmented 
+podcast/radioshow like dataset is created
+"""
 
 def create_folder_structure(path):
     if not os.path.exists(path):
@@ -54,6 +48,7 @@ create_folder_structure(train_path)
 val_path = "augmented_dataset/val"
 create_folder_structure(val_path)
 
+# create the metadata directory
 if not os.path.exists('augmented_dataset/metadata'):
     os.makedirs('augmented_dataset/metadata')
 if not os.path.exists('augmented_dataset/metadata/train'):
@@ -89,8 +84,6 @@ def mix_audio_sources(track_path, speech_path, output_path, music_to_speech_rati
     linear_mono = cropped_track_mono * music_to_speech_ratio + cropped_speech
     
     # write the files
-
-    
     file_name = re.sub("[^0-9a-zA-Z]+", "-", track_path.split('/')[-1]) + '_' + speech_path.split('/')[-1]
     sf.write(output_path + "/linear_mono/" + file_name, linear_mono, 44100, subtype='PCM_24')
     sf.write(output_path + "/linear_stereo/" + file_name, linear_stereo.T, 44100, subtype='PCM_24')
@@ -100,15 +93,18 @@ def mix_audio_sources(track_path, speech_path, output_path, music_to_speech_rati
 
     return file_name, min_lenght
 
+# I used the s1 source from the MiniLibriMix for the train set
+# and the s3 source for the val set
 speech_path_train = "MiniLibriMix/val/s1/"
 speech_path_val = "MiniLibriMix/val/s2/"
     
 speech_array_train = [f for f in listdir(speech_path_train) if isfile(join(speech_path_train, f))]
 speech_array_val = [f for f in listdir(speech_path_val) if isfile(join(speech_path_val, f))]
 
+# initialize the random seed
 random.seed(1)
 
-# train
+# create the train csv file
 csv_path = 'augmented_dataset/metadata/train/linear_stereo.csv'
 with open(csv_path, 'w', newline='') as file:
     writer = csv.writer(file)
@@ -119,7 +115,7 @@ with open(csv_path, 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(["","mixture_ID","mixture_path","track_path","speech_path","length"])
 
-# val
+# create the val csv file
 csv_path = 'augmented_dataset/metadata/val/linear_stereo.csv'
 with open(csv_path, 'w', newline='') as file:
     writer = csv.writer(file)
@@ -130,22 +126,23 @@ with open(csv_path, 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(["","mixture_ID","mixture_path","track_path","speech_path","length"])
 
-# create the train/val
+# create the train/val sets:
 
-# 100 train, 50 val
+# 100 train, 44 val
 n_train = 100
 i = 0
 for track in mus:
     
     track_file = track.path
-    # get the speech name for the csv
     if i < n_train:
+        # creating the training set for the first n_train songs
         speech_name = speech_array_train[random.randint(0,len(speech_array_train)-1)]
         path = train_path
         csv_path = 'augmented_dataset/metadata/train'
         speech_path = speech_path_train
         
     else:
+        # the val set
         speech_name = speech_array_val[random.randint(0,len(speech_array_val)-1)]
         path = val_path
         csv_path = 'augmented_dataset/metadata/val'
@@ -153,10 +150,9 @@ for track in mus:
 
     # path of the speech
     speech_file = speech_path + speech_name
-    
     file_name, min_length = mix_audio_sources(track_file, speech_file, path, music_to_speech_ratio= 0.1)
 
-
+    # add a new row to the corresponding csv metadata file
     csv_path_file = csv_path + '/linear_mono.csv'
     with open(csv_path_file, 'a', newline='') as file:
         writer = csv.writer(file)
