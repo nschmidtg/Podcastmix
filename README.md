@@ -2,7 +2,18 @@
 
 ## Installation
 
+```conda config --add channels conda-forge```
+
+```conda install --file asteroid_requirements.txt```
+
+```conda install git pip```
+
 ```sh install_dependencies.sh```
+
+```conda install -c conda-forge ffmpeg```
+
+```conda install -c conda-forge ipython```
+
 
 Create the dataset:
 
@@ -15,3 +26,7 @@ Train with DPRNNTasNet:
 Train with ConvTasNet:
 
 ```train_ConvTasNet.py```
+
+
+# Conda
+
