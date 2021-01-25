@@ -92,6 +92,16 @@ class PodcastMix(Dataset):
         sources = torch.from_numpy(sources)
         return mixture, sources
 
+    def get_infos(self):
+        """Get dataset infos (for publishing models).
+        Returns:
+            dict, dataset infos with keys `dataset`, `task` and `licences`.
+        """
+        infos = dict()
+        infos["dataset"] = self.dataset_name
+        infos["task"] = self.task
+        return infos
+
     @classmethod
     def loaders_from_mini(cls, batch_size=4, **kwargs):
         """Downloads MiniLibriMix and returns train and validation DataLoader.
