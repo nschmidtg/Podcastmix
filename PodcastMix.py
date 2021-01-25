@@ -26,9 +26,10 @@ class PodcastMix(Dataset):
 
     dataset_name = "PodcastMix"
 
-    def __init__(self, csv_dir, task="linear_mono", sample_rate=44100, n_src=2, segment=3):
+    def __init__(self, csv_dir, task="linear_mono", sample_rate=44100, n_src=2, segment=3, return_id=False):
         self.csv_dir = csv_dir
         self.task = task
+        self.return_id = return_id
         # Get the csv corresponding to the task
         md_file = [f for f in os.listdir(csv_dir) if task in f][0]
         self.csv_path = os.path.join(self.csv_dir, md_file)
@@ -90,7 +91,11 @@ class PodcastMix(Dataset):
         sources = np.vstack(sources_list)
         # Convert sources to tensor
         sources = torch.from_numpy(sources)
-        return mixture, sources
+        if not self.return_id:
+            return mixture, sources
+        # 5400-34479-0005_4973-24515-0007.wav
+        id1, id2 = mixture_path.split("/")[-1].split(".")[0].split("_")
+        return mixture, sources, [id1, id2]
 
     def get_infos(self):
         """Get dataset infos (for publishing models).

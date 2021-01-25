@@ -68,6 +68,7 @@ def main(conf):
         sample_rate=conf["sample_rate"],
         n_src=conf["train_conf"]["data"]["n_src"],
         segment=None,
+        return_id=True,
     )  # Uses all segment length
     # Used to reorder sources only
     loss_func = PITLossWrapper(pairwise_neg_sisdr, pit_from="pw_mtx")
