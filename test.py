@@ -155,14 +155,16 @@ def main(conf):
     with open(os.path.join(eval_save_dir, "final_metrics.json"), "w") as f:
         json.dump(final_results, f, indent=0)
 
-    model_dict = torch.load(model_path, map_location="cpu")
-    os.makedirs(os.path.join(conf["exp_dir"], "publish_dir"), exist_ok=True)
-    publishable = save_publishable(
-        os.path.join(conf["exp_dir"], "publish_dir"),
-        model_dict,
-        metrics=final_results,
-        train_conf=train_conf,
-    )
+    # for publishing the model:
+    
+    # model_dict = torch.load(model_path, map_location="cpu")
+    # os.makedirs(os.path.join(conf["exp_dir"], "publish_dir"), exist_ok=True)
+    # publishable = save_publishable(
+    #     os.path.join(conf["exp_dir"], "publish_dir"),
+    #     model_dict,
+    #     metrics=final_results,
+    #     train_conf=train_conf,
+    # )
 
 
 if __name__ == "__main__":
