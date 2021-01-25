@@ -94,7 +94,7 @@ class PodcastMix(Dataset):
         if not self.return_id:
             return mixture, sources
         # 5400-34479-0005_4973-24515-0007.wav
-        id1, id2 = mixture_path.split("/")[-1].split(".")[0].split("_")
+        id1, id2 = self.mixture_path.split("/")[-1].split(".")[0].split("_")
         return mixture, sources, [id1, id2]
 
     def get_infos(self):
