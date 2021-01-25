@@ -32,14 +32,14 @@ system = System(model, optimizer, loss, train_loader, val_loader)
 
 # Train for 1 epoch using a single GPU. If you're running this on Google Colab,
 # be sure to select a GPU runtime (Runtime → Change runtime type → Hardware accelarator).
-trainer = Trainer(max_epochs=1, gpus=1)
+trainer = Trainer(max_epochs=100, gpus=1)
 trainer.fit(system)
 
 # get the test file from console
 test_path = input("enter the path of the file to test:")
 
 # use the model to separate a file
-model.separate(test_path, resample=True)
+model.separate(test_path, resample=True, force_overwrite=True)
 
 # display sounds
 # display(Audio(test_path))
