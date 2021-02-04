@@ -24,13 +24,6 @@ import importlib
 parser = argparse.ArgumentParser()
 parser.add_argument("--exp_dir", default="exp/tmp", help="Full path to save best validation model")
 
-def my_import(name):
-    components = name.split('.')
-    mod = __import__(components[0])
-    for comp in components[1:]:
-        mod = getattr(mod, comp)
-    return mod
-
 def main(conf):
     train_set = PodcastMix(
         csv_dir=conf["data"]["train_dir"],

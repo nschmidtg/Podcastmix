@@ -14,7 +14,8 @@ from pathlib import Path
 from asteroid.metrics import get_metrics
 from PodcastMix import PodcastMix
 from asteroid.losses import PITLossWrapper, pairwise_neg_sisdr
-from asteroid import ConvTasNet
+#from asteroid import ConvTasNet
+import importlib
 from asteroid.models import save_publishable
 from asteroid.utils import tensors_to_device
 from asteroid.metrics import WERTracker, MockWERTracker
@@ -54,13 +55,23 @@ parser.add_argument(
 
 COMPUTE_METRICS = ["si_sdr", "sdr", "sir", "sar", "stoi"]
 
+
+def my_import(name):
+    components = name.split('.')
+    mod = __import__(components[0])
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    return mod
+
 def main(conf):
     compute_metrics = COMPUTE_METRICS
     wer_tracker = (
         MockWERTracker()
     )
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
-    model = ConvTasNet.from_pretrained(model_path)
+    AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
+    model = AsteroidModelModule.from_pretrained(model_path)
+    # model = ConvTasNet
     # Handle device placement
     if conf["use_gpu"]:
         model.cuda()
