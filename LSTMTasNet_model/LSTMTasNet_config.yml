@@ -1,8 +1,13 @@
 model: 
-  name: DCCRNet
-  architecture: DCCRN-CL
-  stft_stride: None
-  stft_kernel_size: 512
+  name: LSTMTasNet
+model_init:
+  rnn_type: "lstm"
+  n_layers: 4
+  hid_size: 512
+  dropout: 0.3
+  mask_act: "sigmoid"
+  bidirectional: True
+  fb_name: "free"
 # Training config
 training:
   epochs: 5

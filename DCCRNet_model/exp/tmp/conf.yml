@@ -1,0 +1,27 @@
+data:
+  n_src: 2
+  sample_rate: 8000
+  segment: 3
+  task: linear_mono
+  train_dir: augmented_dataset/metadata/train
+  valid_dir: augmented_dataset/metadata/val
+main_args:
+  config_model: DCCRNet_model/DCCRNet_config.yml
+  exp_dir: exp/tmp
+  help: null
+model:
+  architecture: DCCRN-CL
+  name: DCCRNet
+  stft_kernel_size: 512
+  stft_stride: None
+optim:
+  lr: 0.001
+  optimizer: adam
+  weight_decay: 0.0
+positional arguments: {}
+training:
+  batch_size: 6
+  early_stop: true
+  epochs: 5
+  half_lr: true
+  num_workers: 4

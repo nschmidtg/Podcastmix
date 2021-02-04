@@ -1,8 +1,6 @@
 model: 
-  name: DCCRNet
-  architecture: DCCRN-CL
-  stft_stride: None
-  stft_kernel_size: 512
+  name: DCUNet
+  architecture: DCUNet-10
 # Training config
 training:
   epochs: 5

@@ -1,8 +1,10 @@
 model: 
-  name: DCCRNet
-  architecture: DCCRN-CL
-  stft_stride: None
-  stft_kernel_size: 512
+  name: DeMask
+model_init: 
+  activation: "relu"
+  mask_act: "relu"
+  norm_type: "gLN"
+  fb_name: "stft"
 # Training config
 training:
   epochs: 5

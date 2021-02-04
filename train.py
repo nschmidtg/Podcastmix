@@ -63,13 +63,62 @@ def main(conf):
         num_workers=conf["training"]["num_workers"],
         drop_last=True,
     )
-    print(conf)
-    conf["masknet"].update({"n_src": conf["data"]["n_src"]})
+    # print(conf)
 
-    AsteroidModelModule = my_import("asteroid.models." + conf["model"]["name"])
-    model = AsteroidModelModule(
-        **conf["filterbank"], **conf["masknet"], sample_rate=conf["data"]["sample_rate"]
-    )
+    if(conf["model"]["name"] == "ConvTasNet"):
+        from asteroid.models import ConvTasNet
+        conf["masknet"].update({"n_src": conf["data"]["n_src"]})
+        model = ConvTasNet(
+            **conf["filterbank"], 
+            **conf["masknet"], 
+            sample_rate=conf["data"]["sample_rate"]
+        )
+    elif(conf["model"]["name"] == "DCCRNet"):
+        from asteroid.models import DCCRNet
+        model = DCCRNet(
+            sample_rate=conf["data"]["sample_rate"], 
+            architecture=conf["model"]["architecture"],
+        )
+    elif(conf["model"]["name"] == "DPRNNTasNet"):
+        from asteroid.models import DPRNNTasNet
+        model = DPRNNTasNet(
+            n_src=conf["data"]["n_src"],
+            sample_rate=conf["data"]["sample_rate"],
+            **conf["model_init"]
+        )
+    elif(conf["model"]["name"] == "DPTNet"):
+        from asteroid.models import DPTNet
+        model = DPTNet(
+            n_src=conf["data"]["n_src"],
+            sample_rate=conf["data"]["sample_rate"],
+            **conf["model_init"]
+        )
+    elif(conf["model"]["name"] == "DeMask"):
+        from asteroid.models import DeMask
+        model = DeMask(
+            sample_rate=conf["data"]["sample_rate"],
+            **conf["model_init"]
+        )
+    elif(conf["model"]["name"] == "DCUNet"):
+        from asteroid.models import DCUNet
+        model = DCUNet(
+            architecture=conf["model"]["architecture"]
+        )
+    elif(conf["model"]["name"] == "LSTMTasNet"):
+        from asteroid.models import LSTMTasNet
+        model = LSTMTasNet(
+            n_src=conf["data"]["n_src"],
+            sample_rate=conf["data"]["sample_rate"],
+            **conf["model_init"]
+        )
+    elif(conf["model"]["name"] == "SuDORMRFNet"):
+        from asteroid.models import SuDORMRFNet
+        model = SuDORMRFNet(
+            n_src=conf["data"]["n_src"],
+            sample_rate=conf["data"]["sample_rate"],
+            **conf["model_init"]
+        )
+
     optimizer = make_optimizer(model.parameters(), **conf["optim"])
     # Define scheduler
     scheduler = None

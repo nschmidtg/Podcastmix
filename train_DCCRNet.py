@@ -23,7 +23,7 @@ from asteroid.losses import pairwise_neg_sisdr, PITLossWrapper
 from asteroid import DCCRNet
 
 # Tell DPRNN that we want to separate to 2 sources.
-model = DCCRNet(n_src=2, architecture="DCCRN-CL")
+model = DCCRNet(architecture="DCCRN-CL")
 
 # PITLossWrapper works with any loss function.
 loss = PITLossWrapper(pairwise_neg_sisdr, pit_from="pw_mtx")

@@ -1,8 +1,21 @@
 model: 
-  name: DCCRNet
-  architecture: DCCRN-CL
-  stft_stride: None
-  stft_kernel_size: 512
+  name: DPRNNTasNet
+model_init: 
+  norm_type: "gLN"
+  mask_act: "sigmoid"
+  bidirectional: True
+  rnn_type: "LSTM"
+  num_layers: 1
+  dropout: 0
+  in_chan: 
+  fb_name: "free"
+  kernel_size: 16
+  n_filters: 64
+  stride: 8
+  encoder_activation: 
+  who_is_pinv: 
+  padding: 0
+  output_padding: 0
 # Training config
 training:
   epochs: 5

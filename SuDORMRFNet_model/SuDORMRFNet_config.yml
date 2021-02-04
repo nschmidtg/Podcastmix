@@ -1,8 +1,11 @@
 model: 
-  name: DCCRNet
-  architecture: DCCRN-CL
-  stft_stride: None
-  stft_kernel_size: 512
+  name: LSTMTasNet
+model_init:
+  bn_chan: 128
+  num_blocks: 16
+  upsampling_depth: 4
+  mask_act: "softmax"
+  fb_name: "free"
 # Training config
 training:
   epochs: 5

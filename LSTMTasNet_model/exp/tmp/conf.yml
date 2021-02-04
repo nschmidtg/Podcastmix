@@ -1,0 +1,30 @@
+data:
+  n_src: 2
+  sample_rate: 8000
+  segment: 3
+  task: linear_mono
+  train_dir: augmented_dataset/metadata/train
+  valid_dir: augmented_dataset/metadata/val
+main_args:
+  config_model: SuDORMRFNet_model/SuDORMRFNet_config.yml
+  exp_dir: exp/tmp
+  help: null
+model:
+  name: LSTMTasNet
+model_init:
+  bn_chan: 128
+  fb_name: free
+  mask_act: softmax
+  num_blocks: 16
+  upsampling_depth: 4
+optim:
+  lr: 0.001
+  optimizer: adam
+  weight_decay: 0.0
+positional arguments: {}
+training:
+  batch_size: 6
+  early_stop: true
+  epochs: 5
+  half_lr: true
+  num_workers: 4

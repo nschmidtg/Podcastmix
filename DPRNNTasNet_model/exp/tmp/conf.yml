@@ -1,0 +1,40 @@
+data:
+  n_src: 2
+  sample_rate: 8000
+  segment: 3
+  task: linear_mono
+  train_dir: augmented_dataset/metadata/train
+  valid_dir: augmented_dataset/metadata/val
+main_args:
+  config_model: DPRNNTasNet_model/DPRNNTasNet_config.yml
+  exp_dir: exp/tmp
+  help: null
+model:
+  name: DPRNNTasNet
+model_init:
+  bidirectional: true
+  dropout: 0
+  encoder_activation: null
+  fb_name: free
+  in_chan: null
+  kernel_size: 16
+  mask_act: sigmoid
+  n_filters: 64
+  norm_type: gLN
+  num_layers: 1
+  output_padding: 0
+  padding: 0
+  rnn_type: LSTM
+  stride: 8
+  who_is_pinv: null
+optim:
+  lr: 0.001
+  optimizer: adam
+  weight_decay: 0.0
+positional arguments: {}
+training:
+  batch_size: 6
+  early_stop: true
+  epochs: 5
+  half_lr: true
+  num_workers: 4

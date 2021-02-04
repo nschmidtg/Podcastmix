@@ -1,8 +1,14 @@
 model: 
-  name: DCCRNet
-  architecture: DCCRN-CL
-  stft_stride: None
-  stft_kernel_size: 512
+  name: DPTNet
+model_init: 
+  hop_size: None
+  n_repeats: 6
+  norm_type: "gLN"
+  ff_activation: "relu"
+  encoder_activation: "relu"
+  mask_act: "relu"
+  bidirectional: True
+  dropout: 0
 # Training config
 training:
   epochs: 5
