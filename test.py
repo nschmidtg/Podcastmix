@@ -37,7 +37,7 @@ parser.add_argument(
 parser.add_argument(
     "--out_dir",
     type=str,
-    default='eval/tmp',
+    default='ConvTasNet/eval/tmp',
     required=True,
     help="Directory in exp_dir where the eval results" " will be stored",
 )
@@ -67,7 +67,6 @@ def main(conf):
     model_device = next(model.parameters()).device
     test_set = PodcastMix(
         csv_dir=conf["test_dir"],
-        model=conf["target_model"],
         task=conf["task"],
         sample_rate=conf["sample_rate"],
         n_src=conf["train_conf"]["data"]["n_src"],
@@ -192,5 +191,5 @@ if __name__ == "__main__":
 
 """
 usage: 
-CUDA_VISIBLE_DEVICES=1 python test.py --target_model ConvTasNet --test_dir augmented_dataset/metadata/val/ --task linear_mono --out_dir=eval/tmp
+CUDA_VISIBLE_DEVICES=1 python test.py --target_model ConvTasNet --test_dir augmented_dataset/metadata/val/ --task linear_mono --out_dir=ConvTasNet_model/eval/tmp --exp_dir=ConvTasNet_model/exp/tmp
 """
