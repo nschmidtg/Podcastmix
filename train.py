@@ -76,7 +76,8 @@ def main(conf):
     if conf["training"]["half_lr"]:
         scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
     # Just after instantiating, save the args. Easy loading in the future.
-    exp_dir = conf["main_args"]["exp_dir"]
+    # exp_dir = conf["main_args"]["exp_dir"]
+    exp_dir = conf["model"]["name"] + "_model/" + conf["main_args"]["exp_dir"]
     os.makedirs(exp_dir, exist_ok=True)
     conf_path = os.path.join(exp_dir, "conf.yml")
     with open(conf_path, "w") as outfile:

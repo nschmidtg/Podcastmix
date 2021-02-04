@@ -28,8 +28,8 @@ optim:
 # Data config
 data:
   task: linear_mono
-  train_dir: ../augmented_dataset/metadata/train
-  valid_dir: ../augmented_dataset/metadata/val
+  train_dir: augmented_dataset/metadata/train
+  valid_dir: augmented_dataset/metadata/val
   sample_rate: 8000
   n_src: 2
   segment: 3
