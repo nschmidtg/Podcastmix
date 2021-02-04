@@ -8,11 +8,12 @@ from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
-from asteroid.models import ConvTasNet
 from PodcastMix import PodcastMix
 from asteroid.engine.optimizers import make_optimizer
 from asteroid.engine.system import System
 from asteroid.losses import PITLossWrapper, pairwise_neg_sisdr
+
+import importlib
 
 # Keys which are not in the conf.yml file can be added here.
 # In the hierarchical dictionary created when parsing, the key `key` can be
@@ -23,6 +24,12 @@ from asteroid.losses import PITLossWrapper, pairwise_neg_sisdr
 parser = argparse.ArgumentParser()
 parser.add_argument("--exp_dir", default="exp/tmp", help="Full path to save best validation model")
 
+def my_import(name):
+    components = name.split('.')
+    mod = __import__(components[0])
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    return mod
 
 def main(conf):
     train_set = PodcastMix(
@@ -56,9 +63,11 @@ def main(conf):
         num_workers=conf["training"]["num_workers"],
         drop_last=True,
     )
+    print(conf)
     conf["masknet"].update({"n_src": conf["data"]["n_src"]})
 
-    model = ConvTasNet(
+    AsteroidModelModule = my_import("asteroid.models." + conf["model"]["name"])
+    model = AsteroidModelModule(
         **conf["filterbank"], **conf["masknet"], sample_rate=conf["data"]["sample_rate"]
     )
     optimizer = make_optimizer(model.parameters(), **conf["optim"])
@@ -126,14 +135,20 @@ def main(conf):
 if __name__ == "__main__":
     import yaml
     from pprint import pprint
+    import sys
     from asteroid.utils import prepare_parser_from_dict, parse_args_as_dict
 
     # We start with opening the config file conf.yml as a dictionary from
     # which we can create parsers. Each top level key in the dictionary defined
     # by the YAML file creates a group in the parser.
-    with open("ConvTasNet_config.yml") as f:
+    parser.add_argument(
+        "--config_model", type=str, required=True, help="Asteroid model to use"
+    )
+    config_model = sys.argv[2]
+    with open(config_model) as f:
         def_conf = yaml.safe_load(f)
     parser = prepare_parser_from_dict(def_conf, parser=parser)
+    print(parser)
     # Arguments are then parsed into a hierarchical dictionary (instead of
     # flat, as returned by argparse) to facilitate calls to the different
     # asteroid methods (see in main).
@@ -143,3 +158,8 @@ if __name__ == "__main__":
     arg_dic, plain_args = parse_args_as_dict(parser, return_plain_args=True)
     pprint(arg_dic)
     main(arg_dic)
+
+"""
+usage: 
+CUDA_VISIBLE_DEVICES=1 python train.py --config_model ConvTasNet_model/ConvTasNet_config.yml
+"""

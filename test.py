@@ -25,6 +25,9 @@ parser.add_argument(
     "--test_dir", type=str, required=True, help="Test directory including the csv files"
 )
 parser.add_argument(
+    "--target_model", type=str, required=True, help="Asteroid model to use"
+)
+parser.add_argument(
     "--task",
     type=str,
     required=True,
@@ -64,6 +67,7 @@ def main(conf):
     model_device = next(model.parameters()).device
     test_set = PodcastMix(
         csv_dir=conf["test_dir"],
+        model=conf["target_model"],
         task=conf["task"],
         sample_rate=conf["sample_rate"],
         n_src=conf["train_conf"]["data"]["n_src"],
@@ -184,3 +188,9 @@ if __name__ == "__main__":
         )
 
     main(arg_dic)
+
+
+"""
+usage: 
+CUDA_VISIBLE_DEVICES=1 python test.py --target_model ConvTasNet --test_dir augmented_dataset/metadata/val/ --task linear_mono --out_dir=eval/tmp
+"""
