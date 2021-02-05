@@ -48,6 +48,9 @@ create_folder_structure(train_path)
 val_path = "augmented_dataset/val"
 create_folder_structure(val_path)
 
+test_path = "augmented_dataset/test"
+create_folder_structure(test_path)
+
 # create the metadata directory
 if not os.path.exists('augmented_dataset/metadata'):
     os.makedirs('augmented_dataset/metadata')
@@ -55,6 +58,8 @@ if not os.path.exists('augmented_dataset/metadata/train'):
     os.makedirs('augmented_dataset/metadata/train')
 if not os.path.exists('augmented_dataset/metadata/val'):
     os.makedirs('augmented_dataset/metadata/val')
+if not os.path.exists('augmented_dataset/metadata/test'):
+    os.makedirs('augmented_dataset/metadata/test')
 
 from os import listdir
 from os.path import isfile, join
@@ -94,15 +99,19 @@ def mix_audio_sources(track_path, speech_path, output_path, music_to_speech_rati
     return file_name, min_lenght
 
 # I used the s1 source from the MiniLibriMix for the train set
-# and the s3 source for the val set
+# and the s3 source for the val and test set
 speech_path_train = "MiniLibriMix/val/s1/"
-speech_path_val = "MiniLibriMix/val/s2/"
+speech_path_val_test = "MiniLibriMix/val/s2/"
     
 speech_array_train = [f for f in listdir(speech_path_train) if isfile(join(speech_path_train, f))]
-speech_array_val = [f for f in listdir(speech_path_val) if isfile(join(speech_path_val, f))]
+speech_array_val_test = [f for f in listdir(speech_path_val_test) if isfile(join(speech_path_val_test, f))]
 
 # initialize the random seed
 random.seed(1)
+# shuffle
+random.shuffle(speech_array_train)
+random.shuffle(speech_array_val_test)
+
 
 # create the train csv file
 csv_path = 'augmented_dataset/metadata/train/linear_stereo.csv'
@@ -126,31 +135,58 @@ with open(csv_path, 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(["","mixture_ID","mixture_path","track_path","speech_path","length"])
 
+# create the test csv file
+csv_path = 'augmented_dataset/metadata/test/linear_stereo.csv'
+with open(csv_path, 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(["","mixture_ID","mixture_path","track_path","speech_path","length"])
+
+csv_path = 'augmented_dataset/metadata/test/linear_mono.csv'
+with open(csv_path, 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(["","mixture_ID","mixture_path","track_path","speech_path","length"])
+
 # create the train/val sets:
 
-# 100 train, 44 val
-n_train = 100
+# 70% train, 15 test 15 val
+n_train = 102
+n_val_test = 21
+
+
+
+speech_array_train = speech_array_train[0:n_train]
+speech_array_val_test = speech_array_train[0: 2 * n_val_test]
+print("speech_array_val_test", len(speech_array_val_test))
+
 i = 0
 for track in mus:
     
     track_file = track.path
     if i < n_train:
         # creating the training set for the first n_train songs
-        speech_name = speech_array_train[random.randint(0,len(speech_array_train)-1)]
-        path = train_path
         csv_path = 'augmented_dataset/metadata/train'
         speech_path = speech_path_train
+        path = train_path
+        speech_name = speech_array_train[i]
         
     else:
-        # the val set
-        speech_name = speech_array_val[random.randint(0,len(speech_array_val)-1)]
-        path = val_path
-        csv_path = 'augmented_dataset/metadata/val'
-        speech_path = speech_path_val
+        # the val/test set
+        if(i - n_train < n_val_test):
+            csv_path = 'augmented_dataset/metadata/val'
+            speech_path = speech_path_val_test
+            path = val_path
+        else:
+            csv_path = 'augmented_dataset/metadata/test'
+            speech_path = speech_path_val_test
+            path = test_path
+        print("i",i)
+        print("n_train", n_train)
+        print("//////////////////////////")
+        speech_name = speech_array_val_test[i - n_train - 1]
 
     # path of the speech
     speech_file = speech_path + speech_name
-    file_name, min_length = mix_audio_sources(track_file, speech_file, path, music_to_speech_ratio= 0.1)
+    file_name, min_length = mix_audio_sources(track_file, speech_file, path, music_to_speech_ratio = 0.1)
 
     # add a new row to the corresponding csv metadata file
     csv_path_file = csv_path + '/linear_mono.csv'
