@@ -5,29 +5,41 @@ data:
   task: linear_mono
   train_dir: augmented_dataset/metadata/train
   valid_dir: augmented_dataset/metadata/val
+filterbank:
+  kernel_size: 16
+  n_filters: 64
+  stride: 8
 main_args:
   config_model: DPTNet_model/DPTNet_config.yml
   exp_dir: exp/tmp
   help: null
+masknet:
+  bidirectional: true
+  chunk_size: 100
+  dropout: 0
+  ff_activation: relu
+  ff_hid: 256
+  hop_size: 50
+  in_chan: 64
+  mask_act: sigmoid
+  n_repeats: 2
+  n_src: 2
+  norm_type: gLN
+  out_chan: 64
 model:
   name: DPTNet
-model_init:
-  bidirectional: true
-  dropout: 0
-  encoder_activation: relu
-  ff_activation: relu
-  hop_size: None
-  mask_act: relu
-  n_repeats: 6
-  norm_type: gLN
 optim:
   lr: 0.001
   optimizer: adam
-  weight_decay: 0.0
+  weight_decay: 1.0e-05
 positional arguments: {}
+scheduler:
+  d_model: 64
+  steps_per_epoch: 10000
 training:
-  batch_size: 6
+  batch_size: 4
   early_stop: true
-  epochs: 5
+  epochs: 200
+  gradient_clipping: 5
   half_lr: true
   num_workers: 4

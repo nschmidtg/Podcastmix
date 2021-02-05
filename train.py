@@ -57,6 +57,7 @@ def main(conf):
         drop_last=True,
     )
     # print(conf)
+    optimizer = None
 
     if(conf["model"]["name"] == "ConvTasNet"):
         from asteroid.models import ConvTasNet
@@ -93,14 +94,15 @@ def main(conf):
         )
     elif(conf["model"]["name"] == "DPTNet"):
         from asteroid.models import DPTNet
-
+        print("hola!")
         conf["masknet"].update({"n_src": train_set.n_src})
         model = DPTNet(
-            n_src=conf["data"]["n_src"],
             sample_rate=conf["data"]["sample_rate"],
             **conf["filterbank"],
             **conf["masknet"]
         )
+        optimizer = make_optimizer(model.parameters(), **conf["optim"])
+        print("chao")
         from asteroid.engine.schedulers import DPTNetScheduler
 
         scheduler = {
@@ -145,8 +147,8 @@ def main(conf):
             sample_rate=conf["data"]["sample_rate"],
             **conf["model_init"]
         )
-
-    optimizer = make_optimizer(model.parameters(), **conf["optim"])
+    if(optimizer == None):
+        optimizer = make_optimizer(model.parameters(), **conf["optim"])
     # Just after instantiating, save the args. Easy loading in the future.
     # exp_dir = conf["main_args"]["exp_dir"]
     exp_dir = conf["model"]["name"] + "_model/" + conf["main_args"]["exp_dir"]

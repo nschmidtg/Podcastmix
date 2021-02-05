@@ -7,7 +7,6 @@ filterbank:
 # Network config
 masknet:
   in_chan: 64
-  n_src: 2
   out_chan: 64
   ff_hid: 256
   ff_activation: "relu"
