@@ -126,6 +126,8 @@ def main(conf):
         # not working, try other scheduler
         from asteroid.models import DCUNet
         model = DCUNet(
+            **conf["filterbank"],
+            **conf["demask_net"],
             architecture=conf["model"]["architecture"]
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
