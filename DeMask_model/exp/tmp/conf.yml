@@ -1,5 +1,5 @@
 data:
-  n_src: 2
+  n_src: 1
   sample_rate: 8000
   segment: 3
   task: linear_mono

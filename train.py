@@ -65,6 +65,10 @@ def main(conf):
         drop_last=True,
     )
 
+    print("train_set",train_set[0][0].shape)
+    print("val_set",val_set[0][0].shape)
+#    print("train_loader",train_loader[0][0].shape)
+#    print("val_loader",val_loader[0][0].shape)
     if(conf["model"]["name"] == "ConvTasNet"):
         from asteroid.models import ConvTasNet
 
@@ -132,7 +136,7 @@ def main(conf):
             sample_rate=conf["data"]["sample_rate"],
             **conf["filterbank"],
             **conf["demask_net"],
-            n_src=2
+            n_src=1
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
@@ -195,9 +199,9 @@ def main(conf):
     loss_func = PITLossWrapper(pairwise_neg_sisdr, pit_from="pw_mtx")
     if(conf["model"]["name"] == "DeMask"):
         from asteroid.losses import singlesrc_neg_sisdr
-        loss_func = singlesrc_neg_sisdr
+        loss_func = loss_func
         print("estoy en demask")
-        system = DeMaskSystem(
+        system = System(
             model=model,
             loss_func=loss_func,
             optimizer=optimizer,
