@@ -24,6 +24,14 @@ import importlib
 parser = argparse.ArgumentParser()
 parser.add_argument("--exp_dir", default="exp/tmp", help="Full path to save best validation model")
 
+class DeMaskSystem(System):
+    def common_step(self, batch, batch_nb, train=True):
+        inputs, targets = batch
+        est_targets = self(inputs)
+        loss = self.loss_func(est_targets.squeeze(1), targets).mean()
+        print("holaaaaa")
+
+        return loss
 
 def main(conf):
     train_set = PodcastMix(
@@ -80,8 +88,14 @@ def main(conf):
             architecture=conf["model"]["architecture"],
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
-        if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
+        from asteroid.engine.schedulers import DPTNetScheduler
+
+        scheduler = {
+            "scheduler": DPTNetScheduler(
+                optimizer, len(train_loader) // conf["training"]["batch_size"], 64
+            ),
+            "interval": "step",
+        }
     elif(conf["model"]["name"] == "DPRNNTasNet"):
         from asteroid.models import DPRNNTasNet
 
@@ -127,14 +141,18 @@ def main(conf):
         # not working, try other scheduler
         from asteroid.models import DCUNet
         model = DCUNet(
-            **conf["filterbank"],
-            **conf["demask_net"],
-            fix_length_mode: 'pad',
+            fix_length_mode= 'pad',
             architecture=conf["model"]["architecture"]
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
-        if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
+        from asteroid.engine.schedulers import DPTNetScheduler
+
+        scheduler = {
+            "scheduler": DPTNetScheduler(
+                optimizer, len(train_loader) // conf["training"]["batch_size"], 64
+            ),
+            "interval": "step",
+        }
     elif(conf["model"]["name"] == "LSTMTasNet"):
         from asteroid.models import LSTMTasNet
         scheduler = None
@@ -175,15 +193,29 @@ def main(conf):
 
     # Define Loss function.
     loss_func = PITLossWrapper(pairwise_neg_sisdr, pit_from="pw_mtx")
-    system = System(
-        model=model,
-        loss_func=loss_func,
-        optimizer=optimizer,
-        train_loader=train_loader,
-        val_loader=val_loader,
-        scheduler=scheduler,
-        config=conf,
-    )
+    if(conf["model"]["name"] == "DeMask"):
+        from asteroid.losses import singlesrc_neg_sisdr
+        loss_func = singlesrc_neg_sisdr
+        print("estoy en demask")
+        system = DeMaskSystem(
+            model=model,
+            loss_func=loss_func,
+            optimizer=optimizer,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            scheduler=scheduler,
+            config=conf
+        )
+    else:
+        system = System(
+            model=model,
+            loss_func=loss_func,
+            optimizer=optimizer,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            scheduler=scheduler,
+            config=conf
+        )
 
     # Define callbacks
     callbacks = []

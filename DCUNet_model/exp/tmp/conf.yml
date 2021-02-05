@@ -5,20 +5,6 @@ data:
   task: linear_mono
   train_dir: augmented_dataset/metadata/train
   valid_dir: augmented_dataset/metadata/val
-demask_net:
-  activation: relu
-  dropout: 0
-  hidden_dims:
-  - 1024
-  input_type: mag
-  mask_act: relu
-  norm_type: gLN
-  output_type: mag
-filterbank:
-  fb_type: stft
-  kernel_size: 512
-  n_filters: 512
-  stride: 256
 main_args:
   config_model: DCUNet_model/DCUNet_config.yml
   exp_dir: exp/tmp
