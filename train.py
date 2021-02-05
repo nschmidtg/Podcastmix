@@ -82,23 +82,23 @@ def main(conf):
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
             scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
-    elif(conf["model"]["name"] == "DCCRNet"):
-        # Not working
-        from asteroid.models import DCCRNet
+    # elif(conf["model"]["name"] == "DCCRNet"):
+    #     # Not working
+    #     from asteroid.models import DCCRNet
 
-        model = DCCRNet(
-            sample_rate=conf["data"]["sample_rate"], 
-            architecture=conf["model"]["architecture"],
-        )
-        optimizer = make_optimizer(model.parameters(), **conf["optim"])
-        from asteroid.engine.schedulers import DPTNetScheduler
+    #     model = DCCRNet(
+    #         sample_rate=conf["data"]["sample_rate"], 
+    #         architecture=conf["model"]["architecture"],
+    #     )
+    #     optimizer = make_optimizer(model.parameters(), **conf["optim"])
+    #     from asteroid.engine.schedulers import DPTNetScheduler
 
-        scheduler = {
-            "scheduler": DPTNetScheduler(
-                optimizer, len(train_loader) // conf["training"]["batch_size"], 64
-            ),
-            "interval": "step",
-        }
+    #     scheduler = {
+    #         "scheduler": DPTNetScheduler(
+    #             optimizer, len(train_loader) // conf["training"]["batch_size"], 64
+    #         ),
+    #         "interval": "step",
+    #     }
     elif(conf["model"]["name"] == "DPRNNTasNet"):
         from asteroid.models import DPRNNTasNet
 
@@ -129,34 +129,34 @@ def main(conf):
             "interval": "step",
         }
 
-    elif(conf["model"]["name"] == "DeMask"):
-        # not working, try other scheduler
-        from asteroid.models import DeMask
-        model = DeMask(
-            sample_rate=conf["data"]["sample_rate"],
-            **conf["filterbank"],
-            **conf["demask_net"],
-            n_src=1
-        )
-        optimizer = make_optimizer(model.parameters(), **conf["optim"])
-        if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
-    elif(conf["model"]["name"] == "DCUNet"):
-        # not working, try other scheduler
-        from asteroid.models import DCUNet
-        model = DCUNet(
-            fix_length_mode= 'pad',
-            architecture=conf["model"]["architecture"]
-        )
-        optimizer = make_optimizer(model.parameters(), **conf["optim"])
-        from asteroid.engine.schedulers import DPTNetScheduler
+    # elif(conf["model"]["name"] == "DeMask"):
+    #     # not working, try other scheduler
+    #     from asteroid.models import DeMask
+    #     model = DeMask(
+    #         sample_rate=conf["data"]["sample_rate"],
+    #         **conf["filterbank"],
+    #         **conf["demask_net"],
+    #         n_src=1
+    #     )
+    #     optimizer = make_optimizer(model.parameters(), **conf["optim"])
+    #     if conf["training"]["half_lr"]:
+    #         scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
+    # elif(conf["model"]["name"] == "DCUNet"):
+    #     # not working, try other scheduler
+    #     from asteroid.models import DCUNet
+    #     model = DCUNet(
+    #         fix_length_mode= 'pad',
+    #         architecture=conf["model"]["architecture"]
+    #     )
+    #     optimizer = make_optimizer(model.parameters(), **conf["optim"])
+    #     from asteroid.engine.schedulers import DPTNetScheduler
 
-        scheduler = {
-            "scheduler": DPTNetScheduler(
-                optimizer, len(train_loader) // conf["training"]["batch_size"], 64
-            ),
-            "interval": "step",
-        }
+    #     scheduler = {
+    #         "scheduler": DPTNetScheduler(
+    #             optimizer, len(train_loader) // conf["training"]["batch_size"], 64
+    #         ),
+    #         "interval": "step",
+    #     }
     elif(conf["model"]["name"] == "LSTMTasNet"):
         from asteroid.models import LSTMTasNet
         scheduler = None
