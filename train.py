@@ -29,7 +29,6 @@ class DeMaskSystem(System):
         inputs, targets = batch
         est_targets = self(inputs)
         loss = self.loss_func(est_targets.squeeze(1), targets).mean()
-        print("holaaaaa")
 
         return loss
 
@@ -133,6 +132,7 @@ def main(conf):
             sample_rate=conf["data"]["sample_rate"],
             **conf["filterbank"],
             **conf["demask_net"],
+            n_src=2
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:

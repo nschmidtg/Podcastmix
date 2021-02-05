@@ -173,7 +173,7 @@ for track in mus:
                         file_name,
                         path + "/linear_stereo/" + file_name,
                         path + "/track_stereo/" + file_name,
-                        path + "/speech_stereo/" + file_name,
+                        path + "/speech_mono/" + file_name,
                         min_length
             ])
     
