@@ -40,12 +40,12 @@ parser.add_argument(
     type=str,
     default='ConvTasNet/eval/tmp',
     required=True,
-    help="Directory in exp_dir where the eval results" " will be stored",
+    help="Directory where the eval results" " will be stored",
 )
 parser.add_argument(
     "--use_gpu", type=int, default=0, help="Whether to use the GPU for model execution"
 )
-parser.add_argument("--exp_dir", default="exp/tmp", help="Experiment root")
+parser.add_argument("--exp_dir", default="exp/tmp", help="Best serialized model path")
 parser.add_argument(
     "--n_save_ex", type=int, default=10, help="Number of audio examples to save, -1 means all"
 )
