@@ -117,7 +117,8 @@ def main(conf):
         from asteroid.models import DeMask
         model = DeMask(
             sample_rate=conf["data"]["sample_rate"],
-            **conf["model_init"]
+            **conf["filterbank"],
+            **conf["demask_net"],
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
@@ -128,6 +129,7 @@ def main(conf):
         model = DCUNet(
             **conf["filterbank"],
             **conf["demask_net"],
+            fix_length_mode: 'pad',
             architecture=conf["model"]["architecture"]
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])

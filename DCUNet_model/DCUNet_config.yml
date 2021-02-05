@@ -6,6 +6,7 @@ filterbank:
   n_filters: 512
   kernel_size: 512
   stride: 256
+  fix_length_mode: pad
 demask_net:
   input_type: mag
   output_type: mag
