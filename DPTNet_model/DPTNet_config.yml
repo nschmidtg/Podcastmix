@@ -1,26 +1,39 @@
 model: 
   name: DPTNet
-model_init: 
-  hop_size: None
-  n_repeats: 6
-  norm_type: "gLN"
+filterbank:
+  n_filters: 64
+  kernel_size: 16
+  stride: 8
+# Network config
+masknet:
+  in_chan: 64
+  n_src: 2
+  out_chan: 64
+  ff_hid: 256
   ff_activation: "relu"
-  encoder_activation: "relu"
-  mask_act: "relu"
-  bidirectional: True
+  norm_type: "gLN"
+  chunk_size: 100
+  hop_size: 50
+  n_repeats: 2
+  mask_act: 'sigmoid'
+  bidirectional: true
   dropout: 0
 # Training config
 training:
-  epochs: 5
-  batch_size: 6
+  epochs: 200
+  batch_size: 4
   num_workers: 4
   half_lr: yes
   early_stop: yes
+  gradient_clipping: 5
 # Optim config
 optim:
   optimizer: adam
   lr: 0.001
-  weight_decay: 0.
+  weight_decay: !!float 1e-5
+scheduler:
+  steps_per_epoch: 10000
+  d_model: 64
 # Data config
 data:
   task: linear_mono

@@ -60,36 +60,32 @@ def main(conf):
 
     if(conf["model"]["name"] == "ConvTasNet"):
         from asteroid.models import ConvTasNet
+
         conf["masknet"].update({"n_src": conf["data"]["n_src"]})
+        # Define scheduler
+        scheduler = None
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
         model = ConvTasNet(
             **conf["filterbank"], 
             **conf["masknet"], 
             sample_rate=conf["data"]["sample_rate"]
         )
     elif(conf["model"]["name"] == "DCCRNet"):
+        # Not working
         from asteroid.models import DCCRNet
+
         model = DCCRNet(
             sample_rate=conf["data"]["sample_rate"], 
             architecture=conf["model"]["architecture"],
         )
-        from asteroid.losses import pairwise_neg_sisdr, PITLossWrapper
-        from asteroid import DCCRNet
-
-        # Tell DPRNN that we want to separate to 2 sources.
-        model = DCCRNet(architecture="DCCRN-CL")
-        from torch import optim
-
-        # PITLossWrapper works with any loss function.
-        loss = PITLossWrapper(pairwise_neg_sisdr, pit_from="pw_mtx")
-        optimizer = optim.Adam(model.parameters(), lr=1e-3)
-        system = System(model, optimizer, loss, train_loader, val_loader)
-
-        # Train for 1 epoch using a single GPU. If you're running this on Google Colab,
-        # be sure to select a GPU runtime (Runtime → Change runtime type → Hardware accelarator).
-        trainer = pl.Trainer(max_epochs=100)
-        trainer.fit(system)
     elif(conf["model"]["name"] == "DPRNNTasNet"):
         from asteroid.models import DPRNNTasNet
+
+        # CHECK! Define scheduler
+        scheduler = None
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
         model = DPRNNTasNet(
             n_src=conf["data"]["n_src"],
             sample_rate=conf["data"]["sample_rate"],
@@ -97,11 +93,23 @@ def main(conf):
         )
     elif(conf["model"]["name"] == "DPTNet"):
         from asteroid.models import DPTNet
+
+        conf["masknet"].update({"n_src": train_set.n_src})
         model = DPTNet(
             n_src=conf["data"]["n_src"],
             sample_rate=conf["data"]["sample_rate"],
-            **conf["model_init"]
+            **conf["filterbank"],
+            **conf["masknet"]
         )
+        from asteroid.engine.schedulers import DPTNetScheduler
+
+        scheduler = {
+            "scheduler": DPTNetScheduler(
+                optimizer, len(train_loader) // conf["training"]["batch_size"], 64
+            ),
+            "interval": "step",
+        }
+
     elif(conf["model"]["name"] == "DeMask"):
         from asteroid.models import DeMask
         model = DeMask(
@@ -115,6 +123,11 @@ def main(conf):
         )
     elif(conf["model"]["name"] == "LSTMTasNet"):
         from asteroid.models import LSTMTasNet
+
+        # CHECK! Define scheduler
+        scheduler = None
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
         model = LSTMTasNet(
             n_src=conf["data"]["n_src"],
             sample_rate=conf["data"]["sample_rate"],
@@ -122,6 +135,11 @@ def main(conf):
         )
     elif(conf["model"]["name"] == "SuDORMRFNet"):
         from asteroid.models import SuDORMRFNet
+
+        # CHECK! Define scheduler
+        scheduler = None
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
         model = SuDORMRFNet(
             n_src=conf["data"]["n_src"],
             sample_rate=conf["data"]["sample_rate"],
@@ -129,10 +147,6 @@ def main(conf):
         )
 
     optimizer = make_optimizer(model.parameters(), **conf["optim"])
-    # Define scheduler
-    scheduler = None
-    if conf["training"]["half_lr"]:
-        scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
     # Just after instantiating, save the args. Easy loading in the future.
     # exp_dir = conf["main_args"]["exp_dir"]
     exp_dir = conf["model"]["name"] + "_model/" + conf["main_args"]["exp_dir"]
