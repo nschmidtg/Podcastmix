@@ -72,6 +72,22 @@ def main(conf):
             sample_rate=conf["data"]["sample_rate"], 
             architecture=conf["model"]["architecture"],
         )
+        from asteroid.losses import pairwise_neg_sisdr, PITLossWrapper
+        from asteroid import DCCRNet
+
+        # Tell DPRNN that we want to separate to 2 sources.
+        model = DCCRNet(architecture="DCCRN-CL")
+        from torch import optim
+
+        # PITLossWrapper works with any loss function.
+        loss = PITLossWrapper(pairwise_neg_sisdr, pit_from="pw_mtx")
+        optimizer = optim.Adam(model.parameters(), lr=1e-3)
+        system = System(model, optimizer, loss, train_loader, val_loader)
+
+        # Train for 1 epoch using a single GPU. If you're running this on Google Colab,
+        # be sure to select a GPU runtime (Runtime → Change runtime type → Hardware accelarator).
+        trainer = pl.Trainer(max_epochs=100)
+        trainer.fit(system)
     elif(conf["model"]["name"] == "DPRNNTasNet"):
         from asteroid.models import DPRNNTasNet
         model = DPRNNTasNet(
