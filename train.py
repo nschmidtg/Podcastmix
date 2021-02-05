@@ -79,6 +79,9 @@ def main(conf):
             sample_rate=conf["data"]["sample_rate"], 
             architecture=conf["model"]["architecture"],
         )
+        optimizer = make_optimizer(model.parameters(), **conf["optim"])
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
     elif(conf["model"]["name"] == "DPRNNTasNet"):
         from asteroid.models import DPRNNTasNet
 
@@ -116,14 +119,18 @@ def main(conf):
             sample_rate=conf["data"]["sample_rate"],
             **conf["model_init"]
         )
-        
+        optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
             scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
     elif(conf["model"]["name"] == "DCUNet"):
+        # not working, try other scheduler
         from asteroid.models import DCUNet
         model = DCUNet(
             architecture=conf["model"]["architecture"]
         )
+        optimizer = make_optimizer(model.parameters(), **conf["optim"])
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
     elif(conf["model"]["name"] == "LSTMTasNet"):
         from asteroid.models import LSTMTasNet
 

@@ -14,6 +14,7 @@ training:
   batch_size: 2
   num_workers: 2
   half_lr: False
+  early_stop: True
 # Optim config
 optim:
   optimizer: adam
