@@ -133,11 +133,7 @@ def main(conf):
             scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
     elif(conf["model"]["name"] == "LSTMTasNet"):
         from asteroid.models import LSTMTasNet
-
-        # CHECK! Define scheduler
         scheduler = None
-        # if conf["training"]["half_lr"]:
-        #     scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
         model = LSTMTasNet(
             n_src=conf["data"]["n_src"],
             sample_rate=conf["data"]["sample_rate"],
@@ -155,9 +151,7 @@ def main(conf):
     elif(conf["model"]["name"] == "SuDORMRFNet"):
         from asteroid.models import SuDORMRFNet
 
-        # CHECK! Define scheduler
-        scheduler = None
-        
+        scheduler = None        
         model = SuDORMRFNet(
             n_src=conf["data"]["n_src"],
             sample_rate=conf["data"]["sample_rate"],
