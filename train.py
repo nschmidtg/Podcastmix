@@ -57,22 +57,20 @@ def main(conf):
         num_workers=conf["training"]["num_workers"],
         drop_last=True,
     )
-    # print(conf)
-    optimizer = None
 
     if(conf["model"]["name"] == "ConvTasNet"):
         from asteroid.models import ConvTasNet
 
         conf["masknet"].update({"n_src": conf["data"]["n_src"]})
-        # Define scheduler
         scheduler = None
-        if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
         model = ConvTasNet(
             **conf["filterbank"], 
             **conf["masknet"], 
             sample_rate=conf["data"]["sample_rate"]
         )
+        optimizer = make_optimizer(model.parameters(), **conf["optim"])
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
     elif(conf["model"]["name"] == "DCCRNet"):
         # Not working
         from asteroid.models import DCCRNet
@@ -84,18 +82,17 @@ def main(conf):
     elif(conf["model"]["name"] == "DPRNNTasNet"):
         from asteroid.models import DPRNNTasNet
 
-        # CHECK! Define scheduler
-        scheduler = None
-        if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
         model = DPRNNTasNet(
             n_src=conf["data"]["n_src"],
             sample_rate=conf["data"]["sample_rate"],
             **conf["model_init"]
         )
+        optimizer = make_optimizer(model.parameters(), **conf["optim"])
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
     elif(conf["model"]["name"] == "DPTNet"):
         from asteroid.models import DPTNet
-        print("hola!")
+
         conf["masknet"].update({"n_src": train_set.n_src})
         model = DPTNet(
             sample_rate=conf["data"]["sample_rate"],
@@ -103,7 +100,6 @@ def main(conf):
             **conf["masknet"]
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
-        print("chao")
         from asteroid.engine.schedulers import DPTNetScheduler
 
         scheduler = {
@@ -114,11 +110,15 @@ def main(conf):
         }
 
     elif(conf["model"]["name"] == "DeMask"):
+        # not working, try other scheduler
         from asteroid.models import DeMask
         model = DeMask(
             sample_rate=conf["data"]["sample_rate"],
             **conf["model_init"]
         )
+        
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
     elif(conf["model"]["name"] == "DCUNet"):
         from asteroid.models import DCUNet
         model = DCUNet(
@@ -129,27 +129,37 @@ def main(conf):
 
         # CHECK! Define scheduler
         scheduler = None
-        if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
+        # if conf["training"]["half_lr"]:
+        #     scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
         model = LSTMTasNet(
             n_src=conf["data"]["n_src"],
             sample_rate=conf["data"]["sample_rate"],
             **conf["model_init"]
+        )
+        optimizer = make_optimizer(model.parameters(), **conf["optim"])
+        scheduler = torch.optim.lr_scheduler.CyclicLR(
+            optimizer,
+            base_lr=conf["optim"]["lr"],
+            max_lr=conf["optim"]["lr"] * 10,
+            step_size_up=4 * len(train_loader),
+            mode="triangular",
+            cycle_momentum=False,
         )
     elif(conf["model"]["name"] == "SuDORMRFNet"):
         from asteroid.models import SuDORMRFNet
 
         # CHECK! Define scheduler
         scheduler = None
-        if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
+        
         model = SuDORMRFNet(
             n_src=conf["data"]["n_src"],
             sample_rate=conf["data"]["sample_rate"],
             **conf["model_init"]
         )
-    if(optimizer == None):
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
+        
     # Just after instantiating, save the args. Easy loading in the future.
     # exp_dir = conf["main_args"]["exp_dir"]
     exp_dir = conf["model"]["name"] + "_model/" + conf["main_args"]["exp_dir"]
