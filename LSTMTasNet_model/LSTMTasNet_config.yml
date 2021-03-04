@@ -10,7 +10,7 @@ model_init:
   fb_name: "free"
 # Training config
 training:
-  epochs: 40
+  epochs: 200
   batch_size: 2
   num_workers: 2
   half_lr: False
