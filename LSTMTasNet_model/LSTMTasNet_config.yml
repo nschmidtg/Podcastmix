@@ -1,0 +1,30 @@
+model: 
+  name: LSTMTasNet
+model_init:
+  rnn_type: "lstm"
+  n_layers: 4
+  hid_size: 512
+  dropout: 0.3
+  mask_act: "sigmoid"
+  bidirectional: True
+  fb_name: "free"
+# Training config
+training:
+  epochs: 40
+  batch_size: 2
+  num_workers: 2
+  half_lr: False
+  early_stop: True
+# Optim config
+optim:
+  optimizer: adam
+  lr: 0.0003
+  weight_decay: 0.
+# Data config
+data:
+  task: linear_mono
+  train_dir: augmented_dataset/metadata/train
+  valid_dir: augmented_dataset/metadata/val
+  sample_rate: 8000
+  n_src: 2
+  segment: 3

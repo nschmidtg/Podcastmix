@@ -1,16 +1,11 @@
-# filterbank config
-filterbank:
-  n_filters: 512
-  kernel_size: 16
-  stride: 8
-# Network config
-masknet:
-  n_blocks: 8
-  n_repeats: 3
-  mask_act: relu
+model: 
+  name: LSTMTasNet
+model_init:
   bn_chan: 128
-  skip_chan: 128
-  hid_chan: 512
+  num_blocks: 16
+  upsampling_depth: 4
+  mask_act: "softmax"
+  fb_name: "free"
 # Training config
 training:
   epochs: 5

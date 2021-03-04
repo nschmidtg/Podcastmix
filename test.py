@@ -14,7 +14,8 @@ from pathlib import Path
 from asteroid.metrics import get_metrics
 from PodcastMix import PodcastMix
 from asteroid.losses import PITLossWrapper, pairwise_neg_sisdr
-from asteroid import ConvTasNet
+#from asteroid import ConvTasNet
+import importlib
 from asteroid.models import save_publishable
 from asteroid.utils import tensors_to_device
 from asteroid.metrics import WERTracker, MockWERTracker
@@ -23,6 +24,9 @@ from asteroid.metrics import WERTracker, MockWERTracker
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--test_dir", type=str, required=True, help="Test directory including the csv files"
+)
+parser.add_argument(
+    "--target_model", type=str, required=True, help="Asteroid model to use"
 )
 parser.add_argument(
     "--task",
@@ -34,14 +38,14 @@ parser.add_argument(
 parser.add_argument(
     "--out_dir",
     type=str,
-    default='eval/tmp',
+    default='ConvTasNet/eval/tmp',
     required=True,
-    help="Directory in exp_dir where the eval results" " will be stored",
+    help="Directory where the eval results" " will be stored",
 )
 parser.add_argument(
     "--use_gpu", type=int, default=0, help="Whether to use the GPU for model execution"
 )
-parser.add_argument("--exp_dir", default="exp/tmp", help="Experiment root")
+parser.add_argument("--exp_dir", default="exp/tmp", help="Best serialized model path")
 parser.add_argument(
     "--n_save_ex", type=int, default=10, help="Number of audio examples to save, -1 means all"
 )
@@ -51,13 +55,24 @@ parser.add_argument(
 
 COMPUTE_METRICS = ["si_sdr", "sdr", "sir", "sar", "stoi"]
 
+
+def my_import(name):
+    components = name.split('.')
+    mod = __import__(components[0])
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    return mod
+
 def main(conf):
     compute_metrics = COMPUTE_METRICS
     wer_tracker = (
         MockWERTracker()
     )
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
-    model = ConvTasNet.from_pretrained(model_path)
+    print(model_path)
+    AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
+    model = AsteroidModelModule.from_pretrained(model_path)
+    # model = ConvTasNet
     # Handle device placement
     if conf["use_gpu"]:
         model.cuda()
@@ -184,3 +199,9 @@ if __name__ == "__main__":
         )
 
     main(arg_dic)
+
+
+"""
+usage: 
+CUDA_VISIBLE_DEVICES=1 python test.py --target_model ConvTasNet --test_dir augmented_dataset/metadata/test/ --task linear_mono --out_dir=ConvTasNet_model/eval/tmp --exp_dir=ConvTasNet_model/exp/tmp
+"""
