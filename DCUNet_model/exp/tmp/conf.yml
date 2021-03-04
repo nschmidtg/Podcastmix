@@ -1,0 +1,24 @@
+data:
+  n_src: 2
+  sample_rate: 8000
+  segment: 3
+  task: linear_mono
+  train_dir: augmented_dataset/metadata/train
+  valid_dir: augmented_dataset/metadata/val
+main_args:
+  config_model: DCUNet_model/DCUNet_config.yml
+  exp_dir: exp/tmp
+  help: null
+model:
+  architecture: DCUNet-10
+  name: DCUNet
+optim:
+  lr: 0.001
+  weight_decay: 1.0e-05
+positional arguments: {}
+training:
+  batch_size: 6
+  early_stop: true
+  epochs: 5
+  half_lr: true
+  num_workers: 4
