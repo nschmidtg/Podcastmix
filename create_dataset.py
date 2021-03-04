@@ -15,6 +15,11 @@ Create the augmented dataset
 using the VCTK and the JamendoPopular datasets, an augmented 
 podcast/radioshow like dataset is created
 """
+# modify if necesary:
+speech_path = "VCTK-Corpus-0.92"
+music_path = "JamendoPopular"
+
+
 # create files structure
 if not os.path.exists('podcastmix'):
         os.makedirs('podcastmix')
@@ -54,17 +59,26 @@ import csv
 
 # I used the s1 source from the MiniLibriMix for the train set
 # and the s3 source for the val and test set
-speech_path_train = "MiniLibriMix/val/s1/"
-speech_path_val_test = "MiniLibriMix/val/s2/"
+
+speech_files = np.array([])
+for path, subdirs, files in os.walk(speech_path):
+    for name in files:
+        speech_files = np.append(speech_files, os.path.join(path, name))
+
+music_files = np.array([])
+for path, subdirs, files in os.walk(speech_path):
+    for name in files:
+        music_files = np.append(music_files, os.path.join(path, name))
+
     
-speech_array_train = [f for f in listdir(speech_path_train) if isfile(join(speech_path_train, f))]
-speech_array_val_test = [f for f in listdir(speech_path_val_test) if isfile(join(speech_path_val_test, f))]
+# speech_files = [f for f in listdir(speech_path) if isfile(join(speech_path, f))]
+# music_files = [f for f in listdir(music_path) if isfile(join(music_path, f))]
 
 # initialize the random seed
 random.seed(1)
 # shuffle
-random.shuffle(speech_array_train)
-random.shuffle(speech_array_val_test)
+random.shuffle(speech_files)
+random.shuffle(music_files)
 
 
 
@@ -74,7 +88,7 @@ def create_csv_metadata(csv_path, headers):
         writer.writerow(headers)
 # create the train csv file
 
-speech_headers = ["speech_ID","speeker_id","speech_path","length"]
+speech_headers = ["speech_ID","speech_path","length"]
 music_headers = ["music_ID", "music_path","length"]
 
 csv_path = 'podcastmix/metadata/train/speech.csv'
@@ -99,67 +113,38 @@ create_csv_metadata(csv_path, music_headers)
 
 # 70% train, 15 test 15 val
 # TODO I have to split the two datasets in the respective folder creating the 2 metadata files
-n_train = 102
-n_val_test = 21
+# SPLIT DATASET:
+train_prop = 0.8
+val_prop = 0.1
+test_prop = 0.1
 
-# speech_array_train = speech_array_train[0:n_train]
-# speech_array_val_test = speech_array_train[0: 2 * n_val_test]
-# print("speech_array_val_test", len(speech_array_val_test))
+speech_train_set = speech_files[0: int(len(speech_files) * train_prop)]
+speech_val_set = speech_files[int(len(speech_files) * train_prop): int(len(speech_files) * (train_prop + val_prop))]
+speech_test_set = speech_files[int(len(speech_files) * (train_prop + val_prop)): len(speech_files)]
 
-# i = 0
-# for track in mus:
-    
-#     track_file = track.path
-#     if i < n_train:
-#         # creating the training set for the first n_train songs
-#         csv_path = 'podcastmix/metadata/train'
-#         speech_path = speech_path_train
-#         path = train_path
-#         speech_name = speech_array_train[i]
-        
-#     else:
-#         # the val/test set
-#         if(i - n_train < n_val_test):
-#             csv_path = 'podcastmix/metadata/val'
-#             speech_path = speech_path_val_test
-#             path = val_path
-#         else:
-#             csv_path = 'podcastmix/metadata/test'
-#             speech_path = speech_path_val_test
-#             path = test_path
-#         print("i",i)
-#         print("n_train", n_train)
-#         print("//////////////////////////")
-#         speech_name = speech_array_val_test[i - n_train - 1]
+music_train_set = music_files[0: int(len(music_files) * train_prop)]
+music_val_set = music_files[int(len(music_files) * train_prop): int(len(music_files) * (train_prop + val_prop))]
+music_test_set = music_files[int(len(music_files) * (train_prop + val_prop)): len(music_files)]
 
-#     # path of the speech
-#     speech_file = speech_path + speech_name
-#     file_name, min_length = mix_audio_sources(track_file, speech_file, path, music_to_speech_ratio = 0.1)
-
-#     # add a new row to the corresponding csv metadata file
-#     csv_path_file = csv_path + '/speech.csv'
-#     with open(csv_path_file, 'a', newline='') as file:
-#         writer = csv.writer(file)
-#         writer.writerow([
-#                         i,
-#                         file_name,
-#                         path + "/linear_mono/" + file_name,
-#                         path + "/music_mono/" + file_name,
-#                         path + "/speech_mono/" + file_name,
-#                         min_length
-#             ])
-
-#     # add a new row to the corresponding csv metadata file
-#     csv_path_file = csv_path + '/music.csv'
-#     with open(csv_path_file, 'a', newline='') as file:
-#         writer = csv.writer(file)
-#         writer.writerow([
-#                         i,
-#                         file_name,
-#                         path + "/linear_mono/" + file_name,
-#                         path + "/music_mono/" + file_name,
-#                         path + "/speech_mono/" + file_name,
-#                         min_length
-#             ])
-    
-#     i += 1
+sets = [
+    [speech_train_set, 'podcastmix/metadata/train/speech.csv'],
+    [speech_val_set, 'podcastmix/metadata/val/speech.csv'],
+    [speech_test_set, 'podcastmix/metadata/test/speech.csv'],
+    [music_train_set, 'podcastmix/metadata/train/music.csv'],
+    [music_val_set, 'podcastmix/metadata/val/music.csv'],
+    [music_test_set, 'podcastmix/metadata/test/music.csv']
+]
+i=0
+for set, csv_path in sets:
+    for element in set:
+        # add a new row to the corresponding csv metadata file
+        with open(csv_path, 'a', newline='') as file:
+            writer = csv.writer(file)
+            # speech_ID","speech_path","length"]
+            element_length = len(sf.read(element)[0])
+            writer.writerow([
+                            i,
+                            element,
+                            element_length
+                ])
+            i += 1
