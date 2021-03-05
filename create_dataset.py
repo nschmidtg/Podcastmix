@@ -5,6 +5,7 @@ from os.path import isfile, join
 import random
 import numpy as np
 import re
+import sys
 import json
 import csv
 # download the JamendoPopular library   
@@ -17,11 +18,11 @@ using the VCTK and the JamendoPopular datasets, an augmented
 podcast/radioshow like dataset is created
 """
 # modify if necesary:
-speech_path = "VCTK/wav48_silence_trimmed"
-speech_metadata_path = "VCTK/spearker_info.txt"
+speech_path = "../../VCTK/wav48_silence_trimmed"
+speech_metadata_path = "../../VCTK/speaker-info.txt"
 
-music_path = "JamendoBoost/music"
-music_metadata_path = "JamendoBoost/metadata.json"
+music_path = "../../JamendoBoost/music"
+music_metadata_path = "../../JamendoBoost/metadata.json"
 
 # create files structure
 if not os.path.exists('podcastmix'):
@@ -30,8 +31,10 @@ if not os.path.exists('podcastmix'):
 def create_folder_structure(path):
     if not os.path.exists(path):
         os.makedirs(path)
-    if not os.path.exists(path + '/speech'):
+    if not os.path.exists(path + '/music'):
         os.makedirs(path + '/music')
+    if not os.path.exists(path + '/speech'):
+        os.makedirs(path + '/speech')
 
 # create files structure
 train_path = "podcastmix/train"
@@ -51,32 +54,7 @@ if not os.path.exists('podcastmix/metadata/train'):
 if not os.path.exists('podcastmix/metadata/val'):
     os.makedirs('podcastmix/metadata/val')
 if not os.path.exists('podcastmix/metadata/test'):
-    os.makedirs('podcastmix/metadata/test')
-
-# I used the s1 source from the MiniLibriMix for the train set
-# and the s3 source for the val and test set
-
-speech_files = np.array([])
-for path, subdirs, files in os.walk(speech_path):
-    for name in files:
-        speech_files = np.append(speech_files, os.path.join(path, name))
-
-music_files = np.array([])
-for path, subdirs, files in os.walk(speech_path):
-    for name in files:
-        music_files = np.append(music_files, os.path.join(path, name))
-
-    
-# speech_files = [f for f in listdir(speech_path) if isfile(join(speech_path, f))]
-# music_files = [f for f in listdir(music_path) if isfile(join(music_path, f))]
-
-# initialize the random seed
-random.seed(1)
-# shuffle
-random.shuffle(speech_files)
-random.shuffle(music_files)
-
-
+    os.makedirs('podcastmix/metadata/tesst')
 
 def create_csv_metadata(csv_path, headers):
     with open(csv_path, 'w', newline='') as file:
@@ -125,36 +103,73 @@ create_csv_metadata(csv_path, speech_headers)
 csv_path = 'podcastmix/metadata/test/music.csv'
 create_csv_metadata(csv_path, music_headers)
 
+# initialize the random seed
+random.seed(1)
 
 train_prop = 0.8
 val_prop = 0.1
 test_prop = 0.1
 
-with open('metadata.json') as file:
+counter = 0
+speech_train_set = []
+speech_val_set = []
+speech_test_set = []
+music_train_set = []
+music_val_set = []
+music_test_set = []
+
+with open(music_metadata_path) as file:
     json_file = json.load(file)
 
-counter = 0
 for song_id in json_file:
-    # if estamos en la proporción de train:
-    print(song_id)
     song = json_file.get(song_id)
-    
+    if counter < int(train_prop * len(json_file)):
+        # train
+        music_train_set.append(song)
+    elif counter >= int(train_prop * len(json_file)) and counter < int((train_prop + val_prop) * len(json_file)):
+        # val
+        music_val_set.append(song)
+    else:
+        # test
+        music_test_set.append(song)
     counter += 1
 
-#...
+print(len(music_train_set))
+print(len(music_val_set))
+print(len(music_test_set))
 
-# 70% train, 15 test 15 val
-# TODO I have to split the two datasets in the respective folder creating the 2 metadata files
-# SPLIT DATASET:
+speech_files = np.array([])
+for path, subdirs, files in os.walk(speech_path):
+    for name in files:
+        speech_files = np.append(speech_files, os.path.join(path, name))
+
+counter = 0
+for speech_path in speech_files:
+    speaker_id = speech_path.split('_')[0]
+    if counter < int(train_prop * len(speech_files)):
+        # train
+        speech_train_set.append(speech_path)
+    elif counter >= int(train_prop * len(speech_files)) and counter < int((train_prop + val_prop) * len(speech_files)):
+        # val
+        speech_val_set.append(speech_path)
+    else:
+        # test
+        speech_test_set.append(speech_path)
+    counter += 1
+
+print(len(speech_train_set))
+print(len(speech_val_set))
+print(len(speech_test_set))
+
+import re
+s_m = open(speech_metadata_path, 'r')
+lines = s_m.readlines()
+for line in lines:
+    print(re.split('\s+', line))
 
 
-speech_train_set = speech_files[0: int(len(speech_files) * train_prop)]
-speech_val_set = speech_files[int(len(speech_files) * train_prop): int(len(speech_files) * (train_prop + val_prop))]
-speech_test_set = speech_files[int(len(speech_files) * (train_prop + val_prop)): len(speech_files)]
+sys.exit()
 
-music_train_set = music_files[0: int(len(music_files) * train_prop)]
-music_val_set = music_files[int(len(music_files) * train_prop): int(len(music_files) * (train_prop + val_prop))]
-music_test_set = music_files[int(len(music_files) * (train_prop + val_prop)): len(music_files)]
 
 sets = [
     [speech_train_set, 'podcastmix/metadata/train/speech.csv'],
