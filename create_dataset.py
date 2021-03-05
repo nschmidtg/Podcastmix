@@ -5,9 +5,10 @@ from os.path import isfile, join
 import random
 import numpy as np
 import re
+import json
 import csv
 # download the JamendoPopular library   
-# TODO wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=FILEID' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=FILEID" -O FILENAME && rm -rf /tmp/cookies.txt 
+# TODO wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1-0aH0V9VD1leaHVmrbI6jNbQyz7Lwp_6' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1-0aH0V9VD1leaHVmrbI6jNbQyz7Lwp_6" -O JamendoPopular && rm -rf /tmp/cookies.txt 
 # download the VCTK
 # TODO !wget --no-check-certificate 'https://datashare.ed.ac.uk/bitstream/handle/10283/3443/VCTK-Corpus-0.92.zip?sequence=2&isAllowed=y' -O 'VCTK-Corpus-0.92.zip'
 """
@@ -16,9 +17,11 @@ using the VCTK and the JamendoPopular datasets, an augmented
 podcast/radioshow like dataset is created
 """
 # modify if necesary:
-speech_path = "VCTK-Corpus-0.92"
-music_path = "JamendoPopular"
+speech_path = "VCTK/wav48_silence_trimmed"
+speech_metadata_path = "VCTK/spearker_info.txt"
 
+music_path = "JamendoBoost/music"
+music_metadata_path = "JamendoBoost/metadata.json"
 
 # create files structure
 if not os.path.exists('podcastmix'):
@@ -49,13 +52,6 @@ if not os.path.exists('podcastmix/metadata/val'):
     os.makedirs('podcastmix/metadata/val')
 if not os.path.exists('podcastmix/metadata/test'):
     os.makedirs('podcastmix/metadata/test')
-
-from os import listdir
-from os.path import isfile, join
-import random
-import numpy as np
-import re
-import csv
 
 # I used the s1 source from the MiniLibriMix for the train set
 # and the s3 source for the val and test set
@@ -88,8 +84,26 @@ def create_csv_metadata(csv_path, headers):
         writer.writerow(headers)
 # create the train csv file
 
-speech_headers = ["speech_ID","speech_path","length"]
-music_headers = ["music_ID", "music_path","length"]
+speech_headers = [
+    "speech_ID",
+    "speaker_age",
+    "speaker_gender",
+    "speaker_accent",
+    "speaker_region_comment",
+    "speech_file_path",
+    "length"
+    ]
+music_headers = [
+    "music_ID",
+    "jamendo_id",
+    "name",
+    "artist_name",
+    "album_name",
+    "license_ccurl",
+    "releasedate",
+    "music_path",
+    "length"
+    ]
 
 csv_path = 'podcastmix/metadata/train/speech.csv'
 create_csv_metadata(csv_path, speech_headers)
@@ -111,12 +125,28 @@ create_csv_metadata(csv_path, speech_headers)
 csv_path = 'podcastmix/metadata/test/music.csv'
 create_csv_metadata(csv_path, music_headers)
 
-# 70% train, 15 test 15 val
-# TODO I have to split the two datasets in the respective folder creating the 2 metadata files
-# SPLIT DATASET:
+
 train_prop = 0.8
 val_prop = 0.1
 test_prop = 0.1
+
+with open('metadata.json') as file:
+    json_file = json.load(file)
+
+counter = 0
+for song_id in json_file:
+    # if estamos en la proporción de train:
+    print(song_id)
+    song = json_file.get(song_id)
+    
+    counter += 1
+
+#...
+
+# 70% train, 15 test 15 val
+# TODO I have to split the two datasets in the respective folder creating the 2 metadata files
+# SPLIT DATASET:
+
 
 speech_train_set = speech_files[0: int(len(speech_files) * train_prop)]
 speech_val_set = speech_files[int(len(speech_files) * train_prop): int(len(speech_files) * (train_prop + val_prop))]
