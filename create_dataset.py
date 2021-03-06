@@ -67,7 +67,6 @@ speech_headers = [
     "speaker_age",
     "speaker_gender",
     "speaker_accent",
-    "speaker_region_comment",
     "speech_file_path",
     "length"
     ]
@@ -121,12 +120,20 @@ music_test_set = []
 with open(music_metadata_path) as file:
     json_file = json.load(file)
 
-for song_id in json_file:
+# shuffle music
+keys = list(json_file.keys())
+print(keys[0:10])
+random.shuffle(keys)
+print(keys[0:10])
+
+keys = keys[0:100]
+
+for song_id in keys:
     song = json_file.get(song_id)
-    if counter < int(train_prop * len(json_file)):
+    if counter < int(train_prop * len(keys)):
         # train
         music_train_set.append(song)
-    elif counter >= int(train_prop * len(json_file)) and counter < int((train_prop + val_prop) * len(json_file)):
+    elif counter >= int(train_prop * len(keys)) and counter < int((train_prop + val_prop) * len(keys)):
         # val
         music_val_set.append(song)
     else:
@@ -139,16 +146,22 @@ print(len(music_val_set))
 print(len(music_test_set))
 
 speech_files = np.array([])
+count = 0
 for path, subdirs, files in os.walk(speech_path):
     for name in files:
         speech_files = np.append(speech_files, os.path.join(path, name))
+        count += 1
+    if count > 100:
+        break
+
+from shutil import copyfile
 
 counter = 0
 for speech_path in speech_files:
-    speaker_id = speech_path.split('_')[0]
     if counter < int(train_prop * len(speech_files)):
         # train
         speech_train_set.append(speech_path)
+        #copyfile(, dst)
     elif counter >= int(train_prop * len(speech_files)) and counter < int((train_prop + val_prop) * len(speech_files)):
         # val
         speech_val_set.append(speech_path)
@@ -161,35 +174,68 @@ print(len(speech_train_set))
 print(len(speech_val_set))
 print(len(speech_test_set))
 
+print('primero de speech_train_set')
+print(speech_train_set[0])
+
+# read speech metadata.txt
+
 import re
+speaker_params = {}
 s_m = open(speech_metadata_path, 'r')
 lines = s_m.readlines()
+count = 0
 for line in lines:
-    print(re.split('\s+', line))
-
-
-sys.exit()
-
+    if count != 0:
+        #skip headers
+        cols = re.split('\s+', line)
+        print(cols)
+        speaker_params[cols[0]] = {'speech_ID':cols[0],'speaker_age':cols[1],'speaker_gender':cols[2],'speaker_accent':cols[3]}
+    count += 1
+print('aca')
+print(speaker_params)
 
 sets = [
-    [speech_train_set, 'podcastmix/metadata/train/speech.csv'],
-    [speech_val_set, 'podcastmix/metadata/val/speech.csv'],
-    [speech_test_set, 'podcastmix/metadata/test/speech.csv'],
+    #[speech_train_set, 'podcastmix/metadata/train/speech.csv'],
+    #[speech_val_set, 'podcastmix/metadata/val/speech.csv'],
+    #[speech_test_set, 'podcastmix/metadata/test/speech.csv'],
     [music_train_set, 'podcastmix/metadata/train/music.csv'],
     [music_val_set, 'podcastmix/metadata/val/music.csv'],
     [music_test_set, 'podcastmix/metadata/test/music.csv']
 ]
+
 i=0
 for set, csv_path in sets:
+    print(set, csv_path)
+    sys.exit()
+    with open(csv_path, 'a', newline='') as file:
+        writer = csv.writer(file)
     for element in set:
-        # add a new row to the corresponding csv metadata file
-        with open(csv_path, 'a', newline='') as file:
-            writer = csv.writer(file)
-            # speech_ID","speech_path","length"]
-            element_length = len(sf.read(element)[0])
-            writer.writerow([
-                            i,
-                            element,
-                            element_length
-                ])
-            i += 1
+        element_length = len(sf.read(element)[0])
+        if 'music' in csv_path:
+            writer.writerow([element['id'],element['id'],element['name'],element['artist_name'],element['album_name'],element['license_ccurl'],element['releasedate'],,element_length)
+        elif 'speech' in csv_path:
+            writer.writerow([])
+        i += 1
+
+
+
+#speech_headers = [
+#    "speech_ID",
+#    "speaker_age",
+#    "speaker_gender",
+#    "speaker_accent",
+#    "speech_file_path",
+#    "length"
+#    ]
+#music_headers = [
+#    "music_ID",
+#    "jamendo_id",
+#    "name",
+#    "artist_name",
+#    "album_name",
+#    "license_ccurl",
+#    "releasedate",
+#    "music_path",
+#    "length"
+#    ]
+
