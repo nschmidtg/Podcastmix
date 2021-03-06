@@ -1,4 +1,7 @@
+from math import floor
 from shutil import copyfile
+from mutagen.mp3 import MP3
+from mutagen.flac import FLAC
 import soundfile as sf
 import librosa, os
 from os import listdir
@@ -65,6 +68,7 @@ def create_csv_metadata(csv_path, headers):
 
 speech_headers = [
     "speech_ID",
+    "speaker_id",
     "speaker_age",
     "speaker_gender",
     "speaker_accent",
@@ -123,11 +127,7 @@ with open(music_metadata_path) as file:
 
 # shuffle music
 keys = list(json_file.keys())
-print(keys[0:10])
 random.shuffle(keys)
-print(keys[0:10])
-
-keys = keys[0:100]
 
 for song_id in keys:
     song = json_file.get(song_id)
@@ -149,28 +149,17 @@ for song_id in keys:
         copyfile(music_path + '/' + song['id'] + '.mp3', destination)
         song['local_path'] = destination
         music_test_set.append(song)
-    counter += 1
-
-
-print(len(music_train_set))
-print(len(music_val_set))
-print(len(music_test_set))
+    counter +=1
 
 speech_files = np.array([])
-count = 0
 for path, subdirs, files in os.walk(speech_path):
     for name in files:
         speech_files = np.append(speech_files, os.path.join(path, name))
-        count += 1
-    if count > 100:
-        break
 
 # shuffle speech
 np.random.shuffle(speech_files)
 
 counter = 0
-# remove:
-speech_files = speech_files[0:100]
 for speech_path in speech_files:
     if counter < int(train_prop * len(speech_files)):
         # train
@@ -189,18 +178,8 @@ for speech_path in speech_files:
         copyfile(speech_path, destination)
         speech_test_set.append(destination)
     counter += 1
-print(speech_train_set)
-sys.exit()
-
-print(len(speech_train_set))
-print(len(speech_val_set))
-print(len(speech_test_set))
-
-print('primero de speech_train_set')
-print(speech_train_set[0])
 
 # read speech metadata.txt
-
 import re
 speaker_params = {}
 s_m = open(speech_metadata_path, 'r')
@@ -210,16 +189,13 @@ for line in lines:
     if count != 0:
         #skip headers
         cols = re.split('\s+', line)
-        print(cols)
-        speaker_params[cols[0]] = {'speech_ID':cols[0],'speaker_age':cols[1],'speaker_gender':cols[2],'speaker_accent':cols[3]}
+        speaker_params[cols[0]] = {'speaker_id':cols[0],'speaker_age':cols[1],'speaker_gender':cols[2],'speaker_accent':cols[3]}
     count += 1
-print('aca')
-print(speaker_params)
 
 sets = [
-    #[speech_train_set, 'podcastmix/metadata/train/speech.csv'],
-    #[speech_val_set, 'podcastmix/metadata/val/speech.csv'],
-    #[speech_test_set, 'podcastmix/metadata/test/speech.csv'],
+    [speech_train_set, 'podcastmix/metadata/train/speech.csv'],
+    [speech_val_set, 'podcastmix/metadata/val/speech.csv'],
+    [speech_test_set, 'podcastmix/metadata/test/speech.csv'],
     [music_train_set, 'podcastmix/metadata/train/music.csv'],
     [music_val_set, 'podcastmix/metadata/val/music.csv'],
     [music_test_set, 'podcastmix/metadata/test/music.csv']
@@ -227,37 +203,17 @@ sets = [
 
 i=0
 for set, csv_path in sets:
-    print(set, csv_path)
-    sys.exit()
     with open(csv_path, 'a', newline='') as file:
         writer = csv.writer(file)
-    for element in set:
-        element_length = len(sf.read(element)[0])
-        if 'music' in csv_path:
-            writer.writerow([element['id'],element['id'],element['name'],element['artist_name'],element['album_name'],element['license_ccurl'],element['releasedate'],'dummy_path',element_length])
-        elif 'speech' in csv_path:
-            writer.writerow([])
-        i += 1
-
-
-
-#speech_headers = [
-#    "speech_ID",
-#    "speaker_age",
-#    "speaker_gender",
-#    "speaker_accent",
-#    "speech_file_path",
-#    "length"
-#    ]
-#music_headers = [
-#    "music_ID",
-#    "jamendo_id",
-#    "name",
-#    "artist_name",
-#    "album_name",
-#    "license_ccurl",
-#    "releasedate",
-#    "music_path",
-#    "length"
-#    ]
-
+        for element in set:
+            if 'music' in csv_path:
+                audio = MP3(element['local_path'])
+                element_length = floor(audio.info.sample_rate * audio.info.length)
+                writer.writerow([element['id'],element['id'],element['name'],element['artist_name'],element['album_name'],element['license_ccurl'],element['releasedate'],element['local_path'] ,element_length])
+            elif 'speech' in csv_path:
+                audio = FLAC(element)
+                element_length = floor(audio.info.sample_rate * audio.info.length)
+                speech_cmp = element.split('/')[-1].split('_')
+                params = speaker_params[speech_cmp[0]]
+                writer.writerow([speech_cmp[1]+'_'+speech_cmp[2].split('.')[0], speech_cmp[0], params['speaker_age'], params['speaker_gender'], params['speaker_accent'], element, element_length])
+            i += 1
