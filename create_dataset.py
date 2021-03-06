@@ -1,3 +1,4 @@
+from shutil import copyfile
 import soundfile as sf
 import librosa, os
 from os import listdir
@@ -54,7 +55,7 @@ if not os.path.exists('podcastmix/metadata/train'):
 if not os.path.exists('podcastmix/metadata/val'):
     os.makedirs('podcastmix/metadata/val')
 if not os.path.exists('podcastmix/metadata/test'):
-    os.makedirs('podcastmix/metadata/tesst')
+    os.makedirs('podcastmix/metadata/test')
 
 def create_csv_metadata(csv_path, headers):
     with open(csv_path, 'w', newline='') as file:
@@ -132,14 +133,26 @@ for song_id in keys:
     song = json_file.get(song_id)
     if counter < int(train_prop * len(keys)):
         # train
+        destination = train_path + '/music/' + song['id'] + '.mp3'
+        copyfile(music_path + '/' + song['id'] + '.mp3', destination)
+        song['local_path'] = destination
         music_train_set.append(song)
     elif counter >= int(train_prop * len(keys)) and counter < int((train_prop + val_prop) * len(keys)):
         # val
+        destination = val_path + '/music/' + song['id'] + '.mp3'
+        copyfile(music_path + '/' + song['id'] + '.mp3', destination)
+        song['local_path'] = destination
         music_val_set.append(song)
     else:
         # test
+        destination = test_path + '/music/' + song['id'] + '.mp3'
+        copyfile(music_path + '/' + song['id'] + '.mp3', destination)
+        song['local_path'] = destination
         music_test_set.append(song)
     counter += 1
+
+print(music_train_set)
+sys.exit()
 
 print(len(music_train_set))
 print(len(music_val_set))
@@ -153,8 +166,6 @@ for path, subdirs, files in os.walk(speech_path):
         count += 1
     if count > 100:
         break
-
-from shutil import copyfile
 
 counter = 0
 for speech_path in speech_files:
@@ -212,7 +223,7 @@ for set, csv_path in sets:
     for element in set:
         element_length = len(sf.read(element)[0])
         if 'music' in csv_path:
-            writer.writerow([element['id'],element['id'],element['name'],element['artist_name'],element['album_name'],element['license_ccurl'],element['releasedate'],,element_length)
+            writer.writerow([element['id'],element['id'],element['name'],element['artist_name'],element['album_name'],element['license_ccurl'],element['releasedate'],'dummy_path',element_length])
         elif 'speech' in csv_path:
             writer.writerow([])
         i += 1
