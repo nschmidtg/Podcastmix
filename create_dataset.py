@@ -151,8 +151,6 @@ for song_id in keys:
         music_test_set.append(song)
     counter += 1
 
-print(music_train_set)
-sys.exit()
 
 print(len(music_train_set))
 print(len(music_val_set))
@@ -167,19 +165,32 @@ for path, subdirs, files in os.walk(speech_path):
     if count > 100:
         break
 
+# shuffle speech
+np.random.shuffle(speech_files)
+
 counter = 0
+# remove:
+speech_files = speech_files[0:100]
 for speech_path in speech_files:
     if counter < int(train_prop * len(speech_files)):
         # train
-        speech_train_set.append(speech_path)
+        destination = train_path + '/speech/' + speech_path.split('/')[-1]
+        copyfile(speech_path, destination)
+        speech_train_set.append(destination)
         #copyfile(, dst)
     elif counter >= int(train_prop * len(speech_files)) and counter < int((train_prop + val_prop) * len(speech_files)):
         # val
-        speech_val_set.append(speech_path)
+        destination = val_path + '/speech/' + speech_path.split('/')[-1]
+        copyfile(speech_path, destination)
+        speech_val_set.append(destination)
     else:
         # test
-        speech_test_set.append(speech_path)
+        destination = test_path + '/speech/' + speech_path.split('/')[-1]
+        copyfile(speech_path, destination)
+        speech_test_set.append(destination)
     counter += 1
+print(speech_train_set)
+sys.exit()
 
 print(len(speech_train_set))
 print(len(speech_val_set))
