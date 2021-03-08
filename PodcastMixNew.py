@@ -1,10 +1,10 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
-import soundfile as sf
 import os
 import numpy as np
 import random
+import librosa
 
 class PodcastMix(Dataset):
     """Dataset class for PodcastMix source separation tasks.
@@ -55,16 +55,17 @@ class PodcastMix(Dataset):
     def __len__(self):
         # for now, its a full permutation
         return len(self.df_music) * len(self.df_speech)
-    
-    def compute_rand_start_end(self, row):
-        start = stop = 0
+
+    def compute_rand_offset_duration(self, row):
+        offset = duration = 0
         if self.seg_len is not None:
-            start = random.randint(0, row["length"] - self.seg_len)
-            stop = start + self.seg_len
+            # ARREGLAR! offset = float(random.randint(0, row["length"] - self.seg_len) / self.sample_rate)
+            offset = 0
+            duration = self.segment
         else:
-            start = 0
-            stop = None
-        return start, stop
+            offset = 0
+            duration = None
+        return offset, duration
 
     def __getitem__(self, idx):
         speech_idx = idx // len(self.df_music)
@@ -72,20 +73,20 @@ class PodcastMix(Dataset):
         # Get the row in speech dataframe
         row_speech = self.df_speech.iloc[speech_idx]
         row_music = self.df_music.iloc[music_idx]
-        
         sources_list = []
         # If there is a seg, start point is set randomly
-        start, stop = self.compute_rand_start_end(row_speech)
+        offset, duration = self.compute_rand_offset_duration(row_speech)
         # We want to cleanly separate Speech, so its the first source in the sources_list
         source_path = row_speech["speech_path"]
-        s_speech, _ = sf.read(source_path, dtype="float32", start=start, stop=stop, samplerate = self.sample_rate)
+        s_speech, _ = librosa.load(source_path, dtype='float32', offset=offset, duration=duration, sr = self.sample_rate)
+        # Normalize speech
         s_speech = s_speech / max(s_speech)
         sources_list.append(s_speech)
 
         # now for music:
-        start, stop = self.compute_rand_start_end(row_music)
+        offset, duration = self.compute_rand_offset_duration(row_music)
         source_path = row_music["music_path"]
-        s_music, _ = sf.read(source_path, dtype="float32", start=start, stop=stop, samplerate = self.sample_rate)
+        s_music, _ = librosa.load(source_path, dtype="float32", offset=offset, duration=duration, sr = self.sample_rate)
         # normalize:
         s_music = s_music / max(s_music)
         sources_list.append(s_music)

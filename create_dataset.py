@@ -1,7 +1,7 @@
 from math import floor
 from shutil import copyfile
+from mutagen.wave import WAVE
 from mutagen.mp3 import MP3
-from mutagen.flac import FLAC
 import soundfile as sf
 import librosa, os
 from os import listdir
@@ -72,7 +72,7 @@ speech_headers = [
     "speaker_age",
     "speaker_gender",
     "speaker_accent",
-    "speech_file_path",
+    "speech_path",
     "length"
     ]
 music_headers = [
@@ -87,22 +87,22 @@ music_headers = [
     "length"
     ]
 
-csv_path = 'podcastmix/metadata/train/speech.csv'
-create_csv_metadata(csv_path, speech_headers)
+#csv_path = 'podcastmix/metadata/train/speech.csv'
+#create_csv_metadata(csv_path, speech_headers)
 
 csv_path = 'podcastmix/metadata/train/music.csv'
 create_csv_metadata(csv_path, music_headers)
 
 # create the val csv file
-csv_path = 'podcastmix/metadata/val/speech.csv'
-create_csv_metadata(csv_path, speech_headers)
+#csv_path = 'podcastmix/metadata/val/speech.csv'
+#create_csv_metadata(csv_path, speech_headers)
 
 csv_path = 'podcastmix/metadata/val/music.csv'
 create_csv_metadata(csv_path, music_headers)
 
 # create the test csv file
-csv_path = 'podcastmix/metadata/test/speech.csv'
-create_csv_metadata(csv_path, speech_headers)
+#csv_path = 'podcastmix/metadata/test/speech.csv'
+#create_csv_metadata(csv_path, speech_headers)
 
 csv_path = 'podcastmix/metadata/test/music.csv'
 create_csv_metadata(csv_path, music_headers)
@@ -115,9 +115,9 @@ val_prop = 0.1
 test_prop = 0.1
 
 counter = 0
-speech_train_set = []
-speech_val_set = []
-speech_test_set = []
+#speech_train_set = []
+#speech_val_set = []
+#speech_test_set = []
 music_train_set = []
 music_val_set = []
 music_test_set = []
@@ -151,51 +151,54 @@ for song_id in keys:
         music_test_set.append(song)
     counter +=1
 
-speech_files = np.array([])
-for path, subdirs, files in os.walk(speech_path):
-    for name in files:
-        speech_files = np.append(speech_files, os.path.join(path, name))
+#speech_files = np.array([])
+#for path, subdirs, files in os.walk(speech_path):
+#    for name in files:
+#        speech_files = np.append(speech_files, os.path.join(path, name))
 
 # shuffle speech
-np.random.shuffle(speech_files)
+#np.random.shuffle(speech_files)
 
-counter = 0
-for speech_path in speech_files:
-    if counter < int(train_prop * len(speech_files)):
-        # train
-        destination = train_path + '/speech/' + speech_path.split('/')[-1]
-        copyfile(speech_path, destination)
-        speech_train_set.append(destination)
-        #copyfile(, dst)
-    elif counter >= int(train_prop * len(speech_files)) and counter < int((train_prop + val_prop) * len(speech_files)):
-        # val
-        destination = val_path + '/speech/' + speech_path.split('/')[-1]
-        copyfile(speech_path, destination)
-        speech_val_set.append(destination)
-    else:
-        # test
-        destination = test_path + '/speech/' + speech_path.split('/')[-1]
-        copyfile(speech_path, destination)
-        speech_test_set.append(destination)
-    counter += 1
+#counter = 0
+#for speech_path in speech_files:
+#    if counter < int(train_prop * len(speech_files)):
+#        # train
+#        destination = train_path + '/speech/' + speech_path.split('/')[-1].split('.')[0] + '.wav'
+#        audio = librosa.load(speech_path, sr=44100)[0]
+#        sf.write(destination, audio, samplerate=44100)
+#        # copyfile(speech_path, destination)
+#        speech_train_set.append(destination)
+#    elif counter >= int(train_prop * len(speech_files)) and counter < int((train_prop + val_prop) * len(speech_files)):
+#        # val
+#        destination = val_path + '/speech/' + speech_path.split('/')[-1].split('.')[0] + '.wav'
+#        audio = librosa.load(speech_path, sr=44100)[0]
+#        sf.write(destination, audio, samplerate=44100)
+#        speech_val_set.append(destination)
+#    else:
+#        # test
+#        destination = test_path + '/speech/' + speech_path.split('/')[-1].split('.')[0] + '.wav'
+#        audio = librosa.load(speech_path, sr=44100)[0]
+#        sf.write(destination, audio, samplerate=44100)
+#        speech_test_set.append(destination)
+#    counter += 1
 
 # read speech metadata.txt
-import re
-speaker_params = {}
-s_m = open(speech_metadata_path, 'r')
-lines = s_m.readlines()
-count = 0
-for line in lines:
-    if count != 0:
-        #skip headers
-        cols = re.split('\s+', line)
-        speaker_params[cols[0]] = {'speaker_id':cols[0],'speaker_age':cols[1],'speaker_gender':cols[2],'speaker_accent':cols[3]}
-    count += 1
+#import re
+#speaker_params = {}
+#s_m = open(speech_metadata_path, 'r')
+#lines = s_m.readlines()
+#count = 0
+#for line in lines:
+#    if count != 0:
+#        #skip headers
+#        cols = re.split('\s+', line)
+#        speaker_params[cols[0]] = {'speaker_id':cols[0],'speaker_age':cols[1],'speaker_gender':cols[2],'speaker_accent':cols[3]}
+#    count += 1
 
 sets = [
-    [speech_train_set, 'podcastmix/metadata/train/speech.csv'],
-    [speech_val_set, 'podcastmix/metadata/val/speech.csv'],
-    [speech_test_set, 'podcastmix/metadata/test/speech.csv'],
+#    [speech_train_set, 'podcastmix/metadata/train/speech.csv'],
+#    [speech_val_set, 'podcastmix/metadata/val/speech.csv'],
+#    [speech_test_set, 'podcastmix/metadata/test/speech.csv'],
     [music_train_set, 'podcastmix/metadata/train/music.csv'],
     [music_val_set, 'podcastmix/metadata/val/music.csv'],
     [music_test_set, 'podcastmix/metadata/test/music.csv']
@@ -211,7 +214,7 @@ for set, csv_path in sets:
                 element_length = floor(audio.info.sample_rate * audio.info.length)
                 writer.writerow([element['id'],element['id'],element['name'],element['artist_name'],element['album_name'],element['license_ccurl'],element['releasedate'],element['local_path'] ,element_length])
             elif 'speech' in csv_path:
-                audio = FLAC(element)
+                audio = WAVE(element)
                 element_length = floor(audio.info.sample_rate * audio.info.length)
                 speech_cmp = element.split('/')[-1].split('_')
                 params = speaker_params[speech_cmp[0]]
