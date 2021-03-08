@@ -1,89 +1,98 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
-import soundfile as sf
 import os
 import numpy as np
 import random
+import librosa
 
 class PodcastMix(Dataset):
     """Dataset class for PodcastMix source separation tasks.
+    This dataset created Podcasts-like mixes on the fly consisting in
+    2 sources: background music and foreground speech
     Args:
-        csv_dir (str): The path to the metadata file.
-        task (str): One of ``'linear_mono'``, ``'linear_stereo'``, 
-            ``'sidechain_mono'`` or ``'sidechain_stereo'`` :
-            * ``'linear_mono'`` for linear_mono mix
-            * ``'linear_stereo'`` for linear_stereo mix
+        csv_dir (str): The path to the metadata files: speech.csv and music.csv
         sample_rate (int) : The sample rate of the sources and mixtures.
-        n_src (int) : The number of sources in the mixture.
         segment (int) : The desired sources and mixtures length in s.
     References
-        [1] "LibriMix: An Open-Source Dataset for Generalizable Speech Separation",
-        Cosentino et al. 2020.
-        [2] "MUSDB18 - a corpus for music separation",
-        Zafar et al. 2018.
+        [1] "Jamendo....
+        [2] "VCTK...
     """
 
     dataset_name = "PodcastMix"
-    def __init__(self, csv_dir, task="linear_mono", sample_rate=44100, n_src=2, segment=3, return_id=False):
+    def __init__(self, csv_dir, sample_rate=44100, segment=3, return_id=False):
         self.csv_dir = csv_dir
-        self.task = task
         self.return_id = return_id
-        # Get the csv corresponding to the task
-        md_file = [f for f in os.listdir(csv_dir) if task in f][0]
-        self.csv_path = os.path.join(self.csv_dir, md_file)
+        self.speech_csv_path = os.path.join(self.csv_dir, 'speech.csv')
+        self.music_csv_path = os.path.join(self.csv_dir, 'music.csv')
         self.segment = segment
         self.sample_rate = sample_rate
-        # Open csv file
-        self.df = pd.read_csv(self.csv_path, engine='python')
+        # Open csv files
+        self.df_speech = pd.read_csv(self.speech_csv_path, engine='python')
+        self.df_music = pd.read_csv(self.music_csv_path, engine='python')
         # Get rid of the utterances too short
         if self.segment is not None:
-            max_len = len(self.df)
+            max_len = len(self.df_music)
             self.seg_len = int(self.segment * self.sample_rate)
             # Ignore the file shorter than the desired_length
-            self.df = self.df[self.df["length"] >= self.seg_len]
+            self.df_music = self.df_music[self.df_music["length"] >= self.seg_len]
             print(
-                f"Drop {max_len - len(self.df)} utterances from {max_len} "
+                f"Music: Drop {max_len - len(self.df_music)} utterances from {max_len} "
+                f"(shorter than {segment} seconds)"
+            )
+
+            max_len = len(self.df_speech)
+            self.seg_len = int(self.segment * self.sample_rate)
+            # Ignore the file shorter than the desired_length
+            self.df_speech = self.df_speech[self.df_speech["length"] >= self.seg_len]
+            print(
+                f"Speech: Drop {max_len - len(self.df_speech)} utterances from {max_len} "
                 f"(shorter than {segment} seconds)"
             )
         else:
             self.seg_len = None
-        self.n_src = n_src
 
     def __len__(self):
-        return len(self.df)
+        # for now, its a full permutation
+        return len(self.df_music) * len(self.df_speech)
+
+    def compute_rand_offset_duration(self, row):
+        offset = duration = 0
+        if self.seg_len is not None:
+            # ARREGLAR! offset = float(random.randint(0, row["length"] - self.seg_len) / self.sample_rate)
+            offset = 0
+            duration = self.segment
+        else:
+            offset = 0
+            duration = None
+        return offset, duration
 
     def __getitem__(self, idx):
-        # Get the row in dataframe
-        row = self.df.iloc[idx]
-        # Get mixture path
-        self.mixture_path = row["mixture_path"]
+        speech_idx = idx // len(self.df_music)
+        music_idx = idx % len(self.df_music)
+        # Get the row in speech dataframe
+        row_speech = self.df_speech.iloc[speech_idx]
+        row_music = self.df_music.iloc[music_idx]
         sources_list = []
-        # If there is a seg start point is set randomly
-        if self.seg_len is not None:
-            start = random.randint(0, row["length"] - self.seg_len)
-            stop = start + self.seg_len
-        else:
-            start = 0
-            stop = None
-        # # If task is enh_both then the source is the clean mixture
-        # if "enh_both" in self.task:
-        #     mix_clean_path = self.df_clean.iloc[idx]["mixture_path"]
-        #     s, _ = sf.read(mix_clean_path, dtype="float32", start=start, stop=stop)
-        #     sources_list.append(s)
+        # If there is a seg, start point is set randomly
+        offset, duration = self.compute_rand_offset_duration(row_speech)
+        # We want to cleanly separate Speech, so its the first source in the sources_list
+        source_path = row_speech["speech_path"]
+        s_speech, _ = librosa.load(source_path, dtype='float32', offset=offset, duration=duration, sr = self.sample_rate)
+        # Normalize speech
+        s_speech = s_speech / max(s_speech)
+        sources_list.append(s_speech)
 
-        # else:
-            # Read sources
-            # for i in range(self.n_src):
-        source_path = row["track_path"]
-        s, _ = sf.read(source_path, dtype="float32", start=start, stop=stop)
-        sources_list.append(s)
+        # now for music:
+        offset, duration = self.compute_rand_offset_duration(row_music)
+        source_path = row_music["music_path"]
+        s_music, _ = librosa.load(source_path, dtype="float32", offset=offset, duration=duration, sr = self.sample_rate)
+        # normalize:
+        s_music = s_music / max(s_music)
+        sources_list.append(s_music)
 
-        source_path = row["speech_path"]
-        s, _ = sf.read(source_path, dtype="float32", start=start, stop=stop)
-        sources_list.append(s)
-        # Read the mixture
-        mixture, _ = sf.read(self.mixture_path, dtype="float32", start=start, stop=stop)
+        # compute the mixture
+        mixture = s_music * 0.2 + s_speech
         # Convert to torch tensor
         mixture = torch.from_numpy(mixture)
         # Stack sources
@@ -92,10 +101,7 @@ class PodcastMix(Dataset):
         sources = torch.from_numpy(sources)
         if not self.return_id:
             return mixture, sources
-        # 5400-34479-0005_4973-24515-0007.wav
-        print('mixture_path', self.mixture_path)
-        id1, id2, id3 = self.mixture_path.split("/")[-1].split(".")[0].split("_")
-        return mixture, sources, [id1, id2 + '_' + id3]
+        return mixture, sources, [row_speech['speech_ID'], row_music['music_ID']]
 
     def get_infos(self):
         """Get dataset infos (for publishing models).
@@ -104,61 +110,4 @@ class PodcastMix(Dataset):
         """
         infos = dict()
         infos["dataset"] = self.dataset_name
-        infos["task"] = self.task
         return infos
-
-    @classmethod
-    def loaders_from_mini(cls, batch_size=4, **kwargs):
-        """Downloads MiniLibriMix and returns train and validation DataLoader.
-        Args:
-            batch_size (int): Batch size of the Dataloader. Only DataLoader param.
-                To have more control on Dataloader, call `mini_from_download` and
-                instantiate the DatalLoader.
-            **kwargs: keyword arguments to pass the `LibriMix`, see `__init__`.
-                The kwargs will be fed to both the training set and validation
-                set.
-        Returns:
-            train_loader, val_loader: training and validation DataLoader out of
-            `LibriMix` Dataset.
-        Examples
-            >>> from asteroid.data import LibriMix
-            >>> train_loader, val_loader = LibriMix.loaders_from_mini(
-            >>>     task='sep_clean', batch_size=4
-            >>> )
-        """
-        train_set, val_set = cls.mini_from_download(**kwargs)
-        train_loader = DataLoader(train_set, batch_size=batch_size, drop_last=True)
-        val_loader = DataLoader(val_set, batch_size=batch_size, drop_last=True)
-        return train_loader, val_loader
-
-    @classmethod
-    def mini_from_download(cls, **kwargs):
-        """Downloads MiniLibriMix and returns train and validation Dataset.
-        If you want to instantiate the Dataset by yourself, call
-        `mini_download` that returns the path to the path to the metadata files.
-        Args:
-            **kwargs: keyword arguments to pass the `LibriMix`, see `__init__`.
-                The kwargs will be fed to both the training set and validation
-                set
-        Returns:
-            train_set, val_set: training and validation instances of
-            `LibriMix` (data.Dataset).
-        Examples
-            >>> from asteroid.data import LibriMix
-            >>> train_set, val_set = LibriMix.mini_from_download(task='sep_clean')
-        """
-        # kwargs checks
-        assert "csv_dir" not in kwargs, "Cannot specify csv_dir when downloading."
-        # assert kwargs.get("task", "sep_clean") in [
-        #     "sep_clean",
-        #     "sep_noisy",
-        # ], "Only clean and noisy separation are supported in MiniLibriMix."
-        assert (
-            kwargs.get("sample_rate", 44100) == 44100
-        ), "Only 44100kHz sample rate is supported in MiniLibriMix."
-        # Download LibriMix in current directory
-        meta_path = 'augmented_dataset/metadata'
-        # Create dataset instances
-        train_set = cls(os.path.join(meta_path, "train"), sample_rate=44100, **kwargs)
-        val_set = cls(os.path.join(meta_path, "val"), sample_rate=44100, **kwargs)
-        return train_set, val_set
