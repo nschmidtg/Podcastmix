@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
-from PodcastMix import PodcastMix
+from PodcastMixNew import PodcastMix
 from asteroid.engine.optimizers import make_optimizer
 from asteroid.engine.system import System
 from asteroid.losses import PITLossWrapper, pairwise_neg_sisdr
@@ -35,17 +35,13 @@ class DeMaskSystem(System):
 def main(conf):
     train_set = PodcastMix(
         csv_dir=conf["data"]["train_dir"],
-        task=conf["data"]["task"],
         sample_rate=conf["data"]["sample_rate"],
-        n_src=conf["data"]["n_src"],
         segment=conf["data"]["segment"],
     )
 
     val_set = PodcastMix(
         csv_dir=conf["data"]["valid_dir"],
-        task=conf["data"]["task"],
         sample_rate=conf["data"]["sample_rate"],
-        n_src=conf["data"]["n_src"],
         segment=conf["data"]["segment"],
     )
 
@@ -177,7 +173,7 @@ def main(conf):
     elif(conf["model"]["name"] == "SuDORMRFNet"):
         from asteroid.models import SuDORMRFNet
 
-        scheduler = None        
+        scheduler = None
         model = SuDORMRFNet(
             n_src=conf["data"]["n_src"],
             sample_rate=conf["data"]["sample_rate"],
@@ -186,7 +182,7 @@ def main(conf):
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
             scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
-        
+
     # Just after instantiating, save the args. Easy loading in the future.
     # exp_dir = conf["main_args"]["exp_dir"]
     exp_dir = conf["model"]["name"] + "_model/" + conf["main_args"]["exp_dir"]
