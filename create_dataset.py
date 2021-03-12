@@ -128,29 +128,40 @@ with open(music_metadata_path) as file:
 # shuffle music
 keys = list(json_file.keys())
 random.shuffle(keys)
-
+errors = []
 for song_id in keys:
     song = json_file.get(song_id)
-    if counter < int(train_prop * len(keys)):
-        # train
-        destination = train_path + '/music/' + song['id'] + '.mp3'
-        copyfile(music_path + '/' + song['id'] + '.mp3', destination)
-        song['local_path'] = destination
-        music_train_set.append(song)
-    elif counter >= int(train_prop * len(keys)) and counter < int((train_prop + val_prop) * len(keys)):
-        # val
-        destination = val_path + '/music/' + song['id'] + '.mp3'
-        copyfile(music_path + '/' + song['id'] + '.mp3', destination)
-        song['local_path'] = destination
-        music_val_set.append(song)
-    else:
-        # test
-        destination = test_path + '/music/' + song['id'] + '.mp3'
-        copyfile(music_path + '/' + song['id'] + '.mp3', destination)
-        song['local_path'] = destination
-        music_test_set.append(song)
-    counter +=1
+    print(counter, '/', len(keys))
+    try:
+        if counter < int(train_prop * len(keys)):
+            # train
+            destination = train_path + '/music/' + song['id'] + '.wav'
+            audio = librosa.load(music_path + '/' + song['id'] + '.mp3', sr=44100, mono=False)[0]
+            sf.write(destination, audio.T, samplerate=44100)
+            # copyfile(music_path + '/' + song['id'] + '.mp3', destination)
+            song['local_path'] = destination
+            music_train_set.append(song)
+        elif counter >= int(train_prop * len(keys)) and counter < int((train_prop + val_prop) * len(keys)):
+            # val
+            destination = val_path + '/music/' + song['id'] + '.wav'
+            audio = librosa.load(music_path + '/' + song['id'] + '.mp3', sr=44100, mono=False)[0]
+            sf.write(destination, audio.T, samplerate=44100)
+            # copyfile(music_path + '/' + song['id'] + '.mp3', destination)
+            song['local_path'] = destination
+            music_val_set.append(song)
+        else:
+            # test
+            destination = test_path + '/music/' + song['id'] + '.wav'
+            audio = librosa.load(music_path + '/' + song['id'] + '.mp3', sr=44100, mono=False)[0]
+            sf.write(destination, audio.T, samplerate=44100)
+            # copyfile(music_path + '/' + song['id'] + '.mp3', destination)
+            song['local_path'] = destination
+            music_test_set.append(song)
+        counter +=1
+    except:
+        errors.append(song_id)
 
+print('errores',errors)
 #speech_files = np.array([])
 #for path, subdirs, files in os.walk(speech_path):
 #    for name in files:

@@ -54,6 +54,7 @@ class PodcastMix(Dataset):
 
     def __len__(self):
         # for now, its a full permutation
+        return 2000
         return len(self.df_music) * len(self.df_speech)
 
     def compute_rand_offset_duration(self, row):
@@ -80,7 +81,7 @@ class PodcastMix(Dataset):
         source_path = row_speech["speech_path"]
         s_speech, _ = librosa.load(source_path, dtype='float32', offset=offset, duration=duration, sr = self.sample_rate)
         # Normalize speech
-        s_speech = s_speech / max(s_speech)
+        # s_speech = s_speech / max(s_speech)
         sources_list.append(s_speech)
 
         # now for music:
@@ -88,7 +89,7 @@ class PodcastMix(Dataset):
         source_path = row_music["music_path"]
         s_music, _ = librosa.load(source_path, dtype="float32", offset=offset, duration=duration, sr = self.sample_rate)
         # normalize:
-        s_music = s_music / max(s_music)
+        # s_music = s_music / max(s_music)
         sources_list.append(s_music)
 
         # compute the mixture
