@@ -76,8 +76,8 @@ class PodcastMix(Dataset):
         #### zero pad if the size is smaller than seq_duration
         seq_duration_samples = int(self.segment * sr)
         total_samples = audio_signal.shape[-1]
-        if seq_duration_samples>total_samples:
-            audio_signal = torch.nn.ConstantPad2d((0,seq_duration_samples-total_samples,0,0),0)(audio_signal)
+        # if seq_duration_samples>total_samples:
+        #     audio_signal = torch.nn.ConstantPad2d((0,seq_duration_samples-total_samples,0,0),0)(audio_signal)
 
         # #### resample
         audio_signal = torchaudio.transforms.Resample(sr, self.sample_rate)(audio_signal)
@@ -89,36 +89,27 @@ class PodcastMix(Dataset):
         # sources_list.append(s_speech)
         sources_list.append(audio_signal)
 
+
+        sources_list.append(audio_signal)
+
+
         # now for music:
 
 
-        offset, num_frames = self.compute_rand_offset_duration(row_music['music_path'])
-        source_path = row_music["music_path"]
-        audio_signal, sr = torchaudio.load(filepath=source_path, frame_offset=offset, num_frames=num_frames)
-        #### zero pad if the size is smaller than seq_duration
-        seq_duration_samples = int(self.segment * sr)
-        total_samples = audio_signal.shape[-1]
-        if seq_duration_samples>total_samples:
-            audio_signal = torch.nn.ConstantPad2d((0,seq_duration_samples-total_samples,0,0),0)(audio_signal)
-
-
-        audio_signal = torchaudio.transforms.Resample(sr, self.sample_rate)(audio_signal)
-        # stereo to mono:
-        audio_signal = audio_signal[0] + audio_signal[1]
-        sources_list.append(audio_signal)
-        # offset, duration = self.compute_rand_offset_duration(row_music)
-        # effects = [
-        #     ['rate', str(self.sample_rate)],
-        #     ['trim', '0', '3'],
-        # ]
+        # offset, num_frames = self.compute_rand_offset_duration(row_music['music_path'])
         # source_path = row_music["music_path"]
-        # offset, duration = self.compute_rand_offset_duration(row_music['music_path'])
-        # s_music, _ = torchaudio.sox_effects.apply_effects_file(source_path, effects)
-        # s_music = s_music[0]
-        # # normalize:
-        # s_music = s_music / max(s_music)
-        # s_music = s_music.numpy()
-        # sources_list.append(s_music)
+        # audio_signal, sr = torchaudio.load(filepath=source_path, frame_offset=offset, num_frames=num_frames)
+        #### zero pad if the size is smaller than seq_duration
+        # seq_duration_samples = int(self.segment * sr)
+        # total_samples = audio_signal.shape[-1]
+        # if seq_duration_samples>total_samples:
+        #     audio_signal = torch.nn.ConstantPad2d((0,seq_duration_samples-total_samples,0,0),0)(audio_signal)
+
+
+        # audio_signal = torchaudio.transforms.Resample(sr, self.sample_rate)(audio_signal)
+        # stereo to mono:
+        # audio_signal = audio_signal[0] + audio_signal[1]
+        # sources_list.append(audio_signal)
 
         # compute the mixture
         mixture = sources_list[0] + 0.2 * sources_list[1]
