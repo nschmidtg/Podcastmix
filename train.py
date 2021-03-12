@@ -15,6 +15,9 @@ from asteroid.losses import PITLossWrapper, pairwise_neg_sisdr
 
 import importlib
 
+import warnings
+warnings.filterwarnings('ignore')
+
 # Keys which are not in the conf.yml file can be added here.
 # In the hierarchical dictionary created when parsing, the key `key` can be
 # found at dic['main_args'][key]
@@ -229,7 +232,7 @@ def main(conf):
 
     # Don't ask GPU if they are not available.
     gpus = -1 if torch.cuda.is_available() else None
-    distributed_backend = "ddp" if torch.cuda.is_available() else None
+    distributed_backend = "dp" if torch.cuda.is_available() else None
 
     trainer = pl.Trainer(
         max_epochs=conf["training"]["epochs"],
