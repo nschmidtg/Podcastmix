@@ -59,16 +59,19 @@ class PodcastMix(Dataset):
         return 2000
         # return len(self.df_music) * len(self.df_speech)
 
-    def compute_rand_offset_duration(self, row):
+    def compute_rand_offset_duration(self, audio_path):
         offset = duration = 0
         if self.segment is not None:
-            # ARREGLAR! offset = float(random.randint(0, row["length"] - self.seg_len) / self.sample_rate)
-            offset = 0
-            duration = self.seg_len
+            si, ei = torchaudio.info(audio_path)
+            sample_rate, channels, length = si.rate, si.channels, si.length
+            duration = length / sample_rate
+            # compute start in seconds
+            start = random.uniform(0, duration - self.segment)
+            offset = int(np.floor(start * sample_rate))
+            num_frames = int(np.floor(self.segment * sample_rate))
         else:
-            offset = 0
-            duration = None
-        return offset, duration
+            print('segment is empty, modify it in the config.yml file')
+        return offset, num_frames
 
     def __getitem__(self, idx):
         #### Marius code:
@@ -102,9 +105,6 @@ class PodcastMix(Dataset):
         # #### resample
         # audio_signal = torchaudio.transforms.Resample(sample_rate, self.resample)(audio_signal)
 
-
-
-
         speech_idx = idx // len(self.df_music)
         music_idx = idx % len(self.df_music)
         # Get the row in speech dataframe
@@ -113,38 +113,49 @@ class PodcastMix(Dataset):
         sources_list = []
 
         # If there is a seg, start point is set randomly
-        offset, duration = self.compute_rand_offset_duration(row_speech)
-        effects = [
-            ['rate', str(self.sample_rate)],
-            ['trim', '0', '3'],
-        ]
+        offset, duration = self.compute_rand_offset_duration(row_speech['speech_path'])
+        # effects = [
+        #     ['rate', str(self.sample_rate)],
+        #     ['trim', '0', '3'],
+        # ]
+        # s_speech, _ = torchaudio.sox_effects.apply_effects_file(source_path, effects)
         source_path = row_speech["speech_path"]
-        s_speech, _ = torchaudio.sox_effects.apply_effects_file(source_path, effects)
-        s_speech = s_speech[0]
-        s_speech = s_speech.numpy()
-        # We want to cleanly separate Speech, so its the first source in the sources_list
-        #  s_speech, _ = torchaudio.load(source_path, frame_offset=offset, num_frames=duration, sr = self.sample_rate)
-        # Normalize speech
-        s_speech = s_speech / max(s_speech)
-        sources_list.append(s_speech)
+        audio_signal, sample_rate = torchaudio.load(filepath=track.audio_path, offset=offset,num_frames=duration)
+        # #### resample
+        audio_signal = torchaudio.transforms.Resample(sample_rate, self.sample_rate)(audio_signal)
+        # s_speech = s_speech[0]
+        # s_speech = s_speech.numpy()
+        # # We want to cleanly separate Speech, so its the first source in the sources_list
+        # #  s_speech, _ = torchaudio.load(source_path, frame_offset=offset, num_frames=duration, sr = self.sample_rate)
+        # # Normalize speech
+        # s_speech = s_speech / max(s_speech)
+        # sources_list.append(s_speech)
+        sourcer_list.append(audio_signal)
 
         # now for music:
-        offset, duration = self.compute_rand_offset_duration(row_music)
-        effects = [
-            ['rate', str(self.sample_rate)],
-            ['trim', '0', '3'],
-        ]
+
+
+        offset, duration = self.compute_rand_offset_duration(row_music['music_path'])
         source_path = row_music["music_path"]
-        offset, duration = self.compute_rand_offset_duration(row_music)
-        s_music, _ = torchaudio.sox_effects.apply_effects_file(source_path, effects)
-        s_music = s_music[0]
-        # normalize:
-        s_music = s_music / max(s_music)
-        s_music = s_music.numpy()
-        sources_list.append(s_music)
+        audio_signal, sample_rate = torchaudio.load(filepath=track.audio_path, offset=offset,num_frames=duration)
+        audio_signal = torchaudio.transforms.Resample(sample_rate, self.sample_rate)(audio_signal)
+        sourcer_list.append(audio_signal)
+        # offset, duration = self.compute_rand_offset_duration(row_music)
+        # effects = [
+        #     ['rate', str(self.sample_rate)],
+        #     ['trim', '0', '3'],
+        # ]
+        # source_path = row_music["music_path"]
+        # offset, duration = self.compute_rand_offset_duration(row_music['music_path'])
+        # s_music, _ = torchaudio.sox_effects.apply_effects_file(source_path, effects)
+        # s_music = s_music[0]
+        # # normalize:
+        # s_music = s_music / max(s_music)
+        # s_music = s_music.numpy()
+        # sources_list.append(s_music)
 
         # compute the mixture
-        mixture = s_music * 0.2 + s_speech
+        mixture = sources_list[0] + 0.2 * sources_list[1]
         # Convert to torch tensor
         mixture = torch.from_numpy(mixture)
         # Stack sources
