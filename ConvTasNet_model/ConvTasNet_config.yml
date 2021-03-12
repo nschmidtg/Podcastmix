@@ -7,12 +7,12 @@ filterbank:
   stride: 8
 # Network config
 masknet:
-  n_blocks: 2
+  n_blocks: 8
   n_repeats: 3
   mask_act: relu
   bn_chan: 128
   skip_chan: 128
-  hid_chan: 128
+  hid_chan: 512
 # Training config
 training:
   epochs: 5
@@ -29,6 +29,6 @@ optim:
 data:
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
-  sample_rate: 8000
+  sample_rate: 22050
   n_src: 2
-  segment: 0.5
+  segment: 3
