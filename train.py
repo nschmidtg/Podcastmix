@@ -75,6 +75,7 @@ def main(conf):
             **conf["masknet"], 
             sample_rate=conf["data"]["sample_rate"]
         )
+        print('********************************')
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
             scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)

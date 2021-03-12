@@ -1,5 +1,7 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
+import torchaudio
+import soundfile as sf
 import pandas as pd
 import os
 import numpy as np
@@ -58,7 +60,7 @@ class PodcastMix(Dataset):
 
     def compute_rand_offset_duration(self, row):
         offset = duration = 0
-        if self.seg_len is not None:
+        if self.segment is not None:
             # ARREGLAR! offset = float(random.randint(0, row["length"] - self.seg_len) / self.sample_rate)
             offset = 0
             duration = self.segment
@@ -74,21 +76,64 @@ class PodcastMix(Dataset):
         row_speech = self.df_speech.iloc[speech_idx]
         row_music = self.df_music.iloc[music_idx]
         sources_list = []
-        # If there is a seg, start point is set randomly
-        offset, duration = self.compute_rand_offset_duration(row_speech)
-        # We want to cleanly separate Speech, so its the first source in the sources_list
+
+        ###### old code:
         source_path = row_speech["speech_path"]
-        s_speech, _ = librosa.load(source_path, dtype='float32', offset=offset, duration=duration, sr = self.sample_rate)
+        s1, _ = sf.read(source_path, dtype="float32", start=0, stop=self.seg_len)
+        sources_list.append(s1)
+        source_path = row_speech["speech_path"]
+        s2, _ = sf.read(source_path, dtype="float32", start=0, stop=self.seg_len)
+        sources_list.append(s2)
+        # Read the mixture
+        mixture = s1+s2
+        # Convert to torch tensor
+        mixture = torch.from_numpy(mixture)
+        # Stack sources
+        sources = np.vstack(sources_list)
+        # Convert sources to tensor
+        sources = torch.from_numpy(sources)
+        if not self.return_id:
+            return mixture, sources
+        # 5400-34479-0005_4973-24515-0007.wav
+        id1, id2 = mixture_path.split("/")[-1].split(".")[0].split("_")
+        id1, id2 = self.mixture_path.split("/")[-1].split(".")[0].split("_")
+        return mixture, sources, [id1, id2]
+        ##### end old code
+
+
+        # If there is a seg, start point is set randomly
+        print('me ves')
+        offset, duration = self.compute_rand_offset_duration(row_speech)
+        effects = [
+            ['rate', str(self.sample_rate)],
+            ['trim', str(offset), str(offset + duration)],
+        ]
+        source_path = row_speech["speech_path"]
+        s_speech, _ = torchaudio.sox_effects.apply_effects_file(source_path, effects)
+        s_speech = s_speech[0]
+        s_speech = s_speech.numpy()
+        # We want to cleanly separate Speech, so its the first source in the sources_list
+        #  s_speech, _ = torchaudio.load(source_path, frame_offset=offset, num_frames=duration, sr = self.sample_rate)
+        # print('pues ya no me ves')
         # Normalize speech
-        s_speech = s_speech / max(s_speech)
+        # s_speech = s_speech / max(s_speech)
         sources_list.append(s_speech)
 
         # now for music:
         offset, duration = self.compute_rand_offset_duration(row_music)
+        effects = [
+            ['rate', str(self.sample_rate)],
+            ['trim', str(offset), str(offset + duration)],
+        ]
         source_path = row_music["music_path"]
-        s_music, _ = librosa.load(source_path, dtype="float32", offset=offset, duration=duration, sr = self.sample_rate)
+        offset, duration = self.compute_rand_offset_duration(row_music)
+        s_music, _ = torchaudio.sox_effects.apply_effects_file(source_path, effects)
+        s_music = s_music[0]
+        print('s_music')
+        print(len(s_music))
         # normalize:
-        s_music = s_music / max(s_music)
+        # s_music = s_music / max(s_music)
+        s_music = s_music.numpy()
         sources_list.append(s_music)
 
         # compute the mixture
