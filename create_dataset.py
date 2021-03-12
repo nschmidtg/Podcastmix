@@ -129,39 +129,44 @@ with open(music_metadata_path) as file:
 keys = list(json_file.keys())
 random.shuffle(keys)
 errors = []
+
+pre_errors = ['1803718', '1822339', '1802304', '1791375', '1800490', '1822260', '1823100', '1822678', '1821959', '1822567', '1829588', '1822734', ' 1822948', '1822951', '1800335', '1810679', '1822534', '1829175', '1804728', '1800491', '1800353', '1829167', '1809521']
+
 for song_id in keys:
     song = json_file.get(song_id)
     print(counter, '/', len(keys))
-    try:
-        if counter < int(train_prop * len(keys)):
-            # train
-            destination = train_path + '/music/' + song['id'] + '.wav'
-            audio = librosa.load(music_path + '/' + song['id'] + '.mp3', sr=44100, mono=False)[0]
-            sf.write(destination, audio.T, samplerate=44100)
-            # copyfile(music_path + '/' + song['id'] + '.mp3', destination)
-            song['local_path'] = destination
-            music_train_set.append(song)
-        elif counter >= int(train_prop * len(keys)) and counter < int((train_prop + val_prop) * len(keys)):
-            # val
-            destination = val_path + '/music/' + song['id'] + '.wav'
-            audio = librosa.load(music_path + '/' + song['id'] + '.mp3', sr=44100, mono=False)[0]
-            sf.write(destination, audio.T, samplerate=44100)
-            # copyfile(music_path + '/' + song['id'] + '.mp3', destination)
-            song['local_path'] = destination
-            music_val_set.append(song)
-        else:
-            # test
-            destination = test_path + '/music/' + song['id'] + '.wav'
-            audio = librosa.load(music_path + '/' + song['id'] + '.mp3', sr=44100, mono=False)[0]
-            sf.write(destination, audio.T, samplerate=44100)
-            # copyfile(music_path + '/' + song['id'] + '.mp3', destination)
-            song['local_path'] = destination
-            music_test_set.append(song)
-        counter +=1
-    except:
-        errors.append(song_id)
+    if not song_id in pre_errors:
+        try:
+            if counter < int(train_prop * len(keys)):
+                # train
+                destination = train_path + '/music/' + song['id'] + '.wav'
+                # audio = librosa.load(music_path + '/' + song['id'] + '.mp3', sr=44100, mono=False)[0]
+                # sf.write(destination, audio.T, samplerate=44100)
+                # copyfile(music_path + '/' + song['id'] + '.mp3', destination)
+                song['local_path'] = destination
+                music_train_set.append(song)
+            elif counter >= int(train_prop * len(keys)) and counter < int((train_prop + val_prop) * len(keys)):
+                # val
+                destination = val_path + '/music/' + song['id'] + '.wav'
+                # audio = librosa.load(music_path + '/' + song['id'] + '.mp3', sr=44100, mono=False)[0]
+                # sf.write(destination, audio.T, samplerate=44100)
+                # copyfile(music_path + '/' + song['id'] + '.mp3', destination)
+                song['local_path'] = destination
+                music_val_set.append(song)
+            else:
+                # test
+                destination = test_path + '/music/' + song['id'] + '.wav'
+                # audio = librosa.load(music_path + '/' + song['id'] + '.mp3', sr=44100, mono=False)[0]
+                # sf.write(destination, audio.T, samplerate=44100)
+                # copyfile(music_path + '/' + song['id'] + '.mp3', destination)
+                song['local_path'] = destination
+                music_test_set.append(song)
+            counter +=1
+        except:
+            errors.append(song_id)
 
 print('errores',errors)
+print('keys',keys[0])
 #speech_files = np.array([])
 #for path, subdirs, files in os.walk(speech_path):
 #    for name in files:
@@ -216,18 +221,25 @@ sets = [
 ]
 
 i=0
+
+errors2=[]
 for set, csv_path in sets:
     with open(csv_path, 'a', newline='') as file:
         writer = csv.writer(file)
         for element in set:
-            if 'music' in csv_path:
-                audio = MP3(element['local_path'])
-                element_length = floor(audio.info.sample_rate * audio.info.length)
-                writer.writerow([element['id'],element['id'],element['name'],element['artist_name'],element['album_name'],element['license_ccurl'],element['releasedate'],element['local_path'] ,element_length])
-            elif 'speech' in csv_path:
-                audio = WAVE(element)
-                element_length = floor(audio.info.sample_rate * audio.info.length)
-                speech_cmp = element.split('/')[-1].split('_')
-                params = speaker_params[speech_cmp[0]]
-                writer.writerow([speech_cmp[1]+'_'+speech_cmp[2].split('.')[0], speech_cmp[0], params['speaker_age'], params['speaker_gender'], params['speaker_accent'], element, element_length])
-            i += 1
+            print(i)
+            try:
+                if 'music' in csv_path:
+                    audio = WAVE(element['local_path'])
+                    element_length = floor(audio.info.sample_rate * audio.info.length)
+                    writer.writerow([element['id'],element['id'],element['name'],element['artist_name'],element['album_name'],element['license_ccurl'],element['releasedate'],element['local_path'] ,element_length])
+                elif 'speech' in csv_path:
+                    audio = WAVE(element)
+                    element_length = floor(audio.info.sample_rate * audio.info.length)
+                    speech_cmp = element.split('/')[-1].split('_')
+                    params = speaker_params[speech_cmp[0]]
+                    writer.writerow([speech_cmp[1]+'_'+speech_cmp[2].split('.')[0], speech_cmp[0], params['speaker_age'], params['speaker_gender'], params['speaker_accent'], element, element_length])
+                i += 1
+            except:
+                errors2.append(element['id'])
+print(errors2)
