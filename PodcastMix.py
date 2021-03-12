@@ -1,12 +1,10 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
 import torchaudio
-import soundfile as sf
 import pandas as pd
 import os
 import numpy as np
 import random
-import librosa
 
 class PodcastMix(Dataset):
     """Dataset class for PodcastMix source separation tasks.
@@ -32,27 +30,7 @@ class PodcastMix(Dataset):
         # Open csv files
         self.df_speech = pd.read_csv(self.speech_csv_path, engine='python')
         self.df_music = pd.read_csv(self.music_csv_path, engine='python')
-        # Get rid of the utterances too short
-        if self.segment is not None:
-            max_len = len(self.df_music)
-            self.seg_len = int(self.segment * self.sample_rate)
-            # Ignore the file shorter than the desired_length
-            self.df_music = self.df_music[self.df_music["length"] >= self.seg_len]
-            print(
-                f"Music: Drop {max_len - len(self.df_music)} utterances from {max_len} "
-                f"(shorter than {segment} seconds)"
-            )
-
-            max_len = len(self.df_speech)
-            self.seg_len = int(self.segment * self.sample_rate)
-            # Ignore the file shorter than the desired_length
-            self.df_speech = self.df_speech[self.df_speech["length"] >= self.seg_len]
-            print(
-                f"Speech: Drop {max_len - len(self.df_speech)} utterances from {max_len} "
-                f"(shorter than {segment} seconds)"
-            )
-        else:
-            self.seg_len = None
+        self.seg_len = int(self.segment * self.sample_rate)
 
     def __len__(self):
         # for now, its a full permutation
@@ -60,51 +38,24 @@ class PodcastMix(Dataset):
         # return len(self.df_music) * len(self.df_speech)
 
     def compute_rand_offset_duration(self, audio_path):
-        offset = duration = 0
+        offset = duration = start = 0
         if self.segment is not None:
-            si, ei = torchaudio.info(audio_path)
-            sample_rate, channels, length = si.rate, si.channels, si.length
-            duration = length / sample_rate
-            # compute start in seconds
-            start = random.uniform(0, duration - self.segment)
-            offset = int(np.floor(start * sample_rate))
-            num_frames = int(np.floor(self.segment * sample_rate))
+            info = torchaudio.info(audio_path)
+            sr, channels, length = info.sample_rate, info.num_channels, info.num_frames
+            duration = float(length / sr)
+            if self.segment > duration:
+                offset = 0
+                num_frames = length
+            else:
+                # compute start in seconds
+                start = random.uniform(0, duration - self.segment)
+                offset = int(np.floor(start * sr))
+                num_frames = int(np.floor(self.segment * sr))
         else:
             print('segment is empty, modify it in the config.yml file')
         return offset, num_frames
 
     def __getitem__(self, idx):
-        #### Marius code:
-        # #### compute start and end frames to read from the disk
-        # si, ei = torchaudio.info(track.audio_path)
-        # sample_rate, channels, length = si.rate, si.channels, si.length
-        # duration = length / sample_rate
-        # if self.seq_duration>duration:
-        #     offset = 0
-        #     num_frames = length
-        # else:
-        #     if self.random_start:
-        #         #### we skip a number of seconds at the beginning of file 
-        #         start = random.uniform(0, duration - self.seq_duration)
-        #     else:
-        #         start = 0.
-        #     #### seconds to audio frames
-        #     offset = int(np.floor(start * sample_rate))
-        #     num_frames = int(np.floor(self.seq_duration * sample_rate))
-
-
-        # #### get audio frames corresponding to offset and num_frames from the disk
-        # audio_signal, sample_rate = torchaudio.load(filepath=track.audio_path, offset=offset,num_frames=num_frames)
-
-        # #### zero pad if the size is smaller than seq_duration
-        # seq_duration_samples = int(self.seq_duration * sample_rate)
-        # total_samples = audio_signal.shape[-1]
-        # if seq_duration_samples>total_samples:
-        #     audio_signal = torch.nn.ConstantPad2d((0,seq_duration_samples-total_samples,0,0),0)(audio_signal)
-
-        # #### resample
-        # audio_signal = torchaudio.transforms.Resample(sample_rate, self.resample)(audio_signal)
-
         speech_idx = idx // len(self.df_music)
         music_idx = idx % len(self.df_music)
         # Get the row in speech dataframe
@@ -113,33 +64,48 @@ class PodcastMix(Dataset):
         sources_list = []
 
         # If there is a seg, start point is set randomly
-        offset, duration = self.compute_rand_offset_duration(row_speech['speech_path'])
+        offset, num_frames = self.compute_rand_offset_duration(row_speech['speech_path'])
         # effects = [
         #     ['rate', str(self.sample_rate)],
         #     ['trim', '0', '3'],
         # ]
         # s_speech, _ = torchaudio.sox_effects.apply_effects_file(source_path, effects)
         source_path = row_speech["speech_path"]
-        audio_signal, sample_rate = torchaudio.load(filepath=track.audio_path, offset=offset,num_frames=duration)
+        audio_signal, sr = torchaudio.load(filepath=source_path, frame_offset=offset, num_frames=num_frames)
+
+        #### zero pad if the size is smaller than seq_duration
+        seq_duration_samples = int(self.segment * sr)
+        total_samples = audio_signal.shape[-1]
+        if seq_duration_samples>total_samples:
+            audio_signal = torch.nn.ConstantPad2d((0,seq_duration_samples-total_samples,0,0),0)(audio_signal)
+
         # #### resample
-        audio_signal = torchaudio.transforms.Resample(sample_rate, self.sample_rate)(audio_signal)
+        audio_signal = torchaudio.transforms.Resample(sr, self.sample_rate)(audio_signal)
         # s_speech = s_speech[0]
         # s_speech = s_speech.numpy()
         # # We want to cleanly separate Speech, so its the first source in the sources_list
         # #  s_speech, _ = torchaudio.load(source_path, frame_offset=offset, num_frames=duration, sr = self.sample_rate)
         # # Normalize speech
-        # s_speech = s_speech / max(s_speech)
         # sources_list.append(s_speech)
-        sourcer_list.append(audio_signal)
+        sources_list.append(audio_signal)
 
         # now for music:
 
 
-        offset, duration = self.compute_rand_offset_duration(row_music['music_path'])
+        offset, num_frames = self.compute_rand_offset_duration(row_music['music_path'])
         source_path = row_music["music_path"]
-        audio_signal, sample_rate = torchaudio.load(filepath=track.audio_path, offset=offset,num_frames=duration)
-        audio_signal = torchaudio.transforms.Resample(sample_rate, self.sample_rate)(audio_signal)
-        sourcer_list.append(audio_signal)
+        audio_signal, sr = torchaudio.load(filepath=source_path, frame_offset=offset, num_frames=num_frames)
+        #### zero pad if the size is smaller than seq_duration
+        seq_duration_samples = int(self.segment * sr)
+        total_samples = audio_signal.shape[-1]
+        if seq_duration_samples>total_samples:
+            audio_signal = torch.nn.ConstantPad2d((0,seq_duration_samples-total_samples,0,0),0)(audio_signal)
+
+
+        audio_signal = torchaudio.transforms.Resample(sr, self.sample_rate)(audio_signal)
+        # stereo to mono:
+        audio_signal = audio_signal[0] + audio_signal[1]
+        sources_list.append(audio_signal)
         # offset, duration = self.compute_rand_offset_duration(row_music)
         # effects = [
         #     ['rate', str(self.sample_rate)],
@@ -157,7 +123,7 @@ class PodcastMix(Dataset):
         # compute the mixture
         mixture = sources_list[0] + 0.2 * sources_list[1]
         # Convert to torch tensor
-        mixture = torch.from_numpy(mixture)
+        # mixture = torch.from_numpy(mixture)
         # Stack sources
         sources = np.vstack(sources_list)
         # Convert sources to tensor
