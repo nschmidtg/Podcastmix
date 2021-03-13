@@ -9,7 +9,7 @@ model_init:
 # Training config
 training:
   epochs: 5
-  batch_size: 6
+  batch_size: 8
   num_workers: 24
   half_lr: yes
   early_stop: yes
@@ -23,6 +23,6 @@ data:
   task: linear_mono
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
-  sample_rate: 8000
+  sample_rate: 16000
   n_src: 2
   segment: 3
