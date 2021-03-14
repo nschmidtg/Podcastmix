@@ -35,7 +35,7 @@ class PodcastMix(Dataset):
 
     def __len__(self):
         # for now, its a full permutation
-        return 2000
+        return 50
         return len(self.df_music) * len(self.df_speech)
 
     def compute_rand_offset_duration(self, audio_path):
@@ -90,7 +90,6 @@ class PodcastMix(Dataset):
             audio_signal = torch.nn.ConstantPad2d((0,seq_duration_samples-total_samples,0,0),0)(audio_signal)
 
         # #### resample
-        print(source_path)
         audio_signal = torchaudio.transforms.Resample(sr, self.sample_rate)(audio_signal)
         if len(audio_signal) == 2:
             audio_signal = audio_signal[0] + audio_signal[1]
