@@ -15,6 +15,9 @@ from asteroid.losses import PITLossWrapper, pairwise_neg_sisdr
 
 import importlib
 
+import warnings
+warnings.filterwarnings('ignore')
+
 # Keys which are not in the conf.yml file can be added here.
 # In the hierarchical dictionary created when parsing, the key `key` can be
 # found at dic['main_args'][key]
@@ -35,17 +38,13 @@ class DeMaskSystem(System):
 def main(conf):
     train_set = PodcastMix(
         csv_dir=conf["data"]["train_dir"],
-        task=conf["data"]["task"],
         sample_rate=conf["data"]["sample_rate"],
-        n_src=conf["data"]["n_src"],
         segment=conf["data"]["segment"],
     )
 
     val_set = PodcastMix(
         csv_dir=conf["data"]["valid_dir"],
-        task=conf["data"]["task"],
         sample_rate=conf["data"]["sample_rate"],
-        n_src=conf["data"]["n_src"],
         segment=conf["data"]["segment"],
     )
 
@@ -64,11 +63,6 @@ def main(conf):
         num_workers=conf["training"]["num_workers"],
         drop_last=True,
     )
-
-    print("train_set",train_set[0][0].shape)
-    print("val_set",val_set[0][0].shape)
-#    print("train_loader",train_loader[0][0].shape)
-#    print("val_loader",val_loader[0][0].shape)
     if(conf["model"]["name"] == "ConvTasNet"):
         from asteroid.models import ConvTasNet
 
@@ -82,23 +76,6 @@ def main(conf):
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
             scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
-    # elif(conf["model"]["name"] == "DCCRNet"):
-    #     # Not working
-    #     from asteroid.models import DCCRNet
-
-    #     model = DCCRNet(
-    #         sample_rate=conf["data"]["sample_rate"], 
-    #         architecture=conf["model"]["architecture"],
-    #     )
-    #     optimizer = make_optimizer(model.parameters(), **conf["optim"])
-    #     from asteroid.engine.schedulers import DPTNetScheduler
-
-    #     scheduler = {
-    #         "scheduler": DPTNetScheduler(
-    #             optimizer, len(train_loader) // conf["training"]["batch_size"], 64
-    #         ),
-    #         "interval": "step",
-    #     }
     elif(conf["model"]["name"] == "DPRNNTasNet"):
         from asteroid.models import DPRNNTasNet
 
@@ -113,7 +90,7 @@ def main(conf):
     elif(conf["model"]["name"] == "DPTNet"):
         from asteroid.models import DPTNet
 
-        conf["masknet"].update({"n_src": train_set.n_src})
+        conf["masknet"].update({"n_src": conf["data"]["n_src"]})
         model = DPTNet(
             sample_rate=conf["data"]["sample_rate"],
             **conf["filterbank"],
@@ -128,35 +105,6 @@ def main(conf):
             ),
             "interval": "step",
         }
-
-    # elif(conf["model"]["name"] == "DeMask"):
-    #     # not working, try other scheduler
-    #     from asteroid.models import DeMask
-    #     model = DeMask(
-    #         sample_rate=conf["data"]["sample_rate"],
-    #         **conf["filterbank"],
-    #         **conf["demask_net"],
-    #         n_src=1
-    #     )
-    #     optimizer = make_optimizer(model.parameters(), **conf["optim"])
-    #     if conf["training"]["half_lr"]:
-    #         scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
-    # elif(conf["model"]["name"] == "DCUNet"):
-    #     # not working, try other scheduler
-    #     from asteroid.models import DCUNet
-    #     model = DCUNet(
-    #         fix_length_mode= 'pad',
-    #         architecture=conf["model"]["architecture"]
-    #     )
-    #     optimizer = make_optimizer(model.parameters(), **conf["optim"])
-    #     from asteroid.engine.schedulers import DPTNetScheduler
-
-    #     scheduler = {
-    #         "scheduler": DPTNetScheduler(
-    #             optimizer, len(train_loader) // conf["training"]["batch_size"], 64
-    #         ),
-    #         "interval": "step",
-    #     }
     elif(conf["model"]["name"] == "LSTMTasNet"):
         from asteroid.models import LSTMTasNet
         scheduler = None
@@ -177,7 +125,7 @@ def main(conf):
     elif(conf["model"]["name"] == "SuDORMRFNet"):
         from asteroid.models import SuDORMRFNet
 
-        scheduler = None        
+        scheduler = None
         model = SuDORMRFNet(
             n_src=conf["data"]["n_src"],
             sample_rate=conf["data"]["sample_rate"],
@@ -186,9 +134,8 @@ def main(conf):
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
             scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
-        
+
     # Just after instantiating, save the args. Easy loading in the future.
-    # exp_dir = conf["main_args"]["exp_dir"]
     exp_dir = conf["model"]["name"] + "_model/" + conf["main_args"]["exp_dir"]
     os.makedirs(exp_dir, exist_ok=True)
     conf_path = os.path.join(exp_dir, "conf.yml")
@@ -197,29 +144,15 @@ def main(conf):
 
     # Define Loss function.
     loss_func = PITLossWrapper(pairwise_neg_sisdr, pit_from="pw_mtx")
-    if(conf["model"]["name"] == "DeMask"):
-        from asteroid.losses import singlesrc_neg_sisdr
-        loss_func = loss_func
-        print("estoy en demask")
-        system = System(
-            model=model,
-            loss_func=loss_func,
-            optimizer=optimizer,
-            train_loader=train_loader,
-            val_loader=val_loader,
-            scheduler=scheduler,
-            config=conf
-        )
-    else:
-        system = System(
-            model=model,
-            loss_func=loss_func,
-            optimizer=optimizer,
-            train_loader=train_loader,
-            val_loader=val_loader,
-            scheduler=scheduler,
-            config=conf
-        )
+    system = System(
+        model=model,
+        loss_func=loss_func,
+        optimizer=optimizer,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        scheduler=scheduler,
+        config=conf
+    )
 
     # Define callbacks
     callbacks = []
@@ -233,7 +166,7 @@ def main(conf):
 
     # Don't ask GPU if they are not available.
     gpus = -1 if torch.cuda.is_available() else None
-    distributed_backend = "ddp" if torch.cuda.is_available() else None
+    distributed_backend = "dp" if torch.cuda.is_available() else None
 
     trainer = pl.Trainer(
         max_epochs=conf["training"]["epochs"],
