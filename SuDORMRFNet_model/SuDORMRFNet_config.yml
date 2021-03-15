@@ -23,6 +23,6 @@ data:
   task: linear_mono
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
-  sample_rate: 16000
+  sample_rate: 44100
   n_src: 2
-  segment: 3
+  segment: 2

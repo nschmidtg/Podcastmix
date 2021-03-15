@@ -35,7 +35,7 @@ class PodcastMix(Dataset):
 
     def __len__(self):
         # for now, its a full permutation
-        return 50
+        return 1000
         return len(self.df_music) * len(self.df_speech)
 
     def compute_rand_offset_duration(self, audio_path):

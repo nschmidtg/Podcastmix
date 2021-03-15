@@ -12,10 +12,10 @@ masknet:
   mask_act: relu
   bn_chan: 128
   skip_chan: 128
-  hid_chan: 512
+  hid_chan: 256
 # Training config
 training:
-  epochs: 2
+  epochs: 200
   batch_size: 2
   num_workers: 24
   half_lr: yes
@@ -29,6 +29,6 @@ optim:
 data:
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
-  sample_rate: 16000
+  sample_rate: 44100
   n_src: 2
-  segment: 3
+  segment: 2
