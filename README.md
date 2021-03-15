@@ -14,6 +14,7 @@
 
 ```conda install -c conda-forge ipython```
 
+```conda install -c conda-forge ffmpeg```
 
 Create the dataset:
 

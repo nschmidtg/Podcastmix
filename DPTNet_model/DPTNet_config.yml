@@ -35,9 +35,8 @@ scheduler:
   d_model: 64
 # Data config
 data:
-  task: linear_mono
-  train_dir: augmented_dataset/metadata/train
-  valid_dir: augmented_dataset/metadata/val
-  sample_rate: 8000
+  train_dir: podcastmix/metadata/train
+  valid_dir: podcastmix/metadata/val
+  sample_rate: 44100
   n_src: 2
-  segment: 3
+  segment: 2
