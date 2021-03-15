@@ -90,7 +90,7 @@ def main(conf):
     elif(conf["model"]["name"] == "DPTNet"):
         from asteroid.models import DPTNet
 
-        conf["masknet"].update({"n_src": train_set.n_src})
+        conf["masknet"].update({"n_src": conf["data"]["n_src"]})
         model = DPTNet(
             sample_rate=conf["data"]["sample_rate"],
             **conf["filterbank"],
@@ -166,7 +166,7 @@ def main(conf):
 
     # Don't ask GPU if they are not available.
     gpus = -1 if torch.cuda.is_available() else None
-    distributed_backend = "ddp" if torch.cuda.is_available() else None
+    distributed_backend = "dp" if torch.cuda.is_available() else None
 
     trainer = pl.Trainer(
         max_epochs=conf["training"]["epochs"],

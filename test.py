@@ -29,13 +29,6 @@ parser.add_argument(
     "--target_model", type=str, required=True, help="Asteroid model to use"
 )
 parser.add_argument(
-    "--task",
-    type=str,
-    required=True,
-    default='linear_mono',
-    help="One of `linear_mono`, `linear_stereo`, " "`sidechain_mono` or `sidechain_stereo`",
-)
-parser.add_argument(
     "--out_dir",
     type=str,
     default='ConvTasNet/eval/tmp',
@@ -79,10 +72,8 @@ def main(conf):
     model_device = next(model.parameters()).device
     test_set = PodcastMix(
         csv_dir=conf["test_dir"],
-        task=conf["task"],
         sample_rate=conf["sample_rate"],
-        n_src=conf["train_conf"]["data"]["n_src"],
-        segment=None,
+        segment=2,
         return_id=True,
     )  # Uses all segment length
     # Used to reorder sources only
@@ -102,7 +93,8 @@ def main(conf):
         mix, sources = tensors_to_device([mix, sources], device=model_device)
         est_sources = model(mix.unsqueeze(0))
         loss, reordered_sources = loss_func(est_sources, sources[None], return_est=True)
-        mix_np = mix.cpu().data.numpy()
+        mix_np = mix.cpu().data.numpy()[0]
+        print(mix_np)
         sources_np = sources.cpu().data.numpy()
         est_sources_np = reordered_sources.squeeze(0).cpu().data.numpy()
         # For each utterance, we get a dictionary with the mixture path,
@@ -114,16 +106,16 @@ def main(conf):
             sample_rate=conf["sample_rate"],
             metrics_list=COMPUTE_METRICS,
         )
-        utt_metrics["mix_path"] = test_set.mixture_path
-        utt_metrics.update(
-            **wer_tracker(
-                mix=mix_np,
-                clean=sources_np,
-                estimate=est_sources_np,
-                wav_id=ids,
-                sample_rate=conf["sample_rate"],
-            )
-        )
+        # utt_metrics["mix_path"] = test_set.mixture_path
+        # utt_metrics.update(
+            # **wer_tracker(
+                # mix=mix_np,
+                # clean=sources_np,
+                # estimate=est_sources_np,
+                # wav_id=ids,
+                # sample_rate=conf["sample_rate"],
+            # )
+        # )
         series_list.append(pd.Series(utt_metrics))
 
         # Save some examples in a folder. Wav files and metrics as text.
@@ -191,12 +183,6 @@ if __name__ == "__main__":
         train_conf = yaml.safe_load(f)
     arg_dic["sample_rate"] = train_conf["data"]["sample_rate"]
     arg_dic["train_conf"] = train_conf
-
-    if args.task != arg_dic["train_conf"]["data"]["task"]:
-        print(
-            "Warning : the task used to test is different than "
-            "the one from training, be sure this is what you want."
-        )
 
     main(arg_dic)
 
