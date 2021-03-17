@@ -32,11 +32,14 @@ class PodcastMix(Dataset):
         self.df_speech = pd.read_csv(self.speech_csv_path, engine='python')
         self.df_music = pd.read_csv(self.music_csv_path, engine='python')
         self.seg_len = int(self.segment * self.sample_rate)
+        # initialize indexes
+        print(len(self.df_speech))
+        self.speech_inxs = list(range(len(self.df_speech)))
+        self.music_inxs = list(range(len(self.df_music)))
 
     def __len__(self):
         # for now, its a full permutation
-        return 1000
-        return len(self.df_music) * len(self.df_speech)
+        return min([len(self.df_speech), len(self.df_music)])
 
     def compute_rand_offset_duration(self, audio_path):
         offset = duration = start = 0
@@ -57,8 +60,13 @@ class PodcastMix(Dataset):
         return offset, num_frames
 
     def __getitem__(self, idx):
-        speech_idx = idx // len(self.df_music)
-        music_idx = idx % len(self.df_music)
+        if(idx == 0):
+            # shuffle
+            random.shuffle(self.music_inxs)
+            random.shuffle(self.speech_inxs)
+        # get corresponding index from the list
+        speech_idx = self.speech_inxs[idx]
+        music_idx = self.music_inxs[idx]
         # Get the row in speech dataframe
         row_speech = self.df_speech.iloc[speech_idx]
         row_music = self.df_music.iloc[music_idx]
