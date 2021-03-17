@@ -11,7 +11,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from PodcastMix import PodcastMix
 from asteroid.engine.optimizers import make_optimizer
 from asteroid.engine.system import System
-from asteroid.losses import PITLossWrapper, PairwiseNegSDR, pairwise_neg_sisdr
+from asteroid.losses import PITLossWrapper, PairwiseNegSDR, multisrc_neg_sisdr
 
 import importlib
 
@@ -143,7 +143,7 @@ def main(conf):
         yaml.safe_dump(conf, outfile)
 
     # Define Loss function.
-    loss_func = PairwiseNegSDR(sdr_type='sisdr')
+    loss_func = PITLossWrapper(multisrc_neg_sisdr, pit_from='perm_avg')
     # loss_func = pairwise_neg_sisdr
     system = System(
         model=model,
