@@ -1,0 +1,5 @@
+asteroid==0.4.4
+torch==1.8.0
+torchaudio==0.8.0
+pytorch_lightning==1.2.3
+pandas==1.2.3
