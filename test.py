@@ -14,6 +14,7 @@ from pathlib import Path
 from asteroid.metrics import get_metrics
 from PodcastMix import PodcastMix
 from asteroid.losses import PITLossWrapper, pairwise_neg_sisdr
+from asteroid.losses.mse import SingleSrcMSE
 #from asteroid import ConvTasNet
 import importlib
 from asteroid.models import save_publishable
@@ -77,7 +78,7 @@ def main(conf):
         return_id=True,
     )  # Uses all segment length
     # Used to reorder sources only
-    loss_func = PITLossWrapper(pairwise_neg_sisdr, pit_from="pw_mtx")
+    loss_func = SingleSrcMSE()
 
     # Randomly choose the indexes of sentences to save.
     eval_save_dir = os.path.join(conf["exp_dir"], conf["out_dir"])
@@ -90,13 +91,17 @@ def main(conf):
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
         mix, sources, ids = test_set[idx]
+        print("ids of test set:", ids)
         mix, sources = tensors_to_device([mix, sources], device=model_device)
         est_sources = model(mix.unsqueeze(0))
-        loss, reordered_sources = loss_func(est_sources, sources[None], return_est=True)
+        print(est_sources.shape)
+        print(sources.shape)
+        print(sources[None].shape)
+        loss = loss_func(est_sources, sources[None])
         mix_np = mix.cpu().data.numpy()[0]
         print(mix_np)
         sources_np = sources.cpu().data.numpy()
-        est_sources_np = reordered_sources.squeeze(0).cpu().data.numpy()
+        est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
         # For each utterance, we get a dictionary with the mixture path,
         # the input and output metrics
         utt_metrics = get_metrics(
