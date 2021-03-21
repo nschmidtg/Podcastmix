@@ -12,6 +12,7 @@ from PodcastMix import PodcastMix
 from asteroid.engine.optimizers import make_optimizer
 from asteroid.engine.system import System
 from asteroid.losses import PITLossWrapper, PairwiseNegSDR, multisrc_neg_sisdr
+from asteroid.losses.mse import SingleSrcMSE
 
 import importlib
 
@@ -143,8 +144,9 @@ def main(conf):
         yaml.safe_dump(conf, outfile)
 
     # Define Loss function.
-    loss_func = PITLossWrapper(multisrc_neg_sisdr, pit_from='perm_avg')
+    # loss_func = PITLossWrapper(multisrc_neg_sisdr, pit_from='perm_avg')
     # loss_func = pairwise_neg_sisdr
+    loss_func = SingleSrcMSE()
     system = System(
         model=model,
         loss_func=loss_func,
@@ -177,6 +179,7 @@ def main(conf):
         distributed_backend=distributed_backend,
         limit_train_batches=1.0,  # Useful for fast experiment
         gradient_clip_val=5.0,
+        resume_from_checkpoint = checkpoint_dir + 'epoch=18-step=103718.ckpt'
     )
     trainer.fit(system)
 
