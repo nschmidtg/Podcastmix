@@ -130,7 +130,8 @@ keys = list(json_file.keys())
 random.shuffle(keys)
 errors = []
 
-pre_errors = ['1803718', '1822339', '1802304', '1791375', '1800490', '1822260', '1823100', '1822678', '1821959', '1822567', '1829588', '1822734', ' 1822948', '1822951', '1800335', '1810679', '1822534', '1829175', '1804728', '1800491', '1800353', '1829167', '1809521']
+pre_errors = []
+# pre_errors = ['1803718', '1822339', '1802304', '1791375', '1800490', '1822260', '1823100', '1822678', '1821959', '1822567', '1829588', '1822734', ' 1822948', '1822951', '1800335', '1810679', '1822534', '1829175', '1804728', '1800491', '1800353', '1829167', '1809521']
 
 for song_id in keys:
     song = json_file.get(song_id)
@@ -232,14 +233,14 @@ for set, csv_path in sets:
                 if 'music' in csv_path:
                     audio = WAVE(element['local_path'])
                     element_length = floor(audio.info.sample_rate * audio.info.length)
-                    writer.writerow([element['id'],element['id'],element['name'],element['artist_name'],element['album_name'],element['license_ccurl'],element['releasedate'],element['local_path'] ,element_length])
+                    writer.writerow([element['id'],element['id'],element['name'].replace(',',''),element['artist_name'].replace(',',''),element['album_name'].replace(',',''),element['license_ccurl'],element['releasedate'],element['local_path'] ,element_length])
                 elif 'speech' in csv_path:
                     audio = WAVE(element)
                     element_length = floor(audio.info.sample_rate * audio.info.length)
                     speech_cmp = element.split('/')[-1].split('_')
                     params = speaker_params[speech_cmp[0]]
-                    writer.writerow([speech_cmp[1]+'_'+speech_cmp[2].split('.')[0], speech_cmp[0], params['speaker_age'], params['speaker_gender'], params['speaker_accent'], element, element_length])
+                    writer.writerow([speech_cmp[1]+'_'+speech_cmp[2].split('.')[0], speech_cmp[0], params['speaker_age'], params['speaker_gender'], params['speaker_accent'].replace(',',''), element, element_length])
                 i += 1
             except:
                 errors2.append(element['id'])
-print(errors2)
+print("ERRORS2", errors2)
