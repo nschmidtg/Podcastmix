@@ -86,6 +86,9 @@ class PodcastMix(Dataset):
 
         # #### resample
         audio_signal = torchaudio.transforms.Resample(sr, self.sample_rate)(audio_signal)
+        # speech normalization
+        audio_signal = audio_signal / max(audio_signal)
+        # add to the list
         sources_list.append(audio_signal)
 
         # now for music:
@@ -101,11 +104,13 @@ class PodcastMix(Dataset):
         audio_signal = torchaudio.transforms.Resample(sr, self.sample_rate)(audio_signal)
         if len(audio_signal) == 2:
             audio_signal = audio_signal[0] + audio_signal[1]
+        # music normalization
+        audio_signal = audio_signal / max(audio_signal)
 
         sources_list.append(audio_signal)
-
+        music_gain = random.uniform(0, 1)
         # compute the mixture
-        mixture = sources_list[0] + 0.2 * sources_list[1]
+        mixture = sources_list[0] + music_gain * sources_list[1]
         # Convert to torch tensor
         # mixture = torch.from_numpy(mixture)
         # Stack sources
