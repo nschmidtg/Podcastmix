@@ -124,48 +124,48 @@ random.shuffle(keys)
 errors = []
 for song_id in keys:
     song = json_file.get(song_id)
-    
-    # try:
-    audio_info = torchaudio.info(music_path + '/' + song['id'] + '.flac')
-    print(audio_info.num_channels)
-    channels = audio_info.num_channels
-    if channels == 2:
-        if counter < int(train_prop * len(keys)):
-            # train
-            print(counter, '/', len(keys))
-            destination = train_path + '/music/' + song['id'] + '.flac'
-            # audio = librosa.load(music_path + '/' + song['id'] + '.mp3', sr=44100, mono=False)[0]
-            # sf.write(destination, audio.T, samplerate=44100)
-            copyfile(music_path + '/' + song['id'] + '.flac', destination)
-            song['local_path'] = destination
-            music_train_set.append(song)
-            csv_path = 'podcastmix/metadata/train/music.csv'
-        elif counter >= int(train_prop * len(keys)) and counter < int((train_prop + val_prop) * len(keys)):
-            # val
-            destination = val_path + '/music/' + song['id'] + '.flac'
-            # audio = librosa.load(music_path + '/' + song['id'] + '.mp3', sr=44100, mono=False)[0]
-            # sf.write(destination, audio.T, samplerate=44100)
-            copyfile(music_path + '/' + song['id'] + '.flac', destination)
-            song['local_path'] = destination
-            music_val_set.append(song)
-            csv_path = 'podcastmix/metadata/val/music.csv'
+
+    try:
+        audio_info = torchaudio.info(music_path + '/' + song['id'] + '.flac')
+        print(audio_info.num_channels)
+        channels = audio_info.num_channels
+        print(counter, '/', len(keys))
+        if channels == 2:
+            if counter < int(train_prop * len(keys)):
+                # train
+                destination = train_path + '/music/' + song['id'] + '.flac'
+                # audio = librosa.load(music_path + '/' + song['id'] + '.mp3', sr=44100, mono=False)[0]
+                # sf.write(destination, audio.T, samplerate=44100)
+                copyfile(music_path + '/' + song['id'] + '.flac', destination)
+                song['local_path'] = destination
+                music_train_set.append(song)
+                csv_path = 'podcastmix/metadata/train/music.csv'
+            elif counter >= int(train_prop * len(keys)) and counter < int((train_prop + val_prop) * len(keys)):
+                # val
+                destination = val_path + '/music/' + song['id'] + '.flac'
+                # audio = librosa.load(music_path + '/' + song['id'] + '.mp3', sr=44100, mono=False)[0]
+                # sf.write(destination, audio.T, samplerate=44100)
+                copyfile(music_path + '/' + song['id'] + '.flac', destination)
+                song['local_path'] = destination
+                music_val_set.append(song)
+                csv_path = 'podcastmix/metadata/val/music.csv'
+            else:
+                # test
+                destination = test_path + '/music/' + song['id'] + '.flac'
+                # audio = librosa.load(music_path + '/' + song['id'] + '.mp3', sr=44100, mono=False)[0]
+                # sf.write(destination, audio.T, samplerate=44100)
+                copyfile(music_path + '/' + song['id'] + '.flac', destination)
+                song['local_path'] = destination
+                music_test_set.append(song)
+                csv_path = 'podcastmix/metadata/test/music.csv'
+            with open(csv_path, 'a', newline='') as file:
+                writer = csv.writer(file)
+                song_length = floor(audio_info.sample_rate * audio_info.num_frames)
+                writer.writerow([song['id'],song['id'],song['name'].replace(',',''),song['artist_name'].replace(',',''),song['album_name'].replace(',',''),song['license_ccurl'],song['releasedate'],song['local_path'] ,song_length])
         else:
-            # test
-            destination = test_path + '/music/' + song['id'] + '.flac'
-            # audio = librosa.load(music_path + '/' + song['id'] + '.mp3', sr=44100, mono=False)[0]
-            # sf.write(destination, audio.T, samplerate=44100)
-            copyfile(music_path + '/' + song['id'] + '.flac', destination)
-            song['local_path'] = destination
-            music_test_set.append(song)
-            csv_path = 'podcastmix/metadata/test/music.csv'
-        with open(csv_path, 'a', newline='') as file:
-            writer = csv.writer(file)
-            song_length = floor(audio_info.sample_rate * audio_info.num_frames)
-            writer.writerow([song['id'],song['id'],song['name'].replace(',',''),song['artist_name'].replace(',',''),song['album_name'].replace(',',''),song['license_ccurl'],song['releasedate'],song['local_path'] ,song_length])
-    else:
+            errors.append(song_id)
+    except:
         errors.append(song_id)
-    # except:
-    #     errors.append(song_id)
     counter +=1
 print('errores',errors)
 print('keys',keys[0])
@@ -193,6 +193,7 @@ for line in lines:
 
 counter = 0
 for speech_path_dir in speech_files:
+    print(counter, '/', len(speech_files))
     if counter < int(train_prop * len(speech_files)):
         # train
         destination = train_path + '/speech/' + speech_path_dir.split('/')[-1]
