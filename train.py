@@ -28,6 +28,7 @@ warnings.filterwarnings('ignore')
 parser = argparse.ArgumentParser()
 parser.add_argument("--exp_dir", default="exp/tmp", help="Full path to save best validation model")
 
+
 class DeMaskSystem(System):
     def common_step(self, batch, batch_nb, train=True):
         inputs, targets = batch
@@ -36,17 +37,20 @@ class DeMaskSystem(System):
 
         return loss
 
+
 def main(conf):
     train_set = PodcastMix(
         csv_dir=conf["data"]["train_dir"],
         sample_rate=conf["data"]["sample_rate"],
         segment=conf["data"]["segment"],
+        shuffle_tracks=True
     )
 
     val_set = PodcastMix(
         csv_dir=conf["data"]["valid_dir"],
         sample_rate=conf["data"]["sample_rate"],
         segment=conf["data"]["segment"],
+        shuffle_tracks=True
     )
 
     train_loader = DataLoader(
@@ -179,7 +183,7 @@ def main(conf):
         distributed_backend=distributed_backend,
         limit_train_batches=1.0,  # Useful for fast experiment
         gradient_clip_val=5.0,
-        resume_from_checkpoint = checkpoint_dir + 'epoch=18-step=103718.ckpt'
+        resume_from_checkpoint=conf["resume_from"]
     )
     trainer.fit(system)
 
@@ -207,6 +211,13 @@ if __name__ == "__main__":
     # by the YAML file creates a group in the parser.
     parser.add_argument(
         "--config_model", type=str, required=True, help="Asteroid model to use"
+    )
+    parser.add_argument(
+        "--resume_from",
+        type=str,
+        required=False,
+        default=None
+        help="path to the desired restore checkpoint with .ckpt extension"
     )
     config_model = sys.argv[2]
     with open(config_model) as f:
