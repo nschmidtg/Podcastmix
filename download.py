@@ -2,6 +2,9 @@ import json
 import os.path
 import wget
 
+if not os.path.isdir('Jamendo/music'):
+    os.mkdir('Jamendo/music')
+
 with open('metadata.json') as file:
     json_file = json.load(file)
 
@@ -9,11 +12,11 @@ errors = {}
 counter = 0
 for song_id in json_file:
     song = json_file.get(song_id)
-    file_name = song_id + '.mp3'
+    file_name = song_id + '.flac'
     url = song['audiodownload']
-    if not os.path.isfile('music/' + file_name):
+    if not os.path.isfile('Jamendo/music/' + file_name):
         try:
-            filename = wget.download(url, out='music/' + file_name)
+            filename = wget.download(url, out='Jamendo/music/' + file_name)
         except Exception as e:
             print(e)
             errors[song['id']] = song
