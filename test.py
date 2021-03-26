@@ -57,6 +57,7 @@ def my_import(name):
         mod = getattr(mod, comp)
     return mod
 
+
 def main(conf):
     compute_metrics = COMPUTE_METRICS
     wer_tracker = (
