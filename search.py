@@ -8,12 +8,13 @@ last_offset = 1
 counter = 0
 for i in range(70):
     offset = (i * 200)
-    print(counter, '/', n_pages * 200)
+    print(counter, '/', 70 * 200)
     r = requests.get(
         'https://api.jamendo.com/v3.0/tracks/?client_id=' +
         client_id +
         '&format=json&order=popularity_total&audiodlformat='
-        'flac&limit=200&offset=0&include=musicinfo'
+        'flac&limit=200&offset=0&include=musicinfo&fullcount'
+        '=true&ccsa=true'
     )
     songs = json.loads(r.text)['results']
     for song in songs:
@@ -21,6 +22,7 @@ for i in range(70):
             id = song['id']
             json_keys[id] = song
             last_offset += 1
+            counter += 1
 
 file_name = 'metadata.json'
 with open(file_name, 'w') as outfile:
