@@ -5,7 +5,7 @@ import wget
 if not os.path.isdir('Jamendo/music'):
     os.mkdir('Jamendo/music')
 
-with open('metadata.json') as file:
+with open('Jamendo/metadata.json') as file:
     json_file = json.load(file)
 
 errors = {}
