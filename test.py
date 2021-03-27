@@ -75,8 +75,9 @@ def main(conf):
     test_set = PodcastMix(
         csv_dir=conf["test_dir"],
         sample_rate=conf["sample_rate"],
-        segment=2,
+        segment=conf["segment"],
         return_id=True,
+        shuffle_tracks=False
     )  # Uses all segment length
     # Used to reorder sources only
     loss_func = SingleSrcMSE()
@@ -112,16 +113,6 @@ def main(conf):
             sample_rate=conf["sample_rate"],
             metrics_list=COMPUTE_METRICS,
         )
-        # utt_metrics["mix_path"] = test_set.mixture_path
-        # utt_metrics.update(
-            # **wer_tracker(
-                # mix=mix_np,
-                # clean=sources_np,
-                # estimate=est_sources_np,
-                # wav_id=ids,
-                # sample_rate=conf["sample_rate"],
-            # )
-        # )
         series_list.append(pd.Series(utt_metrics))
 
         # Save some examples in a folder. Wav files and metrics as text.
@@ -169,7 +160,6 @@ def main(conf):
         json.dump(final_results, f, indent=0)
 
     # for publishing the model:
-    
     # model_dict = torch.load(model_path, map_location="cpu")
     # os.makedirs(os.path.join(conf["exp_dir"], "publish_dir"), exist_ok=True)
     # publishable = save_publishable(
