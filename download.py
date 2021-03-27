@@ -10,7 +10,8 @@ with open('Jamendo/metadata.json') as file:
 
 errors = {}
 counter = 0
-for song_id in json_file:
+for song_id in json_file.keys():
+    print(counter, '/', len(json_file.keys()))
     song = json_file.get(song_id)
     file_name = song_id + '.flac'
     url = song['audiodownload']

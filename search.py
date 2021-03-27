@@ -1,6 +1,6 @@
 import requests
 import json
-
+import os
 client_id = '08bac555'
 
 json_keys = {}
@@ -14,11 +14,12 @@ for i in range(n_pages):
         'https://api.jamendo.com/v3.0/tracks/?client_id=' +
         client_id +
         '&format=json&order=popularity_total&audiodlformat='
-        'flac&limit=200&offset=0&include=musicinfo&fullcount'
+        'flac&limit=200&offset=' + str(offset) + '&include=musicinfo&fullcount'
         '=true&ccsa=true'
     )
     songs = json.loads(r.text)['results']
     for song in songs:
+        print(song['audiodownload_allowed'])
         if(song['audiodownload_allowed']):
             id = song['id']
             json_keys[id] = song
