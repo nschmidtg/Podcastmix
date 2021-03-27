@@ -23,7 +23,8 @@ class PodcastMix(Dataset):
 
     dataset_name = "PodcastMix"
 
-    def __init__(self, csv_dir, sample_rate=44100, segment=3, return_id=False, shuffle_tracks=False):
+    def __init__(self, csv_dir, sample_rate=44100, segment=3, return_id=False, 
+                 shuffle_tracks=False):
         self.csv_dir = csv_dir
         self.return_id = return_id
         self.speech_csv_path = os.path.join(self.csv_dir, 'speech.csv')

@@ -26,7 +26,11 @@ warnings.filterwarnings('ignore')
 # By default train.py will use all available GPUs. The `id` option in run.sh
 # will limit the number of available GPUs for train.py .
 parser = argparse.ArgumentParser()
-parser.add_argument("--exp_dir", default="exp/tmp", help="Full path to save best validation model")
+parser.add_argument(
+    "--exp_dir",
+    default="exp/tmp",
+    help="Full path to save best validation model"
+)
 
 
 class DeMaskSystem(System):
@@ -74,13 +78,17 @@ def main(conf):
         conf["masknet"].update({"n_src": conf["data"]["n_src"]})
         scheduler = None
         model = ConvTasNet(
-            **conf["filterbank"], 
-            **conf["masknet"], 
+            **conf["filterbank"],
+            **conf["masknet"],
             sample_rate=conf["data"]["sample_rate"]
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
+            scheduler = ReduceLROnPlateau(
+                optimizer=optimizer,
+                factor=0.5,
+                patience=5
+            )
     elif(conf["model"]["name"] == "DPRNNTasNet"):
         from asteroid.models import DPRNNTasNet
 
@@ -91,7 +99,11 @@ def main(conf):
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
+            scheduler = ReduceLROnPlateau(
+                optimizer=optimizer,
+                factor=0.5,
+                patience=5
+            )
     elif(conf["model"]["name"] == "DPTNet"):
         from asteroid.models import DPTNet
 
@@ -106,7 +118,9 @@ def main(conf):
 
         scheduler = {
             "scheduler": DPTNetScheduler(
-                optimizer, len(train_loader) // conf["training"]["batch_size"], 64
+                optimizer,
+                len(train_loader) // conf["training"]["batch_size"],
+                64
             ),
             "interval": "step",
         }
@@ -138,7 +152,11 @@ def main(conf):
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(optimizer=optimizer, factor=0.5, patience=5)
+            scheduler = ReduceLROnPlateau(
+                optimizer=optimizer,
+                factor=0.5,
+                patience=5
+            )
 
     # Just after instantiating, save the args. Easy loading in the future.
     exp_dir = conf["model"]["name"] + "_model/" + conf["main_args"]["exp_dir"]
@@ -165,11 +183,20 @@ def main(conf):
     callbacks = []
     checkpoint_dir = os.path.join(exp_dir, "checkpoints/")
     checkpoint = ModelCheckpoint(
-        checkpoint_dir, monitor="val_loss", mode="min", save_top_k=5, verbose=True
+        checkpoint_dir,
+        monitor="val_loss",
+        mode="min",
+        save_top_k=5,
+        verbose=True
     )
     callbacks.append(checkpoint)
     if conf["training"]["early_stop"]:
-        callbacks.append(EarlyStopping(monitor="val_loss", mode="min", patience=30, verbose=True))
+        callbacks.append(EarlyStopping(
+            monitor="val_loss",
+            mode="min",
+            patience=30,
+            verbose=True
+        ))
 
     # Don't ask GPU if they are not available.
     gpus = -1 if torch.cuda.is_available() else None
@@ -236,5 +263,7 @@ if __name__ == "__main__":
 
 """
 usage:
-CUDA_VISIBLE_DEVICES=1 python train.py --config_model ConvTasNet_model/ConvTasNet_config.yml --restore_from=ConvTasNet_Model/exp/checkpoints/mode.ckpt
+CUDA_VISIBLE_DEVICES=1 python train.py --config_model \
+    ConvTasNet_model/ConvTasNet_config.yml \
+        --restore_from=ConvTasNet_Model/exp/checkpoints/mode.ckpt
 """
