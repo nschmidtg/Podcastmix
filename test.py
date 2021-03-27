@@ -15,7 +15,6 @@ from asteroid.metrics import get_metrics
 from PodcastMix import PodcastMix
 from asteroid.losses import PITLossWrapper, pairwise_neg_sisdr
 from asteroid.losses.mse import SingleSrcMSE
-#from asteroid import ConvTasNet
 import importlib
 from asteroid.models import save_publishable
 from asteroid.utils import tensors_to_device
@@ -24,10 +23,16 @@ from asteroid.metrics import WERTracker, MockWERTracker
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--test_dir", type=str, required=True, help="Test directory including the csv files"
+    "--test_dir",
+    type=str,
+    required=True,
+    help="Test directory including the csv files"
 )
 parser.add_argument(
-    "--target_model", type=str, required=True, help="Asteroid model to use"
+    "--target_model",
+    type=str,
+    required=True,
+    help="Asteroid model to use"
 )
 parser.add_argument(
     "--out_dir",
@@ -37,14 +42,25 @@ parser.add_argument(
     help="Directory where the eval results" " will be stored",
 )
 parser.add_argument(
-    "--use_gpu", type=int, default=0, help="Whether to use the GPU for model execution"
+    "--use_gpu",
+    type=int,
+    default=0,
+    help="Whether to use the GPU for model execution"
 )
-parser.add_argument("--exp_dir", default="exp/tmp", help="Best serialized model path")
+parser.add_argument("--exp_dir",
+                    default="exp/tmp",
+                    help="Best serialized model path")
 parser.add_argument(
-    "--n_save_ex", type=int, default=10, help="Number of audio examples to save, -1 means all"
+    "--n_save_ex",
+    type=int,
+    default=10,
+    help="Number of audio examples to save, -1 means all"
 )
 parser.add_argument(
-    "--compute_wer", type=int, default=0, help="Compute WER using ESPNet's pretrained model"
+    "--compute_wer",
+    type=int,
+    default=0,
+    help="Compute WER using ESPNet's pretrained model"
 )
 
 COMPUTE_METRICS = ["si_sdr", "sdr", "sir", "sar", "stoi"]
@@ -119,10 +135,18 @@ def main(conf):
         if idx in save_idx:
             local_save_dir = os.path.join(ex_save_dir, "ex_{}/".format(idx))
             os.makedirs(local_save_dir, exist_ok=True)
-            sf.write(local_save_dir + "mixture.wav", mix_np, conf["sample_rate"])
+            sf.write(
+                local_save_dir + "mixture.wav",
+                mix_np,
+                conf["sample_rate"]
+            )
             # Loop over the sources and estimates
             for src_idx, src in enumerate(sources_np):
-                sf.write(local_save_dir + "s{}.wav".format(src_idx), src, conf["sample_rate"])
+                sf.write(
+                    local_save_dir + "s{}.wav".format(src_idx),
+                    src,
+                    conf["sample_rate"]
+                )
             for src_idx, est_src in enumerate(est_sources_np):
                 est_src *= np.max(np.abs(mix_np)) / np.max(np.abs(est_src))
                 sf.write(
@@ -184,6 +208,8 @@ if __name__ == "__main__":
 
 
 """
-usage: 
-CUDA_VISIBLE_DEVICES=1 python test.py --target_model ConvTasNet --test_dir augmented_dataset/metadata/test/ --task linear_mono --out_dir=ConvTasNet_model/eval/tmp --exp_dir=ConvTasNet_model/exp/tmp
+usage:
+CUDA_VISIBLE_DEVICES=1 python test.py --target_model ConvTasNet \
+    --test_dir augmented_dataset/metadata/test/ --task linear_mono \
+        --out_dir=ConvTasNet_model/eval/tmp --exp_dir=ConvTasNet_model/exp/tmp
 """
