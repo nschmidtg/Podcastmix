@@ -142,33 +142,39 @@ for song_id in keys:
     song = json_file.get(song_id)
     try:
         current_file_path = music_path + '/' + song['id'] + '.flac'
+        print('********', current_file_path)
         audio_info = torchaudio.info(current_file_path)
         print(counter, '/', len(keys))
+        print('1', current_file_path)
         exists = False
         channels = audio_info.num_channels
         if channels == 2:
             if counter < int(train_prop * len(keys)):
                 # train
-                destination = train_path + '/music/' + song['id'] + '.wav'
+                print('2', current_file_path)
+                destination = train_path + '/music/' + song['id'] + '.flac'
                 if not os.path.exists(destination):
-                    audio = librosa.load(
-                        current_file_path,
-                        sr=44100,
-                        mono=False)[0]
-                    sf.write(destination, audio.T, samplerate=44100)
+                    copyfile(music_path + '/' + song['id'] + '.flac', destination)
+                    # audio, original_sf = torchaudio.load(
+                    #     current_file_path,
+                    #     normalize = True)
+                    # audio.transforms.Resample(orig_freq = original_sf, new_freq = 44100)
+                    # torchaudio.save(destination, audio, sample_rate=44100, bits_per_sample=16)
                     exists = True
                 song['local_path'] = destination
+                print('3', current_file_path)
                 music_train_set.append(song)
                 csv_path = 'podcastmix/metadata/train/music.csv'
             elif counter >= int(train_prop * len(keys)) and counter < int((train_prop + val_prop) * len(keys)):
                 # val
                 destination = val_path + '/music/' + song['id'] + '.flac'
                 if not os.path.exists(destination):
-                    audio = librosa.load(
-                        current_file_path,
-                        sr=44100,
-                        mono=False)[0]
-                    sf.write(destination, audio.T, samplerate=44100)
+                    copyfile(music_path + '/' + song['id'] + '.flac', destination)
+                    # audio, original_sf = torchaudio.load(
+                    #     current_file_path,
+                    #     normalize = True)
+                    # audio.transforms.Resample(orig_freq = original_sf, new_freq = 44100)
+                    # torchaudio.save(destination, audio, sample_rate=44100, bits_per_sample=16)
                     exists = True
                 song['local_path'] = destination
                 music_val_set.append(song)
@@ -177,11 +183,12 @@ for song_id in keys:
                 # test
                 destination = test_path + '/music/' + song['id'] + '.flac'
                 if not os.path.exists(destination):
-                    audio = librosa.load(
-                        current_file_path,
-                        sr=44100,
-                        mono=False)[0]
-                    sf.write(destination, audio.T, samplerate=44100)
+                    copyfile(music_path + '/' + song['id'] + '.flac', destination)
+                    # audio, original_sf = torchaudio.load(
+                    #     current_file_path,
+                    #     normalize = True)
+                    # audio.transforms.Resample(orig_freq = original_sf, new_freq = 44100)
+                    # torchaudio.save(destination, audio, sample_rate=44100, bits_per_sample=16)
                     exists = True
                 song['local_path'] = destination
                 music_test_set.append(song)
@@ -257,7 +264,7 @@ for speech_path_dir in speech_files:
     print(counter, '/', len(speech_files))
     if counter < int(train_prop * len(speech_files)):
         # train
-        destination = train_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.wav'
+        destination = train_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
         # resample from 48kHz -> 44.1kHz
         audio, original_sr = torchaudio.load(speech_path_dir, normalize=True)
         resampled_audio = torchaudio.transforms.Resample(
@@ -267,14 +274,15 @@ for speech_path_dir in speech_files:
         torchaudio.save(
             filepath=destination,
             src=resampled_audio,
-            sample_rate=44100
+            sample_rate=44100,
+            bits_per_sample=16
         )
         # copyfile(speech_path_dir, destination)
         speech_train_set.append(destination)
         csv_path = 'podcastmix/metadata/train/speech.csv'
     elif counter >= int(train_prop * len(speech_files)) and counter < int((train_prop + val_prop) * len(speech_files)):
         # val
-        destination = val_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.wav'
+        destination = val_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
         # resample from 48kHz -> 44.1kHz
         audio, original_sr = torchaudio.load(speech_path_dir, normalize=True)
         resampled_audio = torchaudio.transforms.Resample(
@@ -284,14 +292,15 @@ for speech_path_dir in speech_files:
         torchaudio.save(
             filepath=destination,
             src=resampled_audio,
-            sample_rate=44100
+            sample_rate=44100,
+            bits_per_sample=16
         )
         # copyfile(speech_path_dir, destination)
         speech_val_set.append(destination)
         csv_path = 'podcastmix/metadata/val/speech.csv'
     else:
         # test
-        destination = test_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.wav'
+        destination = test_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
         # resample from 48kHz -> 44.1kHz
         audio, original_sr = torchaudio.load(speech_path_dir, normalize=True)
         resampled_audio = torchaudio.transforms.Resample(
@@ -301,7 +310,8 @@ for speech_path_dir in speech_files:
         torchaudio.save(
             filepath=destination,
             src=resampled_audio,
-            sample_rate=44100
+            sample_rate=44100,
+            bits_per_sample=16
         )
         # copyfile(speech_path_dir, destination)
         speech_test_set.append(destination)
