@@ -1,4 +1,7 @@
+import sys
+import soundfile as sf
 from shutil import copyfile
+import os
 from os import listdir
 from os.path import isfile, join
 import random
@@ -8,6 +11,7 @@ import sys
 import json
 import csv
 import torchaudio
+import librosa
 
 """
 Create the augmented dataset
@@ -57,9 +61,10 @@ if not os.path.exists('podcastmix/metadata/test'):
 
 
 def create_csv_metadata(csv_path, headers):
-    with open(csv_path, 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(headers)
+    if not os.path.exists(csv_path):
+        with open(csv_path, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(headers)
 
 
 # create the train csv file
@@ -139,68 +144,78 @@ for song_id in keys:
         current_file_path = music_path + '/' + song['id'] + '.flac'
         audio_info = torchaudio.info(current_file_path)
         print(counter, '/', len(keys))
+        exists = False
         channels = audio_info.num_channels
         if channels == 2:
             if counter < int(train_prop * len(keys)):
                 # train
                 destination = train_path + '/music/' + song['id'] + '.wav'
-                audio = librosa.load(
-                    current_file_path,
-                    sr=44100,
-                    mono=False)[0]
-                sf.write(destination, audio.T, samplerate=44100)
+                if not os.path.exists(destination):
+                    audio = librosa.load(
+                        current_file_path,
+                        sr=44100,
+                        mono=False)[0]
+                    sf.write(destination, audio.T, samplerate=44100)
+                    exists = True
                 song['local_path'] = destination
                 music_train_set.append(song)
                 csv_path = 'podcastmix/metadata/train/music.csv'
-            elif counter >= int(train_prop * len(keys)) and
-            counter < int((train_prop + val_prop) * len(keys)):
+            elif counter >= int(train_prop * len(keys)) and counter < int((train_prop + val_prop) * len(keys)):
                 # val
                 destination = val_path + '/music/' + song['id'] + '.flac'
-                audio = librosa.load(
-                    current_file_path,
-                    sr=44100,
-                    mono=False)[0]
-                sf.write(destination, audio.T, samplerate=44100)
+                if not os.path.exists(destination):
+                    audio = librosa.load(
+                        current_file_path,
+                        sr=44100,
+                        mono=False)[0]
+                    sf.write(destination, audio.T, samplerate=44100)
+                    exists = True
                 song['local_path'] = destination
                 music_val_set.append(song)
                 csv_path = 'podcastmix/metadata/val/music.csv'
             else:
                 # test
                 destination = test_path + '/music/' + song['id'] + '.flac'
-                audio = librosa.load(
-                    current_file_path,
-                    sr=44100,
-                    mono=False)[0]
-                sf.write(destination, audio.T, samplerate=44100)
+                if not os.path.exists(destination):
+                    audio = librosa.load(
+                        current_file_path,
+                        sr=44100,
+                        mono=False)[0]
+                    sf.write(destination, audio.T, samplerate=44100)
+                    exists = True
                 song['local_path'] = destination
                 music_test_set.append(song)
                 csv_path = 'podcastmix/metadata/test/music.csv'
-            with open(csv_path, 'a', newline='') as file:
-                writer = csv.writer(file)
-                song_length = audio_info.num_frames
-                # flatten tags
-                tags = json.dump(song["musicinfo"]["tags"])
-                writer.writerow(
-                    [
-                        song['id'],
-                        song['id'],
-                        song['name'].replace(',', ''),
-                        song['artist_name'].replace(',', ''),
-                        song['album_name'].replace(',', ''),
-                        song['license_ccurl'],
-                        song['releasedate'],
-                        song["image"],
-                        song["musicinfo"]["vocalinstrumental"],
-                        song["musicinfo"]["lang"],
-                        song["musicinfo"]["gender"],
-                        song["musicinfo"]["acousticelectric"],
-                        song["musicinfo"]["speed"],
-                        tags(',', '/'),
-                        song['local_path'],
-                        song_length])
+            if not exists:
+                with open(csv_path, 'a', newline='') as file:
+                    writer = csv.writer(file)
+                    song_length = audio_info.num_frames
+                    # flatten tags
+                    tags = json.dumps(song["musicinfo"]["tags"])
+                    writer.writerow(
+                        [
+                            song['id'],
+                            song['id'],
+                            song['name'].replace(',', ''),
+                            song['artist_name'].replace(',', ''),
+                            song['album_name'].replace(',', ''),
+                            song['license_ccurl'],
+                            song['releasedate'],
+                            song["image"],
+                            song["musicinfo"]["vocalinstrumental"],
+                            song["musicinfo"]["lang"],
+                            song["musicinfo"]["gender"],
+                            song["musicinfo"]["acousticelectric"],
+                            song["musicinfo"]["speed"],
+                            tags.replace(',', '/'),
+                            song['local_path'],
+                            song_length])
         else:
             errors.append(song_id)
     except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
         print(e)
         errors.append(song_id)
     counter += 1
@@ -242,9 +257,7 @@ for speech_path_dir in speech_files:
     print(counter, '/', len(speech_files))
     if counter < int(train_prop * len(speech_files)):
         # train
-        destination = train_path +
-        '/speech/' +
-        speech_path_dir.split('/')[-1].split('.')[0] + '.wav'
+        destination = train_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.wav'
         # resample from 48kHz -> 44.1kHz
         audio, original_sr = torchaudio.load(speech_path_dir, normalize=True)
         resampled_audio = torchaudio.transforms.Resample(
@@ -259,12 +272,9 @@ for speech_path_dir in speech_files:
         # copyfile(speech_path_dir, destination)
         speech_train_set.append(destination)
         csv_path = 'podcastmix/metadata/train/speech.csv'
-    elif counter >= int(train_prop * len(speech_files)) and
-    counter < int((train_prop + val_prop) * len(speech_files)):
+    elif counter >= int(train_prop * len(speech_files)) and counter < int((train_prop + val_prop) * len(speech_files)):
         # val
-        destination = val_path +
-        '/speech/' +
-        speech_path_dir.split('/')[-1].split('.')[0] + '.wav'
+        destination = val_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.wav'
         # resample from 48kHz -> 44.1kHz
         audio, original_sr = torchaudio.load(speech_path_dir, normalize=True)
         resampled_audio = torchaudio.transforms.Resample(
@@ -281,9 +291,7 @@ for speech_path_dir in speech_files:
         csv_path = 'podcastmix/metadata/val/speech.csv'
     else:
         # test
-        destination = test_path +
-        '/speech/' +
-        speech_path_dir.split('/')[-1].split('.')[0] + '.wav'
+        destination = test_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.wav'
         # resample from 48kHz -> 44.1kHz
         audio, original_sr = torchaudio.load(speech_path_dir, normalize=True)
         resampled_audio = torchaudio.transforms.Resample(
