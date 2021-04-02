@@ -40,7 +40,7 @@ class PodcastMix(Dataset):
         self.speech_inxs = list(range(len(self.df_speech)))
         self.music_inxs = list(range(len(self.df_music)))
         np.random.seed(1)
-        self.gain_ramp = np.array(range(10, 110, 1))/100
+        self.gain_ramp = np.array(range(0, 100, 1))/100
         np.random.shuffle(self.gain_ramp)
 
     def __len__(self):
@@ -94,7 +94,6 @@ class PodcastMix(Dataset):
             num_frames=duration,
             normalize=True
         )
-        # Normalize speech
         # zero pad if the size is smaller than seq_duration
         seq_duration_samples = int(self.segment * sr)
         total_samples = audio_signal.shape[-1]
@@ -157,11 +156,15 @@ class PodcastMix(Dataset):
             music_gain = self.gain_ramp[idx % len(self.gain_ramp)]
         # compute the mixture
         mixture = sources_list[0] + music_gain * sources_list[1]
+        mixture = torch.squeeze(mixture)
 
         # Stack sources
         sources = np.vstack(sources_list)
         # Convert sources to tensor
         sources = torch.from_numpy(sources)
+        # print(sources[0].shape)
+        # print(sources[1].shape)
+        # print(mixture.shape)
         if not self.return_id:
             return mixture, sources
         return mixture, sources, [

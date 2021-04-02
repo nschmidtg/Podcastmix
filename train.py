@@ -63,6 +63,7 @@ def main(conf):
         batch_size=conf["training"]["batch_size"],
         num_workers=conf["training"]["num_workers"],
         drop_last=True,
+        pin_memory=True
     )
 
     val_loader = DataLoader(
@@ -71,6 +72,7 @@ def main(conf):
         batch_size=conf["training"]["batch_size"],
         num_workers=conf["training"]["num_workers"],
         drop_last=True,
+        pin_memory=True
     )
     if(conf["model"]["name"] == "ConvTasNet"):
         from asteroid.models import ConvTasNet
@@ -210,7 +212,7 @@ def main(conf):
         distributed_backend=distributed_backend,
         limit_train_batches=1.0,  # Useful for fast experiment
         gradient_clip_val=5.0,
-        resume_from_checkpoint=conf["resume_from"]
+#        resume_from_checkpoint=conf["resume_from"]
     )
     trainer.fit(system)
 
@@ -239,13 +241,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config_model", type=str, required=True, help="Asteroid model to use"
     )
-    parser.add_argument(
-        "--resume_from",
-        type=str,
-        required=False,
-        default=None
-        help="path to the desired restore checkpoint with .ckpt extension"
-    )
+#     parser.add_argument(
+#        "--resume_from",
+#        type=str,
+#        default=None,
+#        help="path to the desired restore checkpoint with .ckpt extension"
+#    )
     config_model = sys.argv[2]
     with open(config_model) as f:
         def_conf = yaml.safe_load(f)

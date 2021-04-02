@@ -16,7 +16,7 @@ masknet:
 # Training config
 training:
   epochs: 200
-  batch_size: 2
+  batch_size: 1
   num_workers: 24
   half_lr: yes
   early_stop: yes
@@ -32,3 +32,5 @@ data:
   sample_rate: 44100
   n_src: 2
   segment: 2
+resume_from:
+  resume_from: None
