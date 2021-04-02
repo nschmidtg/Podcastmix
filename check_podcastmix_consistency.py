@@ -25,9 +25,9 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
     onlyfiles = [f for f in listdir(files_path) if isfile(join(files_path, f))]
     print('Check diff between:', files_path, csv_path)
     diff = list(set(onlyfiles) - set(not_missing))
-    print('List of files minus list in csv:', diff)
+    print('List of files minus list in csv:', len(diff))
     diff2 = list(set(not_missing) - set(onlyfiles))
-    print('List in csv minus list of files:', diff2)
+    print('List in csv minus list of files:', len(diff2))
 
 
 # check consistency of the dataset:
