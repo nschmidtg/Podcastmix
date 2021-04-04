@@ -111,15 +111,22 @@ def main(conf):
         mix, sources, ids = test_set[idx]
         print("ids of test set:", ids)
         mix, sources = tensors_to_device([mix, sources], device=model_device)
-        est_sources = model(mix.unsqueeze(0))
+        print("early_mix:", mix)
+        est_sources = model(mix)
         print(est_sources.shape)
         print(sources.shape)
-        print(sources[None].shape)
-        loss = loss_func(est_sources, sources[None])
-        mix_np = mix.cpu().data.numpy()[0]
+        # sources = sources[None]
+        # est_sources = est_sources[None]
+        print("estoy casi aca")
+        loss = loss_func(est_sources, sources)
+        print("estoy aca")
+        mix_np = mix.cpu().data.numpy()
         print(mix_np)
         sources_np = sources.cpu().data.numpy()
         est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
+        print("mix:", mix_np.shape)
+        print("sources:", sources_np.shape)
+        print("est_sources:", est_sources_np.shape)
         # For each utterance, we get a dictionary with the mixture path,
         # the input and output metrics
         utt_metrics = get_metrics(
@@ -202,6 +209,7 @@ if __name__ == "__main__":
     with open(conf_path) as f:
         train_conf = yaml.safe_load(f)
     arg_dic["sample_rate"] = train_conf["data"]["sample_rate"]
+    arg_dic["segment"] = train_conf["data"]["segment"]
     arg_dic["train_conf"] = train_conf
 
     main(arg_dic)
