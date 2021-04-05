@@ -52,19 +52,21 @@ class PodcastMix(Dataset):
         if self.segment is not None:
             info = torchaudio.info(audio_path)
             sr, length = info.sample_rate, info.num_frames
-            duration = float(length / sr)
-            if self.segment > duration:
+            duration = length
+            segment_frames = int(self.segment * sr)
+            if segment_frames > duration:
                 offset = 0
-                num_frames = length
+                print(audio_path)
+                num_frames = self.segment
             else:
                 # compute start in seconds
                 if self.shuffle_tracks:
-                    start = random.uniform(0, duration - self.segment)
+                    start = int(random.uniform(0, duration - segment_frames))
                 else:
                     # if we are testing the segment is fixed
-                    start = int((duration - self.segment) / 2)
-                offset = int(np.floor(start * sr))
-                num_frames = int(np.floor(self.segment * sr))
+                    start = int((duration - segment_frames) / 2)
+                offset = start
+                num_frames = segment_frames
         else:
             print('segment is empty, modify it in the config.yml file')
         return offset, num_frames
@@ -83,6 +85,7 @@ class PodcastMix(Dataset):
         sources_list = []
 
         audio_signal = torch.tensor([0.])
+        sr = 0
         while torch.sum(torch.abs(audio_signal)) == 0:
             # If there is a seg, start point is set randomly
             offset, duration = self.compute_rand_offset_duration(
@@ -91,38 +94,64 @@ class PodcastMix(Dataset):
             # We want to cleanly separate Speech, so its the first source
             # in the sources_list
             source_path = row_speech["speech_path"]
-            audio_signal, _ = torchaudio.load(
+            audio_signal, sr = torchaudio.load(
                 source_path,
                 frame_offset=offset,
                 num_frames=duration,
                 normalize=True
             )
+            # zero pad if the size is smaller than seq_duration
+            seq_duration_samples = int(self.segment * sr)
+            total_samples = audio_signal.shape[-1]
+            if seq_duration_samples > total_samples:
+                audio_signal = torch.nn.ConstantPad2d(
+                    (
+                        0,
+                        seq_duration_samples - total_samples,
+                        0,
+                        0),
+                    0
+                )(audio_signal)
         sources_list.append(audio_signal)
 
         # now for music:
         audio_signal = torch.tensor([0.])
+        sr = 0
         while torch.sum(torch.abs(audio_signal)) == 0:
             # If there is a seg, start point is set randomly
             offset, duration = self.compute_rand_offset_duration(
                 row_music['music_path']
             )
             source_path = row_music["music_path"]
-            audio_signal, _ = torchaudio.load(
+            audio_signal, sr = torchaudio.load(
                 source_path,
                 frame_offset=offset,
                 num_frames=duration,
                 normalize=True
             )
+            # zero pad if the size is smaller than seq_duration
+            seq_duration_samples = int(self.segment * sr)
+            total_samples = audio_signal.shape[-1]
+            if seq_duration_samples > total_samples:
+                audio_signal = torch.nn.ConstantPad2d(
+                    (
+                        0,
+                        seq_duration_samples - total_samples,
+                        0,
+                        0),
+                    0
+                )(audio_signal)
+
         if len(audio_signal) == 2:
             audio_signal = audio_signal[0] + audio_signal[1]
-        
+
         if self.shuffle_tracks:
             # random gain for training and validation
-            music_gain = random.uniform(0, 1)
+            music_gain = random.uniform(1e-3, 1)
         else:
             # fixed gain for testing
             music_gain = self.gain_ramp[idx % len(self.gain_ramp)]
-        
+
         # multiply the music by the gain factor and add to the sources_list
         sources_list.append(music_gain * audio_signal)
         # compute the mixture
