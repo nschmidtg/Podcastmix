@@ -83,7 +83,7 @@ class PodcastMix(Dataset):
         sources_list = []
 
         audio_signal = torch.tensor([0.])
-        while not torch.is_nonzero(audio_signal):
+        while torch.sum(torch.abs(audio_signal)) == 0:
             # If there is a seg, start point is set randomly
             offset, duration = self.compute_rand_offset_duration(
                 row_speech['speech_path']
@@ -101,7 +101,7 @@ class PodcastMix(Dataset):
 
         # now for music:
         audio_signal = torch.tensor([0.])
-        while not torch.is_nonzero(audio_signal):
+        while torch.sum(torch.abs(audio_signal)) == 0:
             # If there is a seg, start point is set randomly
             offset, duration = self.compute_rand_offset_duration(
                 row_music['music_path']
