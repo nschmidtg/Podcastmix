@@ -80,7 +80,6 @@ def main(conf):
         MockWERTracker()
     )
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
-    print(model_path)
     AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
     model = AsteroidModelModule.from_pretrained(model_path)
     # model = ConvTasNet
@@ -111,22 +110,13 @@ def main(conf):
         mix, sources, ids = test_set[idx]
         print("ids of test set:", ids)
         mix, sources = tensors_to_device([mix, sources], device=model_device)
-        print("early_mix:", mix)
         est_sources = model(mix)
-        print(est_sources.shape)
-        print(sources.shape)
         # sources = sources[None]
         # est_sources = est_sources[None]
-        print("estoy casi aca")
         loss = loss_func(est_sources, sources)
-        print("estoy aca")
         mix_np = mix.cpu().data.numpy()
-        print(mix_np)
         sources_np = sources.cpu().data.numpy()
         est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
-        print("mix:", mix_np.shape)
-        print("sources:", sources_np.shape)
-        print("est_sources:", est_sources_np.shape)
         # For each utterance, we get a dictionary with the mixture path,
         # the input and output metrics
         utt_metrics = get_metrics(
@@ -178,7 +168,7 @@ def main(conf):
         final_results[metric_name + "_imp"] = ldf.mean()
 
     print("Overall metrics :")
-    pprint(final_results)
+    print(final_results)
     if conf["compute_wer"]:
         print("\nWER report")
         wer_card = wer_tracker.final_report_as_markdown()
