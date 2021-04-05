@@ -266,5 +266,5 @@ if __name__ == "__main__":
 usage:
 CUDA_VISIBLE_DEVICES=1 python train.py --config_model \
     ConvTasNet_model/ConvTasNet_config.yml \
-        --restore_from=ConvTasNet_Model/exp/checkpoints/mode.ckpt
+        --restore_from=ConvTasNet_Model/exp/checkpoints/model.ckpt
 """
