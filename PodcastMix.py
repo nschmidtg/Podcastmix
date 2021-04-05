@@ -81,81 +81,52 @@ class PodcastMix(Dataset):
         row_speech = self.df_speech.iloc[speech_idx]
         row_music = self.df_music.iloc[music_idx]
         sources_list = []
-        # If there is a seg, start point is set randomly
-        offset, duration = self.compute_rand_offset_duration(
-            row_speech['speech_path']
-        )
-        # We want to cleanly separate Speech, so its the first source
-        # in the sources_list
-        source_path = row_speech["speech_path"]
-        audio_signal, sr = torchaudio.load(
-            source_path,
-            frame_offset=offset,
-            num_frames=duration,
-            normalize=True
-        )
-        # zero pad if the size is smaller than seq_duration
-        seq_duration_samples = int(self.segment * sr)
-        total_samples = audio_signal.shape[-1]
-        if seq_duration_samples > total_samples:
-            audio_signal = torch.nn.ConstantPad2d(
-                (
-                    0,
-                    seq_duration_samples - total_samples,
-                    0,
-                    0),
-                0
-            )(audio_signal)
 
-        # #### resample
-        audio_signal = torchaudio.transforms.Resample(
-            sr,
-            self.sample_rate
-        )(audio_signal)
-        # speech normalization
-        # add to the list
+        audio_signal = torch.tensor([0.])
+        while not torch.is_nonzero(audio_signal):
+            # If there is a seg, start point is set randomly
+            offset, duration = self.compute_rand_offset_duration(
+                row_speech['speech_path']
+            )
+            # We want to cleanly separate Speech, so its the first source
+            # in the sources_list
+            source_path = row_speech["speech_path"]
+            audio_signal, _ = torchaudio.load(
+                source_path,
+                frame_offset=offset,
+                num_frames=duration,
+                normalize=True
+            )
         sources_list.append(audio_signal)
 
         # now for music:
-        offset, duration = self.compute_rand_offset_duration(
-            row_music['music_path']
-        )
-        source_path = row_music["music_path"]
-        audio_signal, sr = torchaudio.load(
-            source_path,
-            frame_offset=offset,
-            num_frames=duration,
-            normalize=True
-        )
-        seq_duration_samples = int(self.segment * sr)
-        total_samples = audio_signal.shape[-1]
-        if seq_duration_samples > total_samples:
-            audio_signal = torch.nn.ConstantPad2d(
-                (
-                    0,
-                    seq_duration_samples - total_samples,
-                    0,
-                    0),
-                0
-            )(audio_signal)
-
-        # resample
-        audio_signal = torchaudio.transforms.Resample(
-            sr,
-            self.sample_rate
-        )(audio_signal)
+        audio_signal = torch.tensor([0.])
+        while not torch.is_nonzero(audio_signal):
+            # If there is a seg, start point is set randomly
+            offset, duration = self.compute_rand_offset_duration(
+                row_music['music_path']
+            )
+            source_path = row_music["music_path"]
+            audio_signal, _ = torchaudio.load(
+                source_path,
+                frame_offset=offset,
+                num_frames=duration,
+                normalize=True
+            )
         if len(audio_signal) == 2:
             audio_signal = audio_signal[0] + audio_signal[1]
-        sources_list.append(audio_signal)
-
+        
         if self.shuffle_tracks:
             # random gain for training and validation
             music_gain = random.uniform(0, 1)
         else:
             # fixed gain for testing
             music_gain = self.gain_ramp[idx % len(self.gain_ramp)]
+        
+        # multiply the music by the gain factor and add to the sources_list
+        sources_list.append(music_gain * audio_signal)
         # compute the mixture
-        mixture = sources_list[0] + music_gain * sources_list[1]
+        mixture = sources_list[0] + sources_list[1]
         mixture = torch.squeeze(mixture)
 
         # Stack sources
