@@ -40,6 +40,7 @@ class PodcastMix(Dataset):
         self.speech_inxs = list(range(len(self.df_speech)))
         self.music_inxs = list(range(len(self.df_music)))
         np.random.seed(1)
+        random.seed(1)
         self.gain_ramp = np.array(range(1, 100, 1))/100
         np.random.shuffle(self.gain_ramp)
 
@@ -96,6 +97,9 @@ class PodcastMix(Dataset):
                 num_frames=duration,
                 normalize=True
             )
+            # resample if sr is different than the specified in dataloader
+            if not sr == self.sample_rate:
+                audio_signal.transforms.Resample(orig_freq = sf, new_freq = self.sample_rate)
             # zero pad if the size is smaller than seq_duration
             seq_duration_samples = int(self.segment * sr)
             total_samples = audio_signal.shape[-1]
@@ -125,6 +129,9 @@ class PodcastMix(Dataset):
                 num_frames=duration,
                 normalize=True
             )
+            # resample if sr is different than the specified in dataloader
+            if not sr == self.sample_rate:
+                audio_signal.transforms.Resample(orig_freq = sf, new_freq = self.sample_rate)
             # zero pad if the size is smaller than seq_duration
             seq_duration_samples = int(self.segment * sr)
             total_samples = audio_signal.shape[-1]
