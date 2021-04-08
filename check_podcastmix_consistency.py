@@ -27,7 +27,7 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
                     print("im not file", path)
                 # check channels sr and bit depth
                 info = torchaudio.info(path)
-                print(info.sample_rate, info.bits_per_sample, info.num_channels)
+                # print(info.sample_rate, info.bits_per_sample, info.num_channels)
                 if(not info.sample_rate == 44100):
                     format_error['sr'].append(path)
                 if(not info.bits_per_sample == 16):
