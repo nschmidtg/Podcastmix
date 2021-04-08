@@ -154,7 +154,7 @@ for song_id in keys:
                 print('2', current_file_path)
                 destination = train_path + '/music/' + song['id'] + '.flac'
                 if not os.path.exists(destination):
-                    copyfile(music_path + '/' + song['id'] + '.flac', destination)
+                    # copyfile(music_path + '/' + song['id'] + '.flac', destination)
                     # audio, original_sf = torchaudio.load(
                     #     current_file_path,
                     #     normalize = True)
@@ -169,7 +169,7 @@ for song_id in keys:
                 # val
                 destination = val_path + '/music/' + song['id'] + '.flac'
                 if not os.path.exists(destination):
-                    copyfile(music_path + '/' + song['id'] + '.flac', destination)
+                    # copyfile(music_path + '/' + song['id'] + '.flac', destination)
                     # audio, original_sf = torchaudio.load(
                     #     current_file_path,
                     #     normalize = True)
@@ -183,7 +183,7 @@ for song_id in keys:
                 # test
                 destination = test_path + '/music/' + song['id'] + '.flac'
                 if not os.path.exists(destination):
-                    copyfile(music_path + '/' + song['id'] + '.flac', destination)
+                    # copyfile(music_path + '/' + song['id'] + '.flac', destination)
                     # audio, original_sf = torchaudio.load(
                     #     current_file_path,
                     #     normalize = True)
@@ -269,17 +269,17 @@ for speech_path_dir in speech_files:
         if not os.path.exists(destination):
             # resample from 48kHz -> 44.1kHz
             exists = True
-            audio, original_sr = torchaudio.load(speech_path_dir, normalize=True)
-            resampled_audio = torchaudio.transforms.Resample(
-                original_sr,
-                44100
-            )(audio)
-            torchaudio.save(
-                filepath=destination,
-                src=resampled_audio,
-                sample_rate=44100,
-                bits_per_sample=16
-            )
+            # audio, original_sr = torchaudio.load(speech_path_dir, normalize=True)
+            # resampled_audio = torchaudio.transforms.Resample(
+            #     original_sr,
+            #     44100
+            # )(audio)
+            # torchaudio.save(
+            #     filepath=destination,
+            #     src=resampled_audio,
+            #     sample_rate=44100,
+            #     bits_per_sample=16
+            # )
         # copyfile(speech_path_dir, destination)
         speech_train_set.append(destination)
         csv_path = 'podcastmix/metadata/train/speech.csv'
@@ -289,17 +289,17 @@ for speech_path_dir in speech_files:
         if not os.path.exists(destination):
             exists = True
             # resample from 48kHz -> 44.1kHz
-            audio, original_sr = torchaudio.load(speech_path_dir, normalize=True)
-            resampled_audio = torchaudio.transforms.Resample(
-                original_sr,
-                44100
-            )(audio)
-            torchaudio.save(
-                filepath=destination,
-                src=resampled_audio,
-                sample_rate=44100,
-                bits_per_sample=16
-            )
+            # audio, original_sr = torchaudio.load(speech_path_dir, normalize=True)
+            # resampled_audio = torchaudio.transforms.Resample(
+            #     original_sr,
+            #     44100
+            # )(audio)
+            # torchaudio.save(
+            #     filepath=destination,
+            #     src=resampled_audio,
+            #     sample_rate=44100,
+            #     bits_per_sample=16
+            # )
         # copyfile(speech_path_dir, destination)
         speech_val_set.append(destination)
         csv_path = 'podcastmix/metadata/val/speech.csv'
@@ -309,17 +309,17 @@ for speech_path_dir in speech_files:
         if not os.path.exists(destination):
             exists = True
             # resample from 48kHz -> 44.1kHz
-            audio, original_sr = torchaudio.load(speech_path_dir, normalize=True)
-            resampled_audio = torchaudio.transforms.Resample(
-                original_sr,
-                44100
-            )(audio)
-            torchaudio.save(
-                filepath=destination,
-                src=resampled_audio,
-                sample_rate=44100,
-                bits_per_sample=16
-            )
+            # audio, original_sr = torchaudio.load(speech_path_dir, normalize=True)
+            # resampled_audio = torchaudio.transforms.Resample(
+            #     original_sr,
+            #     44100
+            # )(audio)
+            # torchaudio.save(
+            #     filepath=destination,
+            #     src=resampled_audio,
+            #     sample_rate=44100,
+            #     bits_per_sample=16
+            # )
         # copyfile(speech_path_dir, destination)
         speech_test_set.append(destination)
         csv_path = 'podcastmix/metadata/test/speech.csv'
@@ -332,7 +332,7 @@ for speech_path_dir in speech_files:
         params = speaker_params[speech_cmp[0]]
         writer.writerow(
             [
-                speech_cmp[1] + '_' + speech_cmp[2].split('.')[0],
+                speech_cmp[0] + '_' + speech_cmp[1] + '_' + speech_cmp[2].split('.')[0],
                 speech_cmp[0],
                 params['speaker_age'],
                 params['speaker_gender'],

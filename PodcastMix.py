@@ -40,7 +40,7 @@ class PodcastMix(Dataset):
         self.speech_inxs = list(range(len(self.df_speech)))
         self.music_inxs = list(range(len(self.df_music)))
         np.random.seed(1)
-        self.gain_ramp = np.array(range(0, 100, 1))/100
+        self.gain_ramp = np.array(range(1, 100, 1))/100
         np.random.shuffle(self.gain_ramp)
 
     def __len__(self):
@@ -57,7 +57,7 @@ class PodcastMix(Dataset):
             if segment_frames > duration:
                 offset = 0
                 print(audio_path)
-                num_frames = self.segment
+                num_frames = segment_frames
             else:
                 # compute start in seconds
                 if self.shuffle_tracks:
