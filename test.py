@@ -75,9 +75,6 @@ def my_import(name):
 
 
 def main(conf):
-    # seed the random to get reproducible results
-    random.seed(1)
-
     compute_metrics = COMPUTE_METRICS
     wer_tracker = (
         MockWERTracker()
