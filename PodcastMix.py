@@ -60,11 +60,7 @@ class PodcastMix(Dataset):
                 num_frames = segment_frames
             else:
                 # compute start in seconds
-                if self.shuffle_tracks:
-                    start = int(random.uniform(0, duration - segment_frames))
-                else:
-                    # if we are testing the segment is fixed
-                    start = int((duration - segment_frames) / 2)
+                start = int(random.uniform(0, duration - segment_frames))
                 offset = start
                 num_frames = segment_frames
         else:
