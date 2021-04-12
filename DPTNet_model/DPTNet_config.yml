@@ -19,7 +19,7 @@ masknet:
   dropout: 0
 # Training config
 training:
-  epochs: 29
+  epochs: 100
   batch_size: 2
   num_workers: 24
   half_lr: yes
