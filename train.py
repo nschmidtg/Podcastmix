@@ -203,7 +203,7 @@ def main(conf):
     # Don't ask GPU if they are not available.
     gpus = -1 if torch.cuda.is_available() else None
     distributed_backend = "dp" if torch.cuda.is_available() else None
-
+    print("hereherehere", conf)
     trainer = pl.Trainer(
         max_epochs=conf["training"]["epochs"],
         callbacks=callbacks,
@@ -212,7 +212,7 @@ def main(conf):
         distributed_backend=distributed_backend,
         limit_train_batches=1.0,  # Useful for fast experiment
         gradient_clip_val=5.0,
-#        resume_from_checkpoint=conf["resume_from"]
+        resume_from_checkpoint=conf["main_args"]["resume_from"]
     )
     trainer.fit(system)
 
@@ -241,12 +241,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config_model", type=str, required=True, help="Asteroid model to use"
     )
-#     parser.add_argument(
-#        "--resume_from",
-#        type=str,
-#        default=None,
-#        help="path to the desired restore checkpoint with .ckpt extension"
-#    )
+    parser.add_argument(
+        "--resume_from",
+        type=str,
+        default=None,
+        help="path to the desired restore checkpoint with .ckpt extension"
+    )
     config_model = sys.argv[2]
     with open(config_model) as f:
         def_conf = yaml.safe_load(f)
@@ -259,12 +259,12 @@ if __name__ == "__main__":
     # the attributes in an non-hierarchical structure. It can be useful to also
     # have it so we included it here but it is not used.
     arg_dic, plain_args = parse_args_as_dict(parser, return_plain_args=True)
-    pprint(arg_dic)
+    print(arg_dic)
     main(arg_dic)
 
 """
 usage:
 CUDA_VISIBLE_DEVICES=1 python train.py --config_model \
     ConvTasNet_model/ConvTasNet_config.yml \
-        --restore_from=ConvTasNet_Model/exp/checkpoints/model.ckpt
+       --resume_from=DPTNet_model/exp/tmp/checkpoints/epoch\=28-step\=224691.ckpt
 """
