@@ -1,0 +1,41 @@
+model: 
+  name: UNet
+# Training config
+training:
+  epochs: 100
+  batch_size: 6
+  num_workers: 2
+  half_lr: yes
+  early_stop: yes
+# Optim config
+stft_filters:
+  stft_n_filters: 1024
+  stft_kernel_size: 1024
+  stft_strid: 768
+  sample_rate: 8192.0
+convolution:
+  stride: 2
+  kernel_size: 5
+  batch_normalization: true
+  activation_kernel: relu
+  activation_leakiness: 0.2
+deconvolution:
+  stride: 2
+  kernel_size: 5
+  batch_normalization: true
+  activation_kernel: relu
+  activation_leakiness: 1
+  n_layer_dropout: 3
+  dropout: 0.5
+  last_layer_activation: sigmoid
+optim:
+  optimizer: adam
+  lr: 0.001
+  weight_decay: !!float 1e-5
+# Data config
+data:
+  train_dir: podcastmix/metadata/train
+  valid_dir: podcastmix/metadata/val
+  sample_rate: 8000
+  n_src: 2
+  segment: 2
