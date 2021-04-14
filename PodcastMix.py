@@ -57,7 +57,6 @@ class PodcastMix(Dataset):
             segment_frames = int(self.segment * sr)
             if segment_frames > duration:
                 offset = 0
-                print(audio_path)
                 num_frames = segment_frames
             else:
                 # compute start in seconds
