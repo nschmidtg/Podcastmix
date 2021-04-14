@@ -36,9 +36,15 @@ class UNet(torch.nn.Module):
 
     def forward(self, x):
         X = torch.stft(x, 1024, 764, 1024)
+        print("pasé el torch.stft(x, 1024, 764, 1024)")
+        print(X.shape)
         X1 = self.inc(X)
+        print("pasé el self.inc(X)")
         X = self.up1(X, X1)
+        print("pasé el self.up1(X, X1)")
         X = self.outc(X)
+        print("pasé el self.outx(X)")
         X = torch.sigmoid(X)
+        print("pasé el sigmoid")
         x = torch.istft(X, 1024, 764, 1024)
         return x

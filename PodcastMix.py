@@ -98,7 +98,7 @@ class PodcastMix(Dataset):
             )
             # resample if sr is different than the specified in dataloader
             if not sr == self.sample_rate:
-                audio_signal.transforms.Resample(orig_freq = sf, new_freq = self.sample_rate)
+                audio_signal = torchaudio.transforms.Resample(orig_freq = sr, new_freq = self.sample_rate)(audio_signal)
             # zero pad if the size is smaller than seq_duration
             seq_duration_samples = int(self.segment * sr)
             total_samples = audio_signal.shape[-1]
@@ -130,7 +130,7 @@ class PodcastMix(Dataset):
             )
             # resample if sr is different than the specified in dataloader
             if not sr == self.sample_rate:
-                audio_signal.transforms.Resample(orig_freq = sf, new_freq = self.sample_rate)
+                audio_signal = torchaudio.transforms.Resample(orig_freq = sr, new_freq = self.sample_rate)(audio_signal)
             # zero pad if the size is smaller than seq_duration
             seq_duration_samples = int(self.segment * sr)
             total_samples = audio_signal.shape[-1]
