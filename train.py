@@ -162,15 +162,10 @@ def main(conf):
                 patience=5
             )
     elif(conf["model"]["name"] == "UNet"):
-        # not working, try other scheduler
-        sys.path.append('UNet_model/unet_model')
+        sys.path.append('UNet_model')
         from unet_model import UNet
         model = UNet(
-            conf["stft_filters"]["stft_n_filters"],
-            conf["stft_filters"]["stft_kernel_size"],
-            conf["stft_filters"]["stft_strid"],
-            conf["stft_filters"]["sample_rate"],
-
+            2,2
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
@@ -188,8 +183,6 @@ def main(conf):
         yaml.safe_dump(conf, outfile)
 
     # Define Loss function.
-    # loss_func = PITLossWrapper(multisrc_neg_sisdr, pit_from='perm_avg')
-    # loss_func = pairwise_neg_sisdr
     loss_func = SingleSrcMSE()
     system = System(
         model=model,
@@ -232,7 +225,7 @@ def main(conf):
         distributed_backend=distributed_backend,
         limit_train_batches=1.0,  # Useful for fast experiment
         gradient_clip_val=5.0,
-        resume_from_checkpoint=conf["main_args"]["resume_from"]
+        # resume_from_checkpoint=conf["main_args"]["resume_from"]
     )
     trainer.fit(system)
 

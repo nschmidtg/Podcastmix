@@ -1,0 +1,43 @@
+convolution:
+  activation_kernel_c: relu
+  activation_leakiness_c: 0.2
+  batch_normalization_c: true
+  kernel_size_c: 5
+  stride_c: 2
+data:
+  n_src: 2
+  sample_rate: 8192
+  segment: 2
+  train_dir: podcastmix/metadata/train
+  valid_dir: podcastmix/metadata/val
+deconvolution:
+  activation_kernel_d: relu
+  activation_leakiness_d: 1
+  batch_normalization_d: true
+  dropout_d: 0.5
+  kernel_size_d: 5
+  last_layer_activation_d: sigmoid
+  n_layer_dropout_d: 3
+  stride_d: 2
+main_args:
+  config_model: UNet_model/UNet_config.yml
+  exp_dir: exp/tmp
+  help: null
+  resume_from: null
+model:
+  name: UNet
+optim:
+  lr: 0.001
+  optimizer: adam
+  weight_decay: 1.0e-05
+positional arguments: {}
+stft_filters:
+  stft_kernel_size: 1024
+  stft_n_filters: 1024
+  stft_strid: 768
+training:
+  batch_size: 2
+  early_stop: true
+  epochs: 100
+  half_lr: true
+  num_workers: 2
