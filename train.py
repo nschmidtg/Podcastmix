@@ -8,6 +8,8 @@ from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
+import sys
+
 from PodcastMix import PodcastMix
 from asteroid.engine.optimizers import make_optimizer
 from asteroid.engine.system import System
@@ -151,6 +153,24 @@ def main(conf):
             n_src=conf["data"]["n_src"],
             sample_rate=conf["data"]["sample_rate"],
             **conf["model_init"]
+        )
+        optimizer = make_optimizer(model.parameters(), **conf["optim"])
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(
+                optimizer=optimizer,
+                factor=0.5,
+                patience=5
+            )
+    elif(conf["model"]["name"] == "UNet"):
+        # not working, try other scheduler
+        sys.path.append('UNet_model/unet_model')
+        from unet_model import UNet
+        model = UNet(
+            conf["stft_filters"]["stft_n_filters"],
+            conf["stft_filters"]["stft_kernel_size"],
+            conf["stft_filters"]["stft_strid"],
+            conf["stft_filters"]["sample_rate"],
+
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
