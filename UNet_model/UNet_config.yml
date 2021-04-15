@@ -8,10 +8,10 @@ training:
   half_lr: yes
   early_stop: yes
 # Optim config
-stft_filters:
-  stft_n_filters: 1024
-  stft_kernel_size: 1024
-  stft_strid: 768
+stft:
+  fft_size: 1024
+  window_size: 1023
+  hop_size: 768
 convolution:
   stride_c: 2
   kernel_size_c: 5
