@@ -225,7 +225,7 @@ def main(conf):
         distributed_backend=distributed_backend,
         limit_train_batches=1.0,  # Useful for fast experiment
         gradient_clip_val=5.0,
-        # resume_from_checkpoint=conf["main_args"]["resume_from"]
+        resume_from_checkpoint=conf["main_args"]["resume_from"]
     )
     trainer.fit(system)
 
@@ -264,7 +264,6 @@ if __name__ == "__main__":
     with open(config_model) as f:
         def_conf = yaml.safe_load(f)
     parser = prepare_parser_from_dict(def_conf, parser=parser)
-    print(parser)
     # Arguments are then parsed into a hierarchical dictionary (instead of
     # flat, as returned by argparse) to facilitate calls to the different
     # asteroid methods (see in main).
@@ -272,7 +271,6 @@ if __name__ == "__main__":
     # the attributes in an non-hierarchical structure. It can be useful to also
     # have it so we included it here but it is not used.
     arg_dic, plain_args = parse_args_as_dict(parser, return_plain_args=True)
-    print(arg_dic)
     main(arg_dic)
 
 """
