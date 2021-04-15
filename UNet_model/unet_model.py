@@ -30,7 +30,7 @@ class UNet(torch.nn.Module):
         self.number_of_samples_in_x = segment * sample_rate
         self.input_number_frames = math.floor(self.number_of_samples_in_x / hop_size) + 1
 
-        self.down1 = down(self.input_number_frames, 64, self.kernel_size_c, self.stride_c)
+        self.down1 = down(1, 16, self.kernel_size_c, self.stride_c)
 
     def forward(self, x):
         # torchaudio.save('../x_0.wav', x[0].unsqueeze(0), sample_rate=8192)
@@ -50,6 +50,8 @@ class UNet(torch.nn.Module):
         )
         X = torch.abs(X)
         print("pasé el torch.stft")
+        # add single channel dimension after batch dimension
+        X = X.unsqueeze(1)
         print(X.shape)
         X1 = self.down1(X)
         print("pasé el self.inc(X)")
