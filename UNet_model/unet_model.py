@@ -5,34 +5,30 @@ import torchaudio
 from unet_parts import *
 
 class UNet(torch.nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=True):
+    #def __init__(self, n_channels, n_classes, bilinear=True):
+    def __init__(self, segment, sample_rate, fft_size, hop_size, window_size):
         super(UNet, self).__init__()
-        self.inc = inconv(n_channels, 64)
-        self.down1 = down(513, 128)
-        self.down2 = down(128, 256)
-        self.down3 = down(256, 512)
-        self.down4 = down(512, 512)
-        self.up1 = up(641, 513, bilinear)
-        self.up2 = up(512, 128, bilinear)
-        self.up3 = up(256, 64, bilinear)
-        self.up4 = up(128, 64, bilinear)
-        self.outc = outconv(513, n_classes)
+        # self.inc = inconv(n_channels, 64)
+        # self.down1 = down(513, 128)
+        # self.down2 = down(128, 256)
+        # self.down3 = down(256, 512)
+        # self.down4 = down(512, 512)
+        # self.up1 = up(641, 513, bilinear)
+        # self.up2 = up(512, 128, bilinear)
+        # self.up3 = up(256, 64, bilinear)
+        # self.up4 = up(128, 64, bilinear)
+        # self.outc = outconv(513, n_classes)
+        self.segment = segment
+        self.sample_rate = sample_rate
+        self.window_size = window_size
+        self.fft_size = fft_size
+        self.hop_size = hop_size
 
-    # def forward(self, x):
-    #     X = torch.stft(x, 1024, 764, 1024)
-    #     X1 = self.inc(X)
-    #     X2 = self.down1(X1)
-    #     X3 = self.down2(X2)
-    #     X4 = self.down3(X3)
-    #     X5 = self.down4(X4)
-    #     X = self.up1(X5, X4)
-    #     X = self.up2(X, X3)
-    #     X = self.up3(X, X2)
-    #     X = self.up4(X, X1)
-    #     X = self.outc(X)
-    #     X = torch.sigmoid(X)
-    #     x = torch.istft(X, 1024, 764, 1024)
-    #     return x
+        self.window = torch.hamming_window(self.window_size)
+        self.number_of_samples_in_x = segment * sample_rate
+        self.input_number_frames = self.number_of_samples_in_x / hop_size + 1
+
+        self.down1 = down(self.input_number_frames, 64)
 
     def forward(self, x):
         # torchaudio.save('../x_0.wav', x[0].unsqueeze(0), sample_rate=8192)
@@ -41,8 +37,10 @@ class UNet(torch.nn.Module):
         # print("x[0]", x[0].shape)
         # print("x[1]", x[1].shape)
         # X = torchaudio.transforms.Spectrogram(1024, 1024, 764, window_fn = torch.hann_window.cuda())(x)
-        X = torch.stft(x, 1024, 764, 1024)
-        print("pasé el torch.stft(x, 1024, 764, 1024)")
+        # usar hamming window: default for speech
+        X = torch.stft(x, self.fft_size, self.hop_size, self.window_size, return_complex=True, window=window)
+        X = torch.abs(X)
+        print("pasé el torch.stft")
         print(X.shape)
         X1 = self.down1(X)
         print("pasé el self.inc(X)")
