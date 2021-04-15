@@ -169,7 +169,9 @@ def main(conf):
             conf["data"]["sample_rate"],
             conf["stft"]["fft_size"],
             conf["stft"]["hop_size"],
-            conf["stft"]["window_size"]
+            conf["stft"]["window_size"],
+            conf["convolution"]["kernel_size_c"],
+            conf["convolution"]["stride_c"],
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:

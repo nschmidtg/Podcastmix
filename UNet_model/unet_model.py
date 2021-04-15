@@ -6,7 +6,7 @@ from unet_parts import *
 
 class UNet(torch.nn.Module):
     #def __init__(self, n_channels, n_classes, bilinear=True):
-    def __init__(self, segment, sample_rate, fft_size, hop_size, window_size):
+    def __init__(self, segment, sample_rate, fft_size, hop_size, window_size, kernel_size_c, stride_c):
         super(UNet, self).__init__()
         # self.inc = inconv(n_channels, 64)
         # self.down1 = down(513, 128)
@@ -23,12 +23,14 @@ class UNet(torch.nn.Module):
         self.window_size = window_size
         self.fft_size = fft_size
         self.hop_size = hop_size
+        self.kernel_size_c = kernel_size_c
+        self.stride_c = stride_c
 
         self.window = torch.hamming_window(self.window_size).cuda()
         self.number_of_samples_in_x = segment * sample_rate
         self.input_number_frames = math.floor(self.number_of_samples_in_x / hop_size) + 1
 
-        self.down1 = down(self.input_number_frames, 64)
+        self.down1 = down(self.input_number_frames, 64, self.kernel_size_c, self.stride_c)
 
     def forward(self, x):
         # torchaudio.save('../x_0.wav', x[0].unsqueeze(0), sample_rate=8192)
