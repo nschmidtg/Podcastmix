@@ -167,7 +167,7 @@ def main(conf):
         model = UNet(
             conf["data"]["segment"],
             conf["data"]["sample_rate"],
-            conf["stft"]["ftt_size"],
+            conf["stft"]["fft_size"],
             conf["stft"]["hop_size"],
             conf["stft"]["window_size"]
         )
