@@ -1,5 +1,5 @@
 # full assembly of the sub-parts to form the complete net
-
+import math
 import torch
 import torchaudio
 from unet_parts import *
@@ -24,9 +24,9 @@ class UNet(torch.nn.Module):
         self.fft_size = fft_size
         self.hop_size = hop_size
 
-        self.window = torch.hamming_window(self.window_size)
+        self.window = torch.hamming_window(self.window_size).cuda()
         self.number_of_samples_in_x = segment * sample_rate
-        self.input_number_frames = self.number_of_samples_in_x / hop_size + 1
+        self.input_number_frames = math.floor(self.number_of_samples_in_x / hop_size) + 1
 
         self.down1 = down(self.input_number_frames, 64)
 
@@ -38,7 +38,14 @@ class UNet(torch.nn.Module):
         # print("x[1]", x[1].shape)
         # X = torchaudio.transforms.Spectrogram(1024, 1024, 764, window_fn = torch.hann_window.cuda())(x)
         # usar hamming window: default for speech
-        X = torch.stft(x, self.fft_size, self.hop_size, self.window_size, return_complex=True, window=window)
+        X = torch.stft(
+            x,
+            self.fft_size,
+            self.hop_size,
+            self.window_size,
+            return_complex=True,
+            window=self.window
+        )
         X = torch.abs(X)
         print("pasé el torch.stft")
         print(X.shape)

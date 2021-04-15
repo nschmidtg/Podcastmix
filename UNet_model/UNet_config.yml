@@ -10,7 +10,7 @@ training:
 # Optim config
 stft:
   fft_size: 1024
-  window_size: 1023
+  window_size: 1024
   hop_size: 768
 convolution:
   stride_c: 2
