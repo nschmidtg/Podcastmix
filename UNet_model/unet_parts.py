@@ -36,7 +36,7 @@ class inconv(nn.Module):
 class down(nn.Module):
     '''(conv => BN => ReLU)'''
     def __init__(self, in_ch, out_ch, kernel_size, stride):
-        super(double_conv, self).__init__()
+        super(down, self).__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(in_ch, out_ch, kernel_size, stride),
             nn.BatchNorm2d(out_ch),
