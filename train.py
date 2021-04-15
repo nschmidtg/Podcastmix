@@ -165,7 +165,11 @@ def main(conf):
         sys.path.append('UNet_model')
         from unet_model import UNet
         model = UNet(
-            2,2
+            conf["data"]["segment"],
+            conf["data"]["sample_rate"],
+            conf["stft"]["ftt_size"],
+            conf["stft"]["hop_size"],
+            conf["stft"]["window_size"]
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
