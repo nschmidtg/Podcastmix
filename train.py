@@ -163,7 +163,7 @@ def main(conf):
             )
     elif(conf["model"]["name"] == "UNet"):
         sys.path.append('UNet_model')
-        from unet_model import UNet
+        from unet_model_transform import UNet
         model = UNet(
             conf["data"]["segment"],
             conf["data"]["sample_rate"],

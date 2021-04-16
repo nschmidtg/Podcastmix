@@ -2,7 +2,7 @@
 import math
 import torch
 import torchaudio
-from unet_parts import *
+from unet_parts_transform import *
 
 class UNet(torch.nn.Module):
     #def __init__(self, n_channels, n_classes, bilinear=True):
@@ -44,23 +44,17 @@ class UNet(torch.nn.Module):
         # print("x[1]", x[1].shape)
         # X = torchaudio.transforms.Spectrogram(1024, 1024, 764, window_fn = torch.hann_window.cuda())(x)
         # usar hamming window: default for speech
-        X = torch.stft(
-            x,
-            self.fft_size,
-            self.hop_size,
-            self.window_size,
-            return_complex=False,
-            window=self.window
-        )
+        # X = torch.stft(
+        #     x,
+        #     self.fft_size,
+        #     self.hop_size,
+        #     self.window_size,
+        #     return_complex=False,
+        #     window=self.window
+        # )
+        X = torchaudio.transforms.Spectrogram(self.fft_size, win_length=self.window_size, hop_length=self.hop_size, window_fn=torch.hamming_window, normalized=True).cuda()(x)
         print("X despues de stft:", X)
         print("despues de stft", X.shape)
-        X = torch.abs(X)
-        print("despues de abs", X.shape)
-        # normalize
-        X -= torch.min(X)
-        X /= torch.max(X)
-        print("pasé el norm")
-        # add single channel dimension after batch dimension
         X = X.unsqueeze(1)
         print(X.shape)
         X1 = self.down1(X)
@@ -77,7 +71,14 @@ class UNet(torch.nn.Module):
         X = X.squeeze(1)
         print("after remove channel dimension:", X.shape)
         print(torch.__version__)
-        x = torch.istft(X, 1024, 764, 1024, window = self.window, normalized=True, return_complex=True)
+        x = torchaudio.transforms.GriffinLim(
+            self.fft_size,
+            win_length=self.window_size,
+            hop_length=self.hop_size,
+            window_fn=torch.hamming_window,
+            normalized=True
+        ).cuda()(X)
+        # x = torch.istft(X, 1024, 764, 1024, window = self.window, normalized=True, return_complex=True)
         print("x audio dp de istft:", x.shape)
         print("pasé el istft")
         return x
