@@ -6,7 +6,7 @@ from unet_parts import *
 
 class UNet(torch.nn.Module):
     #def __init__(self, n_channels, n_classes, bilinear=True):
-    def __init__(self, segment, sample_rate, fft_size, hop_size, window_size, kernel_size_c, stride_c):
+    def __init__(self, segment, sample_rate, fft_size, hop_size, window_size, kernel_size_c, stride_c, kernel_size_d, stride_d):
         super(UNet, self).__init__()
         # self.inc = inconv(n_channels, 64)
         # self.down1 = down(513, 128)
@@ -25,12 +25,15 @@ class UNet(torch.nn.Module):
         self.hop_size = hop_size
         self.kernel_size_c = kernel_size_c
         self.stride_c = stride_c
+        self.kernel_size_d = kernel_size_d
+        self.stride_d = stride_d
 
         self.window = torch.hamming_window(self.window_size).cuda()
         self.number_of_samples_in_x = segment * sample_rate
         self.input_number_frames = math.floor(self.number_of_samples_in_x / hop_size) + 1
 
         self.down1 = down(1, 16, self.kernel_size_c, self.stride_c)
+        self.up1 = up(16, 1, self.kernel_size_d, self.stride_d)
 
     def forward(self, x):
         # torchaudio.save('../x_0.wav', x[0].unsqueeze(0), sample_rate=8192)
@@ -49,6 +52,9 @@ class UNet(torch.nn.Module):
             window=self.window
         )
         X = torch.abs(X)
+        # normalize
+        X -= torch.min(X)
+        X /= torch.max(X)
         print("pasé el torch.stft")
         # add single channel dimension after batch dimension
         X = X.unsqueeze(1)
