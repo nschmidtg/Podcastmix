@@ -172,8 +172,8 @@ def main(conf):
             conf["stft"]["window_size"],
             conf["convolution"]["kernel_size_c"],
             conf["convolution"]["stride_c"],
-            conf["convolution"]["kernel_size_d"],
-            conf["convolution"]["stride_d"],
+            conf["deconvolution"]["kernel_size_d"],
+            conf["deconvolution"]["stride_d"],
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
