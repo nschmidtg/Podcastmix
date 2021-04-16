@@ -31,10 +31,10 @@ optim:
   optimizer: adam
   weight_decay: 1.0e-05
 positional arguments: {}
-stft_filters:
-  stft_kernel_size: 1024
-  stft_n_filters: 1024
-  stft_strid: 768
+stft:
+  fft_size: 1024
+  hop_size: 768
+  window_size: 1024
 training:
   batch_size: 2
   early_stop: true

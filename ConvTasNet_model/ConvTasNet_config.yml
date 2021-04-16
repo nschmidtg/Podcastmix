@@ -15,7 +15,7 @@ masknet:
   hid_chan: 256
 # Training config
 training:
-  epochs: 200
+  epochs: 100
   batch_size: 1
   num_workers: 24
   half_lr: yes
@@ -32,5 +32,3 @@ data:
   sample_rate: 44100
   n_src: 2
   segment: 2
-resume_from:
-  resume_from: None
