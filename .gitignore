@@ -1,0 +1,10 @@
+UNet_model/exp/*
+ConvTasNet_model/exp/*
+DPTNet_model/exp/*
+podcastmix/*
+__pycache__/*
+VCTK/*
+Jamendo/*
+upload-s3.py
+UNet_model/__pycache__/*
+UNet_model/__pycache__/
