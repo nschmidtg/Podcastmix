@@ -34,16 +34,6 @@ parser.add_argument(
     help="Full path to save best validation model"
 )
 
-
-class DeMaskSystem(System):
-    def common_step(self, batch, batch_nb, train=True):
-        inputs, targets = batch
-        est_targets = self(inputs)
-        loss = self.loss_func(est_targets.squeeze(1), targets).mean()
-
-        return loss
-
-
 def main(conf):
     train_set = PodcastMix(
         csv_dir=conf["data"]["train_dir"],

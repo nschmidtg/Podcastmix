@@ -1,33 +1,48 @@
 # Master Thesis
 
 ## Installation
+Create a conda environment:
+```conda create --name thesis python=3.7```
 
-```conda config --add channels conda-forge```
-
-```conda install --file asteroid_requirements.txt```
-
-```conda install git pip```
+```conda activate thesis```
 
 ```sh install_dependencies.sh```
 
-```conda install -c conda-forge ffmpeg```
+Download the dataset:
 
-```conda install -c conda-forge ipython```
+```wget --no-check-certificate 'https://podcastmix.s3.eu-west-3.amazonaws.com/podcastmix.zip' -O podcastmix.zip```
 
-```conda install -c conda-forge ffmpeg```
+Unzip it:
 
-Create the dataset:
+```unzip podcastmix.zip```
 
-```python create_dataset.py```
+## Train network:
+The batch number in the ```[MODEL]_model/[MODEL]_config.yml``` file must match the number of GPUs that you want to train with.
 
-Train with DPRNNTasNet:
+```[MODEL]``` can be any of the following:
 
-```train_DPRNNTasNet.py```
+- ConvTasNet
+- DPTNet
+- UNet
+- SuDORMRFNet
+- LSTMTasNet
+- DPRNNTasNet
 
-Train with ConvTasNet:
+### Train
+```
+CUDA_VISIBLE_DEVICES=1 python train.py --config_model [MODEL]_model/[MODEL]_config.yml
+```
 
-```train_ConvTasNet.py```
+### Continue training from checkpoint
+```
+CUDA_VISIBLE_DEVICES=1 python train.py --config_model [MODEL]_model/[MODEL]_config.yml --resume_from= [MODEL]_model/exp/tmp/checkpoints/epoch\=28-step\=224691.ckpt
+```
 
 
-# Conda
+## Evaluate network:
 
+``` 
+CUDA_VISIBLE_DEVICES=1 python test.py --target_model [MODEL] \
+    --test_dir augmented_dataset/metadata/test/ --task linear_mono \
+        --out_dir=[MODEL]_model/eval/tmp --exp_dir=[MODEL]_model/exp/tmp
+```
