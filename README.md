@@ -43,6 +43,6 @@ CUDA_VISIBLE_DEVICES=1 python train.py --config_model [MODEL]_model/[MODEL]_conf
 
 ``` 
 CUDA_VISIBLE_DEVICES=1 python test.py --target_model [MODEL] \
-    --test_dir augmented_dataset/metadata/test/ \
+    --test_dir podcastmix/metadata/test/ \
         --out_dir=[MODEL]_model/eval/tmp --exp_dir=[MODEL]_model/exp/tmp
 ```
