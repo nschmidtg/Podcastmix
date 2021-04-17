@@ -83,8 +83,8 @@ class UNet(BaseModel):
         T_data = torch.stack([speech_out, music_out], dim=1)
         # T = torch.tensor(T_data)
         print("T", T_data.shape)
-        torchaudio.save('speech0.wav', speech_out[0].unsqueeze(0).cpu(), sample_rate=8192)
-        torchaudio.save('music0.wav', music_out[0].unsqueeze(0).cpu(), sample_rate=8192)
+        # torchaudio.save('speech0.wav', speech_out[0].unsqueeze(0).cpu(), sample_rate=8192)
+        # torchaudio.save('music0.wav', music_out[0].unsqueeze(0).cpu(), sample_rate=8192)
         return T_data
 
     def get_model_args(self):
