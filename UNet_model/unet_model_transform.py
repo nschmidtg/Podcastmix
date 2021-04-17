@@ -30,28 +30,37 @@ class UNet(BaseModel):
     def forward(self, x_in):
         # torchaudio.save('../x_0.wav', x[0].unsqueeze(0), sample_rate=8192)
         X_in = torchaudio.transforms.Spectrogram(self.fft_size, win_length=self.window_size, hop_length=self.hop_size, window_fn=torch.hamming_window, normalized=True).cuda()(x_in)
-        print("despues de stft", X_in.shape)
+        # print("despues de stft", X_in.shape)
         X = X_in.unsqueeze(1)
-        print("despues de unsqueeze", X.shape)
+        # print("despues de unsqueeze", X.shape)
+        print("X antes de down1:", X)
         X1 = self.down1(X)
-        print("pasé el self.down1(X)")
-        print("X:", X.shape)
-        print("X1:", X1.shape)
+        # print("pasé el self.down1(X)")
+        # print("X:", X.shape)
+        # print("X1:", X1.shape)
+        print("X1 antes de up:", X1)
         X = self.up1(X, X1)
-        print("pasé el self.up1(X, X1)")
-        print(X.shape)
+        # print("pasé el self.up1(X, X1)")
+        # print(X.shape)
+        # print("X antes de sigmoid:", X)
         X = self.sigmoid(X)
-        print("pasé el sigmoid")
-        print(X.shape)
+        # print("pasé el sigmoid")
+        # print(X.shape)
 
         # remove channels dimension:
         X = X.squeeze(1)
 
+        print("X:", X.shape)
+        print(X)
+        print("X_in:", X_in.shape)
+        print(X_in)
+        print("1-X shape:", (1-X).shape)
+        print("1-X", (1-X))
         # use mask to separate speech from mix:
         speech = X_in * X
         music = X_in * (1 - X)
-        print("speech after remove channel dimension:", speech.shape)
-        print("music after remove channel dimension:", music.shape)
+        # print("speech after remove channel dimension:", speech.shape)
+        # print("music after remove channel dimension:", music.shape)
 
 
         speech_out = torchaudio.transforms.GriffinLim(
@@ -77,3 +86,18 @@ class UNet(BaseModel):
         torchaudio.save('speech0.wav', speech_out[0].unsqueeze(0).cpu(), sample_rate=8192)
         torchaudio.save('music0.wav', music_out[0].unsqueeze(0).cpu(), sample_rate=8192)
         return T_data
+
+    def get_model_args(self):
+        """Arguments needed to re-instantiate the model."""
+        model_args = {
+            "segment": self.segment,
+            "sample_rate": self.sample_rate,
+            "fft_size": self.fft_size,
+            "hop_size": self.hop_size,
+            "window_size": self.window_size,
+            "kernel_size_c": self.kernel_size_c,
+            "stride_c": self.stride_c,
+            "kernel_size_d": self.kernel_size_d,
+            "stride_d": self.stride_d
+        }
+        return model_args
