@@ -3,7 +3,7 @@ model:
 # Training config
 training:
   epochs: 100
-  batch_size: 2
+  batch_size: 1
   num_workers: 2
   half_lr: yes
   early_stop: yes
@@ -11,7 +11,7 @@ training:
 stft:
   fft_size: 1024
   window_size: 1024
-  hop_size: 768
+  hop_size: 128
 convolution:
   stride_c: 2
   kernel_size_c: 5
