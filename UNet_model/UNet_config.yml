@@ -11,7 +11,7 @@ training:
 stft:
   fft_size: 1024
   window_size: 1024
-  hop_size: 128
+  hop_size: 512
 convolution:
   stride_c: 2
   kernel_size_c: 5
