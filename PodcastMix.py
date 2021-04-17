@@ -57,7 +57,6 @@ class PodcastMix(Dataset):
             segment_frames = int(self.segment * sr)
             if segment_frames > duration:
                 offset = 0
-                print(audio_path)
                 num_frames = segment_frames
             else:
                 # compute start in seconds
@@ -99,9 +98,9 @@ class PodcastMix(Dataset):
             )
             # resample if sr is different than the specified in dataloader
             if not sr == self.sample_rate:
-                audio_signal.transforms.Resample(orig_freq = sf, new_freq = self.sample_rate)
+                audio_signal = torchaudio.transforms.Resample(orig_freq = sr, new_freq = self.sample_rate)(audio_signal)
             # zero pad if the size is smaller than seq_duration
-            seq_duration_samples = int(self.segment * sr)
+            seq_duration_samples = int(self.segment * self.sample_rate)
             total_samples = audio_signal.shape[-1]
             if seq_duration_samples > total_samples:
                 audio_signal = torch.nn.ConstantPad2d(
@@ -131,9 +130,9 @@ class PodcastMix(Dataset):
             )
             # resample if sr is different than the specified in dataloader
             if not sr == self.sample_rate:
-                audio_signal.transforms.Resample(orig_freq = sf, new_freq = self.sample_rate)
+                audio_signal = torchaudio.transforms.Resample(orig_freq = sr, new_freq = self.sample_rate)(audio_signal)
             # zero pad if the size is smaller than seq_duration
-            seq_duration_samples = int(self.segment * sr)
+            seq_duration_samples = int(self.segment * self.sample_rate)
             total_samples = audio_signal.shape[-1]
             if seq_duration_samples > total_samples:
                 audio_signal = torch.nn.ConstantPad2d(
