@@ -8,6 +8,8 @@ from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
+import sys
+
 from PodcastMix import PodcastMix
 from asteroid.engine.optimizers import make_optimizer
 from asteroid.engine.system import System
@@ -159,6 +161,27 @@ def main(conf):
                 factor=0.5,
                 patience=5
             )
+    elif(conf["model"]["name"] == "UNet"):
+        sys.path.append('UNet_model')
+        from unet_model_transform import UNet
+        model = UNet(
+            conf["data"]["segment"],
+            conf["data"]["sample_rate"],
+            conf["stft"]["fft_size"],
+            conf["stft"]["hop_size"],
+            conf["stft"]["window_size"],
+            conf["convolution"]["kernel_size_c"],
+            conf["convolution"]["stride_c"],
+            conf["deconvolution"]["kernel_size_d"],
+            conf["deconvolution"]["stride_d"],
+        )
+        optimizer = make_optimizer(model.parameters(), **conf["optim"])
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(
+                optimizer=optimizer,
+                factor=0.5,
+                patience=5
+            )
 
     # Just after instantiating, save the args. Easy loading in the future.
     exp_dir = conf["model"]["name"] + "_model/" + conf["main_args"]["exp_dir"]
@@ -168,8 +191,6 @@ def main(conf):
         yaml.safe_dump(conf, outfile)
 
     # Define Loss function.
-    # loss_func = PITLossWrapper(multisrc_neg_sisdr, pit_from='perm_avg')
-    # loss_func = pairwise_neg_sisdr
     loss_func = SingleSrcMSE()
     system = System(
         model=model,
@@ -251,7 +272,6 @@ if __name__ == "__main__":
     with open(config_model) as f:
         def_conf = yaml.safe_load(f)
     parser = prepare_parser_from_dict(def_conf, parser=parser)
-    print(parser)
     # Arguments are then parsed into a hierarchical dictionary (instead of
     # flat, as returned by argparse) to facilitate calls to the different
     # asteroid methods (see in main).
@@ -259,7 +279,6 @@ if __name__ == "__main__":
     # the attributes in an non-hierarchical structure. It can be useful to also
     # have it so we included it here but it is not used.
     arg_dic, plain_args = parse_args_as_dict(parser, return_plain_args=True)
-    print(arg_dic)
     main(arg_dic)
 
 """
