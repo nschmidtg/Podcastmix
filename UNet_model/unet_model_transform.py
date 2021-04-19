@@ -25,11 +25,11 @@ class UNet(BaseModel):
 
         # declare layers
         self.down1 = down(1, 16, self.kernel_size_c, self.stride_c)
-        self.up1 = up(16 + 1, 1, self.kernel_size_d, self.stride_d)
+        self.up1 = up(16 + 1, 1, self.kernel_size_d, self.stride_d, (1,0))
         self.sigmoid = torch.nn.Sigmoid()
 
         # Create STFT/iSTFT pair in one line
-        self.stft, self.istft = make_enc_dec('stft', n_filters=512, kernel_size=self.fft_size, stride=self.hop_size)
+        self.stft, self.istft = make_enc_dec('stft', n_filters=1024, kernel_size=self.fft_size, stride=self.hop_size)
 
 
 
@@ -43,16 +43,16 @@ class UNet(BaseModel):
         # first down layer
         X1 = self.down1(X)
         print("X1:", X1.shape)
-        print("after first conv:" X1)
+        print("after first conv:", X1)
         # first up layer
         X = self.up1(X, X1)
-        print("X:", X.shape)
+        print("X after deconv:", X.shape)
         # activation function
         X = self.sigmoid(X)
-        print("X:", X.shape)
+        print("X after sigmoid:", X.shape)
         # remove channels dimension:
         X = X.squeeze(1)
-        print("X:", X.shape)
+        print("X after squeeze:", X.shape)
         # use mask to separate speech from mix
         speech = X_in * X
         print("speech:", speech.shape)
@@ -64,13 +64,17 @@ class UNet(BaseModel):
         music_out = self.istft(music)
         print("speech_out:", speech_out.shape)
         print("music_out:", music_out.shape)
+        # remove additional dimention
+        speech_out = speech_out.squeeze(1)
+        music_out = music_out.squeeze(1)
+
         # add both sources to a tensor to return them
         T_data = torch.stack([speech_out, music_out], dim=1)
         print("T_data:", T_data)
         # # write the sources to disk to check progress
-        # torchaudio.save('speech0.wav', speech_out[0].unsqueeze(0).cpu(), sample_rate=8192)
-        # torchaudio.save('music0.wav', music_out[0].unsqueeze(0).cpu(), sample_rate=8192)
-        
+        torchaudio.save('speech0.wav', speech_out[0].unsqueeze(0).cpu(), sample_rate=8192)
+        torchaudio.save('music0.wav', music_out[0].unsqueeze(0).cpu(), sample_rate=8192)
+
         return T_data
 
     def get_model_args(self):
