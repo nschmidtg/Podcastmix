@@ -44,61 +44,61 @@ class UNet(BaseModel):
     def forward(self, x_in):
         # compute normalized spectrogram
         X_in = self.stft(x_in)
-        print("X_in:", X_in.shape)
+
         # add channels dimension
         X = X_in.unsqueeze(1)
-        print("X:", X.shape)
+
         # first down layer
         X1 = self.down1(X)
-        print("X1:", X1.shape)
+
         # second down layer
         X2 = self.down2(X1)
-        print("X2:", X2.shape)
+
         # third down layer
         X3 = self.down3(X2)
-        print("X3:", X3.shape)
+
         # fourth down layer
         X4 = self.down4(X3)
-        print("X4:", X4.shape)
+
 
 
         # first up layer
         X3 = self.up1(X3, X4)
-        print("X3 after 1 deconv:", X3.shape)
+
         # second up layer
         X2 = self.up2(X2, X3)
-        print("X2 after 2 deconv:", X2.shape)
+
         # third up layer
         X1 = self.up3(X1, X2)
-        print("X1 after 3 deconv:", X1.shape)
+
         # fourth up layer
         X = self.up4(X, X1)
-        print("X after 1 deconv:", X.shape)
+
         
         # activation function
         X = self.sigmoid(X)
-        print("X after sigmoid:", X.shape)
+
         # remove channels dimension:
         X = X.squeeze(1)
-        print("X after squeeze:", X.shape)
+
         # use mask to separate speech from mix
         speech = X_in * X
-        print("speech:", speech.shape)
+
         # use the opposite of the mask to separate music from mix
         music = X_in * (1 - X)
-        print("music:", music.shape)
+
         # use GriffinLim to compute wav from normalized spectrogram
         speech_out = self.istft(speech)
         music_out = self.istft(music)
-        print("speech_out:", speech_out.shape)
-        print("music_out:", music_out.shape)
+
+
         # remove additional dimention
         speech_out = speech_out.squeeze(1)
         music_out = music_out.squeeze(1)
 
         # add both sources to a tensor to return them
         T_data = torch.stack([speech_out, music_out], dim=1)
-        print("T_data:", T_data)
+
         # # write the sources to disk to check progress
         # torchaudio.save('speech0.wav', speech_out[0].unsqueeze(0).cpu(), sample_rate=8192)
         # torchaudio.save('music0.wav', music_out[0].unsqueeze(0).cpu(), sample_rate=8192)
