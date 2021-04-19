@@ -22,14 +22,22 @@ class up(nn.Module):
         as proposed in SINGING VOICE SEPARATION WITH DEEP
         U-NET CONVOLUTIONAL NETWORK
     '''
-    def __init__(self, in_ch, out_ch, kernel_size, stride):
+    def __init__(self, in_ch, out_ch, kernel_size, stride, output_padding, index):
         super(up, self).__init__()
-        self.deconv = nn.Sequential(
-            nn.ConvTranspose2d(17, out_ch, kernel_size, stride),
-            nn.BatchNorm2d(out_ch),
-            nn.ReLU(),
-            nn.Dropout(p=0.5)
-        )
+        if index > 3:
+            self.deconv = nn.Sequential(
+                nn.ConvTranspose2d(in_ch, out_ch, kernel_size, stride, output_padding=output_padding),
+                nn.BatchNorm2d(out_ch),
+                nn.ReLU()
+            )
+        else:
+            # 50% dropout for the first 3 layers
+            self.deconv = nn.Sequential(
+                nn.ConvTranspose2d(in_ch, out_ch, kernel_size, stride, output_padding=output_padding),
+                nn.BatchNorm2d(out_ch),
+                nn.ReLU(),
+                nn.Dropout(p=0.5)
+            )
 
     def forward(self, x1, x2):
         # input is CHW. Taken from 
