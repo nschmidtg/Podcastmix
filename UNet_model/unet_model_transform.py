@@ -25,7 +25,15 @@ class UNet(BaseModel):
 
         # declare layers
         self.down1 = down(1, 16, self.kernel_size_c, self.stride_c)
-        self.up1 = up(16 + 1, 1, self.kernel_size_d, self.stride_d, (1,0))
+        self.down2 = down(16, 32, self.kernel_size_c, self.stride_c)
+        self.down3 = down(32, 64, self.kernel_size_c, self.stride_c)
+        self.down4 = down(64, 128, self.kernel_size_c, self.stride_c)
+
+
+        self.up1 = up(128 + 64, 64, self.kernel_size_d, self.stride_d, (1,0))
+        self.up2 = up(64 + 32, 32, self.kernel_size_d, self.stride_d, (1,0))
+        self.up3 = up(32 + 16, 16, self.kernel_size_d, self.stride_d, (1,0))
+        self.up4 = up(16 + 1, 1, self.kernel_size_d, self.stride_d, (1,0))
         self.sigmoid = torch.nn.Sigmoid()
 
         # Create STFT/iSTFT pair in one line
@@ -43,10 +51,30 @@ class UNet(BaseModel):
         # first down layer
         X1 = self.down1(X)
         print("X1:", X1.shape)
-        print("after first conv:", X1)
+        # second down layer
+        X2 = self.down2(X1)
+        print("X2:", X2.shape)
+        # third down layer
+        X3 = self.down3(X2)
+        print("X3:", X3.shape)
+        # fourth down layer
+        X4 = self.down4(X3)
+        print("X4:", X4.shape)
+
+
         # first up layer
-        X = self.up1(X, X1)
-        print("X after deconv:", X.shape)
+        X3 = self.up1(X3, X4)
+        print("X3 after 1 deconv:", X3.shape)
+        # second up layer
+        X2 = self.up2(X2, X3)
+        print("X2 after 2 deconv:", X2.shape)
+        # third up layer
+        X1 = self.up3(X1, X2)
+        print("X1 after 3 deconv:", X1.shape)
+        # fourth up layer
+        X = self.up4(X, X1)
+        print("X after 1 deconv:", X.shape)
+        
         # activation function
         X = self.sigmoid(X)
         print("X after sigmoid:", X.shape)
@@ -72,8 +100,8 @@ class UNet(BaseModel):
         T_data = torch.stack([speech_out, music_out], dim=1)
         print("T_data:", T_data)
         # # write the sources to disk to check progress
-        torchaudio.save('speech0.wav', speech_out[0].unsqueeze(0).cpu(), sample_rate=8192)
-        torchaudio.save('music0.wav', music_out[0].unsqueeze(0).cpu(), sample_rate=8192)
+        # torchaudio.save('speech0.wav', speech_out[0].unsqueeze(0).cpu(), sample_rate=8192)
+        # torchaudio.save('music0.wav', music_out[0].unsqueeze(0).cpu(), sample_rate=8192)
 
         return T_data
 
