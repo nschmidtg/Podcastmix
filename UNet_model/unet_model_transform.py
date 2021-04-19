@@ -30,10 +30,10 @@ class UNet(BaseModel):
         self.down4 = down(64, 128, self.kernel_size_c, self.stride_c)
 
 
-        self.up1 = up(128 + 64, 64, self.kernel_size_d, self.stride_d, (0,1))
-        self.up2 = up(64 + 32, 32, self.kernel_size_d, self.stride_d, (1,1))
-        self.up3 = up(32 + 16, 16, self.kernel_size_d, self.stride_d, (0,0))
-        self.up4 = up(16 + 1, 1, self.kernel_size_d, self.stride_d, (1,0))
+        self.up1 = up(128 + 64, 64, self.kernel_size_d, self.stride_d, (0,1), 1)
+        self.up2 = up(64 + 32, 32, self.kernel_size_d, self.stride_d, (1,1), 2)
+        self.up3 = up(32 + 16, 16, self.kernel_size_d, self.stride_d, (0,0), 3)
+        self.up4 = up(16 + 1, 1, self.kernel_size_d, self.stride_d, (1,0), 4)
         self.sigmoid = torch.nn.Sigmoid()
 
         # Create STFT/iSTFT pair in one line
