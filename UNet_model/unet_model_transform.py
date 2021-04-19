@@ -28,12 +28,16 @@ class UNet(BaseModel):
         self.down2 = down(16, 32, self.kernel_size_c, self.stride_c)
         self.down3 = down(32, 64, self.kernel_size_c, self.stride_c)
         self.down4 = down(64, 128, self.kernel_size_c, self.stride_c)
+        self.down5 = down(128, 256, self.kernel_size_c, self.stride_c)
+        self.down6 = down(256, 512, self.kernel_size_c, self.stride_c)
 
 
-        self.up1 = up(128 + 64, 64, self.kernel_size_d, self.stride_d, (0,1), 1)
-        self.up2 = up(64 + 32, 32, self.kernel_size_d, self.stride_d, (1,1), 2)
-        self.up3 = up(32 + 16, 16, self.kernel_size_d, self.stride_d, (0,0), 3)
-        self.up4 = up(16 + 1, 1, self.kernel_size_d, self.stride_d, (1,0), 4)
+        self.up1 = up(512, 256, self.kernel_size_d, self.stride_d, (0,1), 1)
+        self.up2 = up(256, 128, self.kernel_size_d, self.stride_d, (0,1), 1)
+        self.up3 = up(128, 64, self.kernel_size_d, self.stride_d, (0,1), 1)
+        self.up4 = up(64, 32, self.kernel_size_d, self.stride_d, (1,1), 2)
+        self.up5 = up(32, 16, self.kernel_size_d, self.stride_d, (0,0), 3)
+        self.up6 = up(16, 1, self.kernel_size_d, self.stride_d, (1,0), 4)
         self.sigmoid = torch.nn.Sigmoid()
 
         # Create STFT/iSTFT pair in one line
@@ -60,20 +64,32 @@ class UNet(BaseModel):
         # fourth down layer
         X4 = self.down4(X3)
         print("X4:", X4.shape)
+        # 5th down layer
+        X5 = self.down5(X4)
+        print("X5:", X5.shape)
+        # 6th down layer
+        X6 = self.down6(X5)
+        print("X6:", X6.shape)
 
 
-        # first up layer
-        X3 = self.up1(X3, X4)
-        print("X3 after 1 deconv:", X3.shape)
-        # second up layer
-        X2 = self.up2(X2, X3)
-        print("X2 after 2 deconv:", X2.shape)
-        # third up layer
-        X1 = self.up3(X1, X2)
-        print("X1 after 3 deconv:", X1.shape)
-        # fourth up layer
-        X = self.up4(X, X1)
-        print("X after 1 deconv:", X.shape)
+        # 1 up layer
+        X5 = self.up1(X5, X6)
+        print("X5 after 1 deconv:", X5.shape)
+        # 2 up layer
+        X4 = self.up2(X4, X5)
+        print("X4 after 2 deconv:", X4.shape)
+        # 3 up layer
+        X3 = self.up3(X3, X4)
+        print("X3 after 3 deconv:", X3.shape)
+        # 4 up layer
+        X2 = self.up4(X2, X3)
+        print("X2 after 4 deconv:", X2.shape)
+        # 5 up layer
+        X1 = self.up5(X1, X2)
+        print("X1 after 5 deconv:", X1.shape)
+        # 6 up layer
+        X = self.up6(X, X1)
+        print("X after 6 deconv:", X.shape)
         
         # activation function
         X = self.sigmoid(X)
