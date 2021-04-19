@@ -2,8 +2,8 @@ model:
   name: DPTNet
 filterbank:
   n_filters: 64
-  kernel_size: 16
-  stride: 8
+  kernel_size: 32
+  stride: 16
 # Network config
 masknet:
   in_chan: 64
