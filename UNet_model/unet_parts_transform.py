@@ -33,6 +33,7 @@ class up(nn.Module):
         else:
             # 50% dropout for the first 3 layers
             self.deconv = nn.Sequential(
+                nn.Upsample(scale_factor=2),
                 nn.ConvTranspose2d(in_ch, out_ch, kernel_size, stride, output_padding=output_padding),
                 nn.BatchNorm2d(out_ch),
                 nn.ReLU(),
