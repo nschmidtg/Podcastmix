@@ -28,16 +28,24 @@ class UNet(BaseModel):
         self.down2 = down(16, 32, self.kernel_size_c, self.stride_c)
         self.down3 = down(32, 64, self.kernel_size_c, self.stride_c)
         self.down4 = down(64, 128, self.kernel_size_c, self.stride_c)
+        self.down5 = down(128, 256, self.kernel_size_c, self.stride_c)
+        self.down6 = down(256, 512, self.kernel_size_c, self.stride_c)
 
 
-        self.up1 = up(128 + 64, 64, self.kernel_size_d, self.stride_d, (0,1), 1)
-        self.up2 = up(64 + 32, 32, self.kernel_size_d, self.stride_d, (1,1), 2)
-        self.up3 = up(32 + 16, 16, self.kernel_size_d, self.stride_d, (0,0), 3)
-        self.up4 = up(16 + 1, 1, self.kernel_size_d, self.stride_d, (1,0), 4)
-        self.sigmoid = torch.nn.Sigmoid()
+        self.up1 = up(512, 256, self.kernel_size_d, self.stride_d, (0,1), 1)
+        self.up2 = up(256, 128, self.kernel_size_d, self.stride_d, (1,1), 2)
+        self.up3 = up(128, 64, self.kernel_size_d, self.stride_d, (0,0), 3)
+        self.up4 = up(64, 32, self.kernel_size_d, self.stride_d, (1,0), 4)
+        self.up5 = up(32, 16, self.kernel_size_d, self.stride_d, (1,0), 5)
+        self.last_layer = last_layer(16, 1, self.kernel_size_d, self.stride_d, (0, 0))
 
         # Create STFT/iSTFT pair in one line
-        self.stft, self.istft = make_enc_dec('stft', n_filters=1024, kernel_size=self.fft_size, stride=self.hop_size)
+        self.stft, self.istft = make_enc_dec(
+            'stft',
+            n_filters=1024,
+            kernel_size=self.fft_size,
+            stride=self.hop_size
+        )
 
 
 
@@ -47,36 +55,56 @@ class UNet(BaseModel):
 
         # add channels dimension
         X = X_in.unsqueeze(1)
+        print("X:", X.shape)
 
         # first down layer
         X1 = self.down1(X)
+        print("X1:", X1.shape)
 
         # second down layer
         X2 = self.down2(X1)
+        print("X2:", X2.shape)
 
         # third down layer
         X3 = self.down3(X2)
+        print("X3:", X3.shape)
 
         # fourth down layer
         X4 = self.down4(X3)
+        print("X4:", X4.shape)
 
+        # 5 down layer
+        X5 = self.down5(X4)
+        print("X5:", X5.shape)
+
+        # 6 down layer
+        X6 = self.down6(X5)
+        print("X6:", X6.shape)
 
 
         # first up layer
+        X5 = self.up1(X5, X6)
+        print("X5:", X5.shape)
+
+        # 2 up layer
+        X4 = self.up1(X4, X5)
+        print("X4:", X4.shape)
+
+        # 3 up layer
         X3 = self.up1(X3, X4)
+        print("X3:", X3.shape)
 
-        # second up layer
+        # 4 up layer
         X2 = self.up2(X2, X3)
+        print("X2:", X2.shape)
 
-        # third up layer
+        # 5 up layer
         X1 = self.up3(X1, X2)
+        print("X1:", X1.shape)
 
-        # fourth up layer
-        X = self.up4(X, X1)
-
-        
-        # activation function
-        X = self.sigmoid(X)
+        # last up layer (no concat after transposed conv)
+        X = self.last_layer(X1)
+        print("X:", X.shape)
 
         # remove channels dimension:
         X = X.squeeze(1)
