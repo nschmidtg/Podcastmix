@@ -40,15 +40,22 @@ class up(nn.Module):
             )
 
     def forward(self, x1, x2):
-        # input is CHW. Taken from 
-        # https://github.com/Steve-Tod/Audio-source-separation-with-Unet/blob/master/models/unet/unet_parts.py
-        diffY = x2.size()[2] - x1.size()[2]
-        diffX = x2.size()[3] - x1.size()[3]
-
-        x1 = F.pad(x1, (diffX // 2, diffX - diffX//2,
-                        diffY // 2, diffY - diffY//2))
-
-        x = torch.cat([x2, x1], dim=1)
         x = self.deconv(x)
+        x = torch.cat([x2, x1], dim=1)
 
         return x
+
+class last_layer(nn.Module):
+    def __init__(self, in_ch, out_ch, kernel_size, stride, output_padding):
+        super(last_layer, self).__init__()
+        self.deconv = nn.Sequential(
+            nn.ConvTranspose2d(in_ch, out_ch, kernel_size, stride, output_padding=output_padding),
+            nn.BatchNorm2d(out_ch),
+            nn.Sigmoid()
+        )
+    
+    def forward(self, x):
+        x = self.deconv(x)
+        
+        return x
+        
