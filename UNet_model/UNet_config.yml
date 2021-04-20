@@ -11,7 +11,7 @@ training:
 stft:
   fft_size: 1024
   window_size: 1024
-  hop_size: 128
+  hop_size: 32
 convolution:
   stride_c: 2
   kernel_size_c: 5
@@ -29,7 +29,7 @@ deconvolution:
   last_layer_activation_d: sigmoid
 optim:
   optimizer: adam
-  lr: 0.0001
+  lr: 0.001
   weight_decay: !!float 1e-5
 # Data config
 data:
