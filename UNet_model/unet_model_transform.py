@@ -32,12 +32,12 @@ class UNet(BaseModel):
         self.down6 = down(256, 512, self.kernel_size_c, self.stride_c)
 
 
-        self.up1 = up(512, 256, self.kernel_size_d, self.stride_d, (0,1), 1)
-        self.up2 = up(256, 128, self.kernel_size_d, self.stride_d, (0,0), 2)
-        self.up3 = up(128, 64, self.kernel_size_d, self.stride_d, (0,0), 3)
-        self.up4 = up(64, 32, self.kernel_size_d, self.stride_d, (1,1), 4)
+        self.up1 = up(512, 256, self.kernel_size_d, self.stride_d, (0,0), 1)
+        self.up2 = up(256, 128, self.kernel_size_d, self.stride_d, (0,1), 2)
+        self.up3 = up(128, 64, self.kernel_size_d, self.stride_d, (0,1), 3)
+        self.up4 = up(64, 32, self.kernel_size_d, self.stride_d, (1,0), 4)
         self.up5 = up(32, 16, self.kernel_size_d, self.stride_d, (0,0), 5)
-        self.last_layer = last_layer(16, 1, self.kernel_size_d, self.stride_d, (1, 0))
+        self.last_layer = last_layer(16, 1, self.kernel_size_d, self.stride_d, (1, 1))
 
         # Create STFT/iSTFT pair in one line
         self.stft, self.istft = make_enc_dec(
