@@ -19,6 +19,7 @@ import importlib
 from asteroid.models import save_publishable
 from asteroid.utils import tensors_to_device
 from asteroid.metrics import WERTracker, MockWERTracker
+sys.path.append('UNet_model')
 
 
 parser = argparse.ArgumentParser()
@@ -80,7 +81,10 @@ def main(conf):
         MockWERTracker()
     )
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
-    AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
+    if conf["target_model"] == "UNet":
+        AsteroidModelModule = "unet_model_transform"
+    else:
+        AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
     model = AsteroidModelModule.from_pretrained(model_path)
     # model = ConvTasNet
     # Handle device placement
