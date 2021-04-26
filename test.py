@@ -10,6 +10,7 @@ import pandas as pd
 from tqdm import tqdm
 from pprint import pprint
 from pathlib import Path
+import sys
 
 from asteroid.metrics import get_metrics
 from PodcastMix import PodcastMix
@@ -82,7 +83,7 @@ def main(conf):
     )
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
     if conf["target_model"] == "UNet":
-        AsteroidModelModule = "unet_model_transform"
+        AsteroidModelModule = my_import("unet_model_transform.UNet")
     else:
         AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
     model = AsteroidModelModule.from_pretrained(model_path)
@@ -114,7 +115,13 @@ def main(conf):
         mix, sources, ids = test_set[idx]
         print("ids of test set:", ids)
         mix, sources = tensors_to_device([mix, sources], device=model_device)
-        est_sources = model(mix)
+        if conf["target_model"] == "UNet":
+            est_sources = model(mix.unsqueeze(0)).squeeze(0)
+            print("UNet est_sources:", est_sources.shape)
+        else:
+            est_sources = model(mix)
+            print("NOT UNet est_sources:", est_sources.shape)
+
         # sources = sources[None]
         # est_sources = est_sources[None]
         loss = loss_func(est_sources, sources)
