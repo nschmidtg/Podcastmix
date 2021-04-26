@@ -155,6 +155,7 @@ def main(conf):
         sys.path.append('UNet_model')
         from unet_model import UNet
         model = UNet(
+            conf["data"]["sample_rate"],
             conf["stft"]["fft_size"],
             conf["stft"]["hop_size"],
             conf["stft"]["window_size"],
@@ -173,6 +174,7 @@ def main(conf):
         sys.path.append('OpenUnmix_model')
         from openunmix_model import OpenUnmix
         model = OpenUnmix(
+            conf["data"]["sample_rate"],
             conf["stft"]["nb_bins"],
             conf["stft"]["hop_size"],
             conf["stft"]["window_size"]

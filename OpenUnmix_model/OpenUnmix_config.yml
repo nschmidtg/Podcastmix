@@ -3,15 +3,15 @@ model:
 # Training config
 training:
   epochs: 100
-  batch_size: 2
+  batch_size: 1
   num_workers: 2
   half_lr: yes
   early_stop: yes
 # Optim config
 stft:
-  nb_bins: 4096
-  window_size: 4096
-  hop_size: 256
+  nb_bins: 1024
+  window_size: 1024
+  hop_size: 32
 optim:
   optimizer: adam
   lr: 0.001
