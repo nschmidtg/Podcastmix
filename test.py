@@ -83,7 +83,7 @@ def main(conf):
     )
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
     if conf["target_model"] == "UNet":
-        AsteroidModelModule = my_import("unet_model_transform.UNet")
+        AsteroidModelModule = my_import("unet_model.UNet")
     else:
         AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
     model = AsteroidModelModule.from_pretrained(model_path)
