@@ -9,7 +9,7 @@ training:
   early_stop: yes
 # Optim config
 stft:
-  nb_bins: 1024
+  nb_bins: 1026
   window_size: 1024
   hop_size: 32
 optim:
@@ -20,6 +20,6 @@ optim:
 data:
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
-  sample_rate: 44100
+  sample_rate: 8000
   n_src: 2
   segment: 2
