@@ -169,6 +169,22 @@ def main(conf):
                 patience=5
             )
 
+    elif(conf["model"]["name"] == "OpenUnmix"):
+        sys.path.append('OpenUnmix_model')
+        from openunmix_model import OpenUnmix
+        model = OpenUnmix(
+            conf["stft"]["nb_bins"],
+            conf["stft"]["hop_size"],
+            conf["stft"]["window_size"]
+        )
+        optimizer = make_optimizer(model.parameters(), **conf["optim"])
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(
+                optimizer=optimizer,
+                factor=0.5,
+                patience=5
+            )
+
     # Just after instantiating, save the args. Easy loading in the future.
     exp_dir = conf["model"]["name"] + "_model/" + conf["main_args"]["exp_dir"]
     os.makedirs(exp_dir, exist_ok=True)
