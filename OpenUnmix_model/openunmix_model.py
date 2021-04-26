@@ -65,13 +65,14 @@ class OpenUnmix(BaseModel):
         self.output_mean = Parameter(torch.ones(self.nb_output_bins).float())
 
 
+        print(self.nb_bins, self.window_size, self.hop_size)
         # Create STFT/iSTFT pair in one line
         self.stft, self.istft = make_enc_dec(
             'stft',
-            n_filters=self.nb_bins - 2,
-            kernel_size=self.window_size,
-            stride=self.hop_size,
-            sample_rate=self.sample_rate
+            n_filters=1024,
+            kernel_size=1024,
+            stride=32,
+            sample_rate=8000,
         )
 
         print("***************:", self.nb_bins)
@@ -81,6 +82,7 @@ class OpenUnmix(BaseModel):
         print("input x_in:", x_in.shape)
         # compute normalized spectrogram
         X_in = self.stft(x_in)
+        print("after stft", X_in.shape)
         aux_istft = self.istft(X_in)
         print("shape of aux_istst", aux_istft.shape)
 
@@ -185,12 +187,9 @@ class OpenUnmix(BaseModel):
     def get_model_args(self):
         """Arguments needed to re-instantiate the model."""
         model_args = {
-            "segment": self.segment,
             "sample_rate": self.sample_rate,
-            "fft_size": self.fft_size,
+            "nb_bins": self.nb_bins,
             "hop_size": self.hop_size,
-            "window_size": self.window_size,
-            "kernel_size": self.kernel_size,
-            "stride": self.stride
+            "window_size": self.window_size
         }
         return model_args
