@@ -24,31 +24,44 @@ class up(nn.Module):
     '''
     def __init__(self, in_ch, out_ch, kernel_size, stride, output_padding, index):
         super(up, self).__init__()
+        self.up_conv = nn.ConvTranspose2d(in_ch, out_ch, kernel_size, stride, output_padding=output_padding)
         if index > 3:
             self.deconv = nn.Sequential(
-                nn.ConvTranspose2d(in_ch, out_ch, kernel_size, stride, output_padding=output_padding),
+                nn.ConvTranspose2d(in_ch, out_ch, 1, 1),
                 nn.BatchNorm2d(out_ch),
                 nn.ReLU()
             )
         else:
             # 50% dropout for the first 3 layers
             self.deconv = nn.Sequential(
-                nn.ConvTranspose2d(in_ch, out_ch, kernel_size, stride, output_padding=output_padding),
+                nn.ConvTranspose2d(in_ch, out_ch, 1, 1),
                 nn.BatchNorm2d(out_ch),
                 nn.ReLU(),
-                nn.Dropout(p=0.5)
+#                nn.Dropout(p=0.5)
             )
 
     def forward(self, x1, x2):
-        # input is CHW. Taken from 
-        # https://github.com/Steve-Tod/Audio-source-separation-with-Unet/blob/master/models/unet/unet_parts.py
-        diffY = x2.size()[2] - x1.size()[2]
-        diffX = x2.size()[3] - x1.size()[3]
+        print("x_antes de up_conv:", x2.shape)
+        x = self.up_conv(x2)
+        print("x_dp de up_conv:", x.shape)
+        x = torch.cat([x, x1], dim=1)
+        print("dp de cat", x.shape)
+        x = self.deconv(x)
 
-        x1 = F.pad(x1, (diffX // 2, diffX - diffX//2,
-                        diffY // 2, diffY - diffY//2))
 
-        x = torch.cat([x2, x1], dim=1)
+        return x
+
+class last_layer(nn.Module):
+    def __init__(self, in_ch, out_ch, kernel_size, stride, output_padding):
+        super(last_layer, self).__init__()
+        self.deconv = nn.Sequential(
+            nn.ConvTranspose2d(in_ch, out_ch, kernel_size, stride, output_padding=output_padding),
+            nn.BatchNorm2d(out_ch),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
         x = self.deconv(x)
 
         return x
+

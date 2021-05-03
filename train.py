@@ -153,17 +153,31 @@ def main(conf):
             )
     elif(conf["model"]["name"] == "UNet"):
         sys.path.append('UNet_model')
-        from unet_model_transform import UNet
+        from unet_model import UNet
         model = UNet(
-            conf["data"]["segment"],
             conf["data"]["sample_rate"],
             conf["stft"]["fft_size"],
             conf["stft"]["hop_size"],
             conf["stft"]["window_size"],
-            conf["convolution"]["kernel_size_c"],
-            conf["convolution"]["stride_c"],
-            conf["deconvolution"]["kernel_size_d"],
-            conf["deconvolution"]["stride_d"],
+            conf["convolution"]["kernel_size"],
+            conf["convolution"]["stride"],
+        )
+        optimizer = make_optimizer(model.parameters(), **conf["optim"])
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(
+                optimizer=optimizer,
+                factor=0.5,
+                patience=5
+            )
+
+    elif(conf["model"]["name"] == "OpenUnmix"):
+        sys.path.append('OpenUnmix_model')
+        from openunmix_model import OpenUnmix
+        model = OpenUnmix(
+            conf["data"]["sample_rate"],
+            conf["stft"]["nb_bins"],
+            conf["stft"]["hop_size"],
+            conf["stft"]["window_size"]
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:

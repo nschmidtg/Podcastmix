@@ -6,7 +6,7 @@ convolution:
   stride_c: 2
 data:
   n_src: 2
-  sample_rate: 8192
+  sample_rate: 44160
   segment: 2
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
@@ -23,20 +23,20 @@ main_args:
   config_model: UNet_model/UNet_config.yml
   exp_dir: exp/tmp
   help: null
-  resume_from: null
+  resume_from: UNet_model/exp/tmp/checkpoints/epoch=21-step=329468.ckpt
 model:
   name: UNet
 optim:
-  lr: 0.0001
+  lr: 0.001
   optimizer: adam
   weight_decay: 1.0e-05
 positional arguments: {}
 stft:
   fft_size: 1024
-  hop_size: 128
+  hop_size: 256
   window_size: 1024
 training:
-  batch_size: 1
+  batch_size: 2
   early_stop: true
   epochs: 100
   half_lr: true
