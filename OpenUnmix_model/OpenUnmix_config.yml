@@ -1,20 +1,17 @@
 model: 
-  name: UNet
+  name: OpenUnmix
 # Training config
 training:
   epochs: 100
   batch_size: 2
-  num_workers: 2
+  num_workers: 24
   half_lr: yes
   early_stop: yes
 # Optim config
 stft:
-  fft_size: 4096
-  window_size: 4096
-  hop_size: 256
-convolution:
-  stride: 2
-  kernel_size: 5
+  nb_bins: 1026
+  window_size: 1024
+  hop_size: 32
 optim:
   optimizer: adam
   lr: 0.001
@@ -23,6 +20,6 @@ optim:
 data:
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
-  sample_rate: 44160
+  sample_rate: 8000
   n_src: 2
   segment: 2

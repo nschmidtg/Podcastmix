@@ -10,6 +10,7 @@ import pandas as pd
 from tqdm import tqdm
 from pprint import pprint
 from pathlib import Path
+import sys
 
 from asteroid.metrics import get_metrics
 from PodcastMix import PodcastMix
@@ -19,6 +20,8 @@ import importlib
 from asteroid.models import save_publishable
 from asteroid.utils import tensors_to_device
 from asteroid.metrics import WERTracker, MockWERTracker
+sys.path.append('UNet_model')
+sys.path.append('OpenUnmix_model')
 
 
 parser = argparse.ArgumentParser()
@@ -80,8 +83,13 @@ def main(conf):
         MockWERTracker()
     )
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
-    AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
-    model = AsteroidModelModule.from_pretrained(model_path)
+    if conf["target_model"] == "UNet":
+        AsteroidModelModule = my_import("unet_model.UNet")
+    elif conf["target_model"] == "OpenUnmix":
+        AsteroidModelModule = my_import("openunmix_model.OpenUnmix")
+    else:
+        AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
+    model = AsteroidModelModule.from_pretrained(model_path, sample_rate=44160)
     # model = ConvTasNet
     # Handle device placement
     if conf["use_gpu"]:
@@ -110,7 +118,13 @@ def main(conf):
         mix, sources, ids = test_set[idx]
         print("ids of test set:", ids)
         mix, sources = tensors_to_device([mix, sources], device=model_device)
-        est_sources = model(mix)
+        if conf["target_model"] == "UNet" or conf["target_model"] == "OpenUnmix":
+            est_sources = model(mix.unsqueeze(0)).squeeze(0)
+            print("UNet or OpenUnmix est_sources:", est_sources.shape)
+        else:
+            est_sources = model(mix)
+            print("NOT UNet est_sources:", est_sources.shape)
+
         # sources = sources[None]
         # est_sources = est_sources[None]
         loss = loss_func(est_sources, sources)
