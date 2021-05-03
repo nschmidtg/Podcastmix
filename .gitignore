@@ -1,3 +1,5 @@
+OpenUnmix_model/exp/*
+UNet_model/exp/*
 .ipynb_checkpoints/
 Test some things tesis.ipynb
 asteroid/*
