@@ -89,7 +89,7 @@ def main(conf):
         AsteroidModelModule = my_import("openunmix_model.OpenUnmix")
     else:
         AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
-    model = AsteroidModelModule.from_pretrained(model_path)
+    model = AsteroidModelModule.from_pretrained(model_path, sample_rate=44160)
     # model = ConvTasNet
     # Handle device placement
     if conf["use_gpu"]:
