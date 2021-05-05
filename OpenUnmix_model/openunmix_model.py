@@ -72,7 +72,7 @@ class OpenUnmix(BaseModel):
             n_filters=1024,
             kernel_size=1024,
             stride=32,
-            sample_rate=8000,
+            sample_rate=44100,
         )
 
         print("***************:", self.nb_bins)

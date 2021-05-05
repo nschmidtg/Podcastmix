@@ -15,8 +15,8 @@ masknet:
   hid_chan: 256
 # Training config
 training:
-  epochs: 100
-  batch_size: 1
+  epochs: 500
+  batch_size: 2
   num_workers: 24
   half_lr: yes
   early_stop: yes
