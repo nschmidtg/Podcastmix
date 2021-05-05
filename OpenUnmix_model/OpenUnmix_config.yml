@@ -20,6 +20,6 @@ optim:
 data:
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
-  sample_rate: 8000
+  sample_rate: 44100
   n_src: 2
   segment: 2
