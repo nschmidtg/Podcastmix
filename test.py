@@ -20,8 +20,6 @@ import importlib
 from asteroid.models import save_publishable
 from asteroid.utils import tensors_to_device
 from asteroid.metrics import WERTracker, MockWERTracker
-sys.path.append('UNet_model')
-sys.path.append('OpenUnmix_model')
 
 
 parser = argparse.ArgumentParser()
@@ -84,12 +82,17 @@ def main(conf):
     )
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
     if conf["target_model"] == "UNet":
+        sys.path.append('UNet_model')
+        AsteroidModelModule = my_import("unet_model.UNet")
+    elif conf["target_model"] == "UNet_8k":
+        sys.path.append('UNet_8k_model')
         AsteroidModelModule = my_import("unet_model.UNet")
     elif conf["target_model"] == "OpenUnmix":
+        sys.path.append('OpenUnmix_model')
         AsteroidModelModule = my_import("openunmix_model.OpenUnmix")
     else:
         AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
-    model = AsteroidModelModule.from_pretrained(model_path, sample_rate=44160)
+    model = AsteroidModelModule.from_pretrained(model_path, conf["sample_rate"])
     # model = ConvTasNet
     # Handle device placement
     if conf["use_gpu"]:
