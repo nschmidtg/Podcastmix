@@ -76,7 +76,7 @@ class PodcastMix(Dataset):
 
         return offset, segment_frames
 
-    def load_mono_non_silent_random_segment(audio_path):
+    def load_mono_non_silent_random_segment(self, audio_path):
         """ Randomly selects a non_silent part of the audio given by audio_path
 
         Parameters:
@@ -121,10 +121,10 @@ class PodcastMix(Dataset):
         # convert to mono
         if len(audio_signal) == 2:
             audio_signal = torch.mean(audio_signal, dim=0).unsqueeze(0)
-        
+
         return audio_signal
 
-    def rms(audio):
+    def rms(self, audio):
         """ computes the RMS of an audio signal
         """
 
@@ -145,14 +145,14 @@ class PodcastMix(Dataset):
 
         # We want to cleanly separate Speech, so its the first source
         # in the sources_list
-        speech_signal = load_mono_non_silent_random_segment(row_speech['speech_path'])
+        speech_signal = self.load_mono_non_silent_random_segment(row_speech['speech_path'])
         sources_list.append(speech_signal)
 
         # now for music:
-        music_signal = load_mono_non_silent_random_segment(row_speech['music_path'])
+        music_signal = self.load_mono_non_silent_random_segment(row_music['music_path'])
 
         # gain based on RMS in order to have RMS(speech_signal) >= RMS(music_singal)
-        reduction_factor = torch.mean(speech_signal) / torch.mean(music_signal)
+        reduction_factor = self.rms(speech_signal) / self.rms(music_signal)
 
         # now we know that rms(r * music_signal) == rms(speech_signal)
         if self.shuffle_tracks:

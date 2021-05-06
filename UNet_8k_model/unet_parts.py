@@ -3,6 +3,16 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+class input_layer(nn.Module):
+    '''(conv => BN => LeackyReLU)'''
+    def __init__(self, out_ch):
+        super(input_layer, self).__init__()
+        self.bn = nn.BatchNorm2d(out_ch)
+
+    def forward(self, x):
+        x = self.bn(x)
+        return x
+
 class down(nn.Module):
     '''(conv => BN => LeackyReLU)'''
     def __init__(self, in_ch, out_ch, kernel_size, stride):
@@ -16,6 +26,7 @@ class down(nn.Module):
     def forward(self, x):
         x = self.conv(x)
         return x
+        
 class up(nn.Module):
     '''
         (concatenation => deconv => BN => ReLU => Dropout )
@@ -41,11 +52,11 @@ class up(nn.Module):
             )
 
     def forward(self, x1, x2):
-        # print("x_antes de up_conv:", x2.shape)
+        print("x_antes de up_conv:", x2.shape)
         x = self.up_conv(x2)
-        # print("x_dp de up_conv:", x.shape)
+        print("x_dp de up_conv:", x.shape)
         x = torch.cat([x, x1], dim=1)
-        # print("dp de cat", x.shape)
+        print("dp de cat", x.shape)
         x = self.deconv(x)
 
 
