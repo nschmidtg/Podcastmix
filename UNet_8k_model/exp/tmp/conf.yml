@@ -4,7 +4,7 @@ convolution:
 data:
   n_src: 2
   sample_rate: 8192
-  segment: 14
+  segment: 12
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
 main_args:
@@ -15,7 +15,7 @@ main_args:
 model:
   name: UNet_8k
 optim:
-  lr: 0.001
+  lr: 0.0005
   optimizer: adam
   weight_decay: 1.0e-05
 positional arguments: {}
@@ -24,7 +24,7 @@ stft:
   hop_size: 768
   window_size: 1024
 training:
-  batch_size: 2
+  batch_size: 1
   early_stop: true
   epochs: 100
   half_lr: true

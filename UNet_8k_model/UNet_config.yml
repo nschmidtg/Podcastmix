@@ -3,7 +3,7 @@ model:
 # Training config
 training:
   epochs: 100
-  batch_size: 2
+  batch_size: 1
   num_workers: 24
   half_lr: yes
   early_stop: yes
@@ -17,7 +17,7 @@ convolution:
   kernel_size: 5
 optim:
   optimizer: adam
-  lr: 0.001
+  lr: 0.0005
   weight_decay: !!float 1e-5
 # Data config
 data:
@@ -25,4 +25,4 @@ data:
   valid_dir: podcastmix/metadata/val
   sample_rate: 8192
   n_src: 2
-  segment: 14
+  segment: 12

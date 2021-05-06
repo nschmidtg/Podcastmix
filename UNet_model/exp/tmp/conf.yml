@@ -11,7 +11,7 @@ main_args:
   config_model: UNet_model/UNet_config.yml
   exp_dir: exp/tmp
   help: null
-  resume_from: UNet_model/exp/tmp/checkpoints/epoch=37-step=294423.ckpt
+  resume_from: null
 model:
   name: UNet
 optim:
