@@ -13,3 +13,4 @@ Jamendo/*
 upload-s3.py
 UNet_model/__pycache__/*
 UNet_model/__pycache__/
+UNet_8k_model/exp/*
