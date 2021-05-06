@@ -169,7 +169,24 @@ def main(conf):
                 factor=0.5,
                 patience=5
             )
-
+    elif(conf["model"]["name"] == "UNet_8k"):
+        sys.path.append('UNet_8k_model')
+        from unet_model import UNet
+        model = UNet(
+            conf["data"]["sample_rate"],
+            conf["stft"]["fft_size"],
+            conf["stft"]["hop_size"],
+            conf["stft"]["window_size"],
+            conf["convolution"]["kernel_size"],
+            conf["convolution"]["stride"],
+        )
+        optimizer = make_optimizer(model.parameters(), **conf["optim"])
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(
+                optimizer=optimizer,
+                factor=0.5,
+                patience=5
+            )
     elif(conf["model"]["name"] == "OpenUnmix"):
         sys.path.append('OpenUnmix_model')
         from openunmix_model import OpenUnmix
