@@ -1,0 +1,31 @@
+convolution:
+  kernel_size: 5
+  stride: 2
+data:
+  n_src: 2
+  sample_rate: 8192
+  segment: 14
+  train_dir: podcastmix/metadata/train
+  valid_dir: podcastmix/metadata/val
+main_args:
+  config_model: UNet_8k_model/UNet_config.yml
+  exp_dir: exp/tmp
+  help: null
+  resume_from: null
+model:
+  name: UNet_8k
+optim:
+  lr: 0.001
+  optimizer: adam
+  weight_decay: 1.0e-05
+positional arguments: {}
+stft:
+  fft_size: 1024
+  hop_size: 768
+  window_size: 1024
+training:
+  batch_size: 2
+  early_stop: true
+  epochs: 100
+  half_lr: true
+  num_workers: 24
