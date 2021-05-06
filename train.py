@@ -187,6 +187,57 @@ def main(conf):
                 factor=0.5,
                 patience=5
             )
+    elif(conf["model"]["name"] == "UNet_8k_spec"):
+        sys.path.append('UNet_8k_spec_model')
+        from unet_model import UNet
+        model = UNet(
+            conf["data"]["sample_rate"],
+            conf["stft"]["fft_size"],
+            conf["stft"]["hop_size"],
+            conf["stft"]["window_size"],
+            conf["convolution"]["kernel_size"],
+            conf["convolution"]["stride"],
+        )
+        optimizer = make_optimizer(model.parameters(), **conf["optim"])
+        if conf["training"]["half_lr"]:
+            scheduler = ReduceLROnPlateau(
+                optimizer=optimizer,
+                factor=0.5,
+                patience=5
+            )
+        train_set = PodcastMix(
+            csv_dir=conf["data"]["train_dir"],
+            sample_rate=conf["data"]["sample_rate"],
+            segment=conf["data"]["segment"],
+            shuffle_tracks=True,
+            spectrogram=True
+        )
+
+        val_set = PodcastMix(
+            csv_dir=conf["data"]["valid_dir"],
+            sample_rate=conf["data"]["sample_rate"],
+            segment=conf["data"]["segment"],
+            shuffle_tracks=True,
+            spectrogram=True
+        )
+
+        train_loader = DataLoader(
+            train_set,
+            shuffle=True,
+            batch_size=conf["training"]["batch_size"],
+            num_workers=conf["training"]["num_workers"],
+            drop_last=True,
+            pin_memory=True
+        )
+
+        val_loader = DataLoader(
+            val_set,
+            shuffle=False,
+            batch_size=conf["training"]["batch_size"],
+            num_workers=conf["training"]["num_workers"],
+            drop_last=True,
+            pin_memory=True
+        )
     elif(conf["model"]["name"] == "OpenUnmix"):
         sys.path.append('OpenUnmix_model')
         from openunmix_model import OpenUnmix
