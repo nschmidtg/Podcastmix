@@ -176,9 +176,6 @@ class PodcastMix(Dataset):
         mixture = sources_list[0] + sources_list[1]
         mixture = torch.squeeze(mixture)
 
-        if self.spectrogram:
-            mixture = self.stft(mixture)
-
         # Stack sources
         sources = np.vstack(sources_list)
         # Convert sources to tensor

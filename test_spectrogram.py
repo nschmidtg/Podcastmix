@@ -81,7 +81,7 @@ def main(conf):
     wer_tracker = (
         MockWERTracker()
     )
-    stft, istft = make_enc_dec('stft', 1024, 1024, sample_rate=self.sample_rate, output_padding=512)
+    stft, istft = make_enc_dec('stft', 1024, 1024, sample_rate=conf["sample_rate"], output_padding=512)
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
     if conf["target_model"] == "UNet_8k_spec":
         sys.path.append('UNet_8k_spec_model')
@@ -94,7 +94,7 @@ def main(conf):
             shuffle_tracks=False,
             spectrogram=True
         )
-    model = AsteroidModelModule.from_pretrained(model_path, conf["sample_rate"])
+    model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
     # model = ConvTasNet
     # Handle device placement
     if conf["use_gpu"]:
