@@ -30,37 +30,38 @@ class UNet(BaseModel):
 
         # down blocks
         self.down1 = down(1, 16, self.kernel_size, self.stride)
-        self.down2 = down(16, 32, self.kernel_size, self.stride)
-        self.down3 = down(32, 64, self.kernel_size, self.stride)
-        self.down4 = down(64, 128, self.kernel_size, self.stride)
-        self.down5 = down(128, 256, self.kernel_size, self.stride)
-        self.down6 = down(256, 512, self.kernel_size, self.stride)
+        # self.down2 = down(16, 32, self.kernel_size, self.stride)
+        # self.down3 = down(32, 64, self.kernel_size, self.stride)
+        # self.down4 = down(64, 128, self.kernel_size, self.stride)
+        # self.down5 = down(128, 256, self.kernel_size, self.stride)
+        # self.down6 = down(256, 512, self.kernel_size, self.stride)
 
         # up blocks
-        self.up1 = up(512, 256, self.kernel_size, self.stride, (0,1), 1)
-        self.up2 = up(256, 128, self.kernel_size, self.stride, (0,1), 2)
-        self.up3 = up(128, 64, self.kernel_size, self.stride, (0,1), 3)
-        self.up4 = up(64, 32, self.kernel_size, self.stride, (0,1), 4)
-        self.up5 = up(32, 16, self.kernel_size, self.stride, (0,1), 5)
+        # self.up1 = up(512, 256, self.kernel_size, self.stride, (0,1), 1)
+        # self.up2 = up(256, 128, self.kernel_size, self.stride, (0,1), 2)
+        # self.up3 = up(128, 64, self.kernel_size, self.stride, (0,1), 3)
+        # self.up4 = up(64, 32, self.kernel_size, self.stride, (0,1), 4)
+        # self.up5 = up(32, 16, self.kernel_size, self.stride, (0,1), 5)
         self.last_layer = last_layer(16, 1, self.kernel_size, self.stride, (1, 0))
 
         # Create STFT/iSTFT pair in one line
-        self.stft, self.istft = make_enc_dec(
-            'stft',
-            n_filters=self.fft_size,
-            kernel_size=self.window_size,
-            stride=self.hop_size,
-            sample_rate=self.sample_rate,
-            output_padding = self.window_size // 2
-        )
+        # self.stft, self.istft = make_enc_dec(
+        #     'stft',
+        #     n_filters=self.fft_size,
+        #     kernel_size=self.window_size,
+        #     stride=self.hop_size,
+        #     sample_rate=self.sample_rate,
+        #     output_padding = self.window_size // 2
+        # )
 
 
 
     def forward(self, x_in):
         print("in:", x_in.shape)
         # compute normalized spectrogram
-        X_in = self.stft(x_in)
-
+        X_in = torch.stft(x_in, self.fft_size, self.hop_size, window=torch.hann_window(self.window_size, device=x_in.device))
+        X_in = torch.abs(X_in)
+        phase = torch.angle(X_in)
         # torch.random()
         # agregar matriz random para el profiling
 
@@ -75,45 +76,45 @@ class UNet(BaseModel):
         print("X1:", X1.shape)
 
         # second down layer
-        X2 = self.down2(X1)
-        print("X2:", X2.shape)
+        # X2 = self.down2(X1)
+        # print("X2:", X2.shape)
 
         # third down layer
-        X3 = self.down3(X2)
-        print("X3:", X3.shape)
+        # X3 = self.down3(X2)
+        # print("X3:", X3.shape)
 
-        # fourth down layer
-        X4 = self.down4(X3)
-        print("X4 down4:", X4.shape)
+        # # fourth down layer
+        # X4 = self.down4(X3)
+        # print("X4 down4:", X4.shape)
 
-        # 5 down layer
-        X5 = self.down5(X4)
-        print("X5 down5:", X5.shape)
+        # # 5 down layer
+        # X5 = self.down5(X4)
+        # print("X5 down5:", X5.shape)
 
-        # 6 down layer
-        X6 = self.down6(X5)
-        print("X6 down6:", X6.shape)
+        # # 6 down layer
+        # X6 = self.down6(X5)
+        # print("X6 down6:", X6.shape)
 
 
-        # first up layer
-        X5 = self.up1(X5, X6)
-        print("X5 up1:", X5.shape)
+        # # first up layer
+        # X5 = self.up1(X5, X6)
+        # print("X5 up1:", X5.shape)
 
-        # 2 up layer
-        X4 = self.up2(X4, X5)
-        print("X4 up2:", X4.shape)
+        # # 2 up layer
+        # X4 = self.up2(X4, X5)
+        # print("X4 up2:", X4.shape)
 
-        # 3 up layer
-        X3 = self.up3(X3, X4)
-        print("X3 up3:", X3.shape)
+        # # 3 up layer
+        # X3 = self.up3(X3, X4)
+        # print("X3 up3:", X3.shape)
 
-        # 4 up layer
-        X2 = self.up4(X2, X3)
-        print("X2 up4:", X2.shape)
+        # # 4 up layer
+        # X2 = self.up4(X2, X3)
+        # print("X2 up4:", X2.shape)
 
-        # 5 up layer
-        X1 = self.up5(X1, X2)
-        print("X1 up5:", X1.shape)
+        # # 5 up layer
+        # X1 = self.up5(X1, X2)
+        # print("X1 up5:", X1.shape)
 
         # last up layer (no concat after transposed conv)
         X = self.last_layer(X1)
@@ -129,7 +130,8 @@ class UNet(BaseModel):
         # music = X_in * (1 - X)
 
         # use ISTFT to compute wav from normalized spectrogram
-        speech_out = self.istft(speech)
+        speech_as_complex = torch.view_as_complex(torch.cat((speech, phase), dim = 1))
+        speech_out = torch.istft(speech, self.fft_size, hop_length=self.hop_size, window=torch.hann_window(self.window_size, device=x_in.device), return_complex=True)
         # music_out = self.istft(music)
 
         # remove additional dimention
