@@ -59,7 +59,8 @@ class UNet(BaseModel):
     def forward(self, x_in):
         print("in:", x_in.shape)
         # compute normalized spectrogram
-        X_in = torch.stft(x_in, self.fft_size, self.hop_size, window=torch.hann_window(self.window_size, device=x_in.device))
+        X_in = torch.stft(x_in, self.fft_size, self.hop_size, window=torch.hann_window(self.window_size, device=x_in.device), return_complex=True, onesided=False)
+        print("X_in after stft", X_in.shape)
         X_in = torch.abs(X_in)
         phase = torch.angle(X_in)
         # torch.random()
@@ -67,6 +68,7 @@ class UNet(BaseModel):
 
         # add channels dimension
         X = X_in.unsqueeze(1)
+        # X = X_in
         print("X:", X.shape)
 
         X = self.input_layer(X)
@@ -130,8 +132,17 @@ class UNet(BaseModel):
         # music = X_in * (1 - X)
 
         # use ISTFT to compute wav from normalized spectrogram
-        speech_as_complex = torch.view_as_complex(torch.cat((speech, phase), dim = 1))
-        speech_out = torch.istft(speech, self.fft_size, hop_length=self.hop_size, window=torch.hann_window(self.window_size, device=x_in.device), return_complex=True)
+        print("speech", speech.shape)
+        print("phase", phase.shape)
+        
+        catted = torch.cat((speech.unsqueeze(1), phase.unsqueeze(1)), dim=1)
+
+        print("catted", catted.shape)
+        permuted = catted.permute(0,2,3,1).contiguous()
+        print("permuted", permuted.shape)
+        speech_as_complex = torch.view_as_complex(permuted)
+        print("speech_as_complex", speech_as_complex.shape)
+        speech_out = torch.istft(speech_as_complex.permute(0,1,2), self.fft_size, hop_length=self.hop_size, window=torch.hann_window(self.window_size, device=speech_as_complex.device), return_complex=True, onesided=False)
         # music_out = self.istft(music)
 
         # remove additional dimention
