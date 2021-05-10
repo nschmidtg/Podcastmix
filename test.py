@@ -20,6 +20,8 @@ import importlib
 from asteroid.models import save_publishable
 from asteroid.utils import tensors_to_device
 from asteroid.metrics import WERTracker, MockWERTracker
+sys.path.append('UNet_model')
+sys.path.append('OpenUnmix_model')
 
 
 parser = argparse.ArgumentParser()
