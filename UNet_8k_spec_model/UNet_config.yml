@@ -1,10 +1,10 @@
 model: 
-  name: UNet_8k
+  name: UNet_8k_spec
 # Training config
 training:
   epochs: 100
-  batch_size: 2
-  num_workers: 0
+  batch_size: 1
+  num_workers: 24
   half_lr: yes
   early_stop: yes
 # Optim config
@@ -17,7 +17,7 @@ convolution:
   kernel_size: 5
 optim:
   optimizer: adam
-  lr: 0.001
+  lr: 0.0005
   weight_decay: !!float 1e-5
 # Data config
 data:
