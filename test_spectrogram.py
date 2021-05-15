@@ -20,7 +20,7 @@ import importlib
 from asteroid.models import save_publishable
 from asteroid.utils import tensors_to_device
 from asteroid.metrics import WERTracker, MockWERTracker
-
+from asteroid.filterbanks import make_enc_dec
 
 
 parser = argparse.ArgumentParser()
@@ -81,35 +81,25 @@ def main(conf):
     wer_tracker = (
         MockWERTracker()
     )
+    stft, istft = make_enc_dec('stft', 1024, 1024, sample_rate=conf["sample_rate"], output_padding=512)
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
-    if conf["target_model"] == "UNet":
-        sys.path.append('UNet_model')
-        AsteroidModelModule = my_import("unet_model.UNet")
-    elif conf["target_model"] == "UNet_8k":
-        print("hola")
-        sys.path.append('UNet_8k_model')
-        AsteroidModelModule = my_import("unet_model.UNet")
-    elif conf["target_model"] == "UNet_8k_spec":
+    if conf["target_model"] == "UNet_8k_spec":
         sys.path.append('UNet_8k_spec_model')
         AsteroidModelModule = my_import("unet_model.UNet")
-    elif conf["target_model"] == "OpenUnmix":
-        sys.path.append('OpenUnmix_model')
-        AsteroidModelModule = my_import("openunmix_model.OpenUnmix")
-    else:
-        AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
+        test_set = PodcastMix(
+            csv_dir=conf["test_dir"],
+            sample_rate=conf["sample_rate"],
+            segment=conf["segment"],
+            return_id=True,
+            shuffle_tracks=False,
+            spectrogram=True
+        )
     model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
     # model = ConvTasNet
     # Handle device placement
     if conf["use_gpu"]:
         model.cuda()
     model_device = next(model.parameters()).device
-    test_set = PodcastMix(
-        csv_dir=conf["test_dir"],
-        sample_rate=conf["sample_rate"],
-        segment=conf["segment"],
-        return_id=True,
-        shuffle_tracks=False
-    )  # Uses all segment length
     # Used to reorder sources only
     loss_func = SingleSrcMSE()
 
@@ -124,14 +114,14 @@ def main(conf):
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
         mix, sources, ids = test_set[idx]
+        mix = istft(mix)
+        sources = istft(sources)
         print("ids of test set:", ids)
         mix, sources = tensors_to_device([mix, sources], device=model_device)
-        if conf["target_model"] == "UNet" or conf["target_model"] == "UNet_8k" or conf["target_model"] == "UNet_8k_spec" or conf["target_model"] == "OpenUnmix":
+        if conf["target_model"] == "UNet_8k_spec":
             est_sources = model(mix.unsqueeze(0)).squeeze(0)
-            print("UNet or OpenUnmix est_sources:", est_sources.shape)
-        else:
-            est_sources = model(mix)
-            print("NOT UNet est_sources:", est_sources.shape)
+            est_sources = istft(est_sources)
+            print("UNet_8k_spec:", est_sources.shape)
 
         # sources = sources[None]
         # est_sources = est_sources[None]
