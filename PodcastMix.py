@@ -5,7 +5,6 @@ import torchaudio
 import os
 import numpy as np
 import random
-from asteroid.filterbanks import make_enc_dec
 
 class PodcastMix(Dataset):
     """Dataset class for PodcastMix source separation tasks.
@@ -43,13 +42,12 @@ class PodcastMix(Dataset):
         random.seed(1)
         self.gain_ramp = np.array(range(1, 100, 1))/100
         np.random.shuffle(self.gain_ramp)
-        self.stft, self.istft = make_enc_dec('stft', 1024, 1024, sample_rate=self.sample_rate, output_padding=512)
 
 
     def __len__(self):
         # for now, its a full permutation
-        # return min([len(self.df_speech), len(self.df_music)])
-        return 100
+        return min([len(self.df_speech), len(self.df_music)])
+
 
     def compute_rand_offset_duration(self, audio_path, original_sr, original_num_frames):
         """ Computes a random offset and the number of frames to read the audio_path
@@ -131,7 +129,7 @@ class PodcastMix(Dataset):
         """ computes the RMS of an audio signal
         """
 
-        return torch.sqrt(torch.mean(audio * audio))
+        return torch.sqrt(torch.mean(audio ** 2))
 
     def __getitem__(self, idx):
         if(idx == 0 and self.shuffle_tracks):

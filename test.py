@@ -20,8 +20,7 @@ import importlib
 from asteroid.models import save_publishable
 from asteroid.utils import tensors_to_device
 from asteroid.metrics import WERTracker, MockWERTracker
-sys.path.append('UNet_model')
-sys.path.append('OpenUnmix_model')
+
 
 
 parser = argparse.ArgumentParser()
@@ -87,6 +86,7 @@ def main(conf):
         sys.path.append('UNet_model')
         AsteroidModelModule = my_import("unet_model.UNet")
     elif conf["target_model"] == "UNet_8k":
+        print("hola")
         sys.path.append('UNet_8k_model')
         AsteroidModelModule = my_import("unet_model.UNet")
     elif conf["target_model"] == "UNet_8k_spec":
