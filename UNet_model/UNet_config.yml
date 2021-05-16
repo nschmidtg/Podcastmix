@@ -1,17 +1,17 @@
 model: 
-  name: UNet
+  name: UNet_8k_spec
 # Training config
 training:
   epochs: 100
   batch_size: 2
-  num_workers: 2
+  num_workers: 24
   half_lr: yes
   early_stop: yes
 # Optim config
 stft:
-  fft_size: 4096
-  window_size: 4096
-  hop_size: 256
+  fft_size: 1024
+  window_size: 1024
+  hop_size: 128
 convolution:
   stride: 2
   kernel_size: 5
@@ -23,6 +23,6 @@ optim:
 data:
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
-  sample_rate: 44160
+  sample_rate: 44100
   n_src: 2
   segment: 2

@@ -13,7 +13,7 @@ import sys
 from PodcastMix import PodcastMix
 from asteroid.engine.optimizers import make_optimizer
 from asteroid.engine.system import System
-from asteroid.losses import PITLossWrapper, PairwiseNegSDR, multisrc_neg_sisdr
+# from asteroid.losses import PITLossWrapper, PairwiseNegSDR, multisrc_neg_sisdr
 from asteroid.losses.mse import SingleSrcMSE
 
 import importlib
@@ -83,21 +83,6 @@ def main(conf):
                 factor=0.5,
                 patience=5
             )
-    elif(conf["model"]["name"] == "DPRNNTasNet"):
-        from asteroid.models import DPRNNTasNet
-
-        model = DPRNNTasNet(
-            n_src=conf["data"]["n_src"],
-            sample_rate=conf["data"]["sample_rate"],
-            **conf["model_init"]
-        )
-        optimizer = make_optimizer(model.parameters(), **conf["optim"])
-        if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(
-                optimizer=optimizer,
-                factor=0.5,
-                patience=5
-            )
     elif(conf["model"]["name"] == "DPTNet"):
         from asteroid.models import DPTNet
 
@@ -118,39 +103,6 @@ def main(conf):
             ),
             "interval": "step",
         }
-    elif(conf["model"]["name"] == "LSTMTasNet"):
-        from asteroid.models import LSTMTasNet
-        scheduler = None
-        model = LSTMTasNet(
-            n_src=conf["data"]["n_src"],
-            sample_rate=conf["data"]["sample_rate"],
-            **conf["model_init"]
-        )
-        optimizer = make_optimizer(model.parameters(), **conf["optim"])
-        scheduler = torch.optim.lr_scheduler.CyclicLR(
-            optimizer,
-            base_lr=conf["optim"]["lr"],
-            max_lr=conf["optim"]["lr"] * 10,
-            step_size_up=4 * len(train_loader),
-            mode="triangular",
-            cycle_momentum=False,
-        )
-    elif(conf["model"]["name"] == "SuDORMRFNet"):
-        from asteroid.models import SuDORMRFNet
-
-        scheduler = None
-        model = SuDORMRFNet(
-            n_src=conf["data"]["n_src"],
-            sample_rate=conf["data"]["sample_rate"],
-            **conf["model_init"]
-        )
-        optimizer = make_optimizer(model.parameters(), **conf["optim"])
-        if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(
-                optimizer=optimizer,
-                factor=0.5,
-                patience=5
-            )
     elif(conf["model"]["name"] == "UNet"):
         sys.path.append('UNet_model')
         from unet_model import UNet

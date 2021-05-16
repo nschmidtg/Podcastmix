@@ -6,7 +6,7 @@ Create a conda environment:
 
 ```conda activate thesis```
 
-```sh install_dependencies.sh```
+```pip install -r requirements.txt```
 
 Download the dataset:
 
@@ -24,9 +24,7 @@ The batch number in the ```[MODEL]_model/[MODEL]_config.yml``` file must match t
 - ConvTasNet
 - DPTNet
 - UNet
-- SuDORMRFNet
-- LSTMTasNet
-- DPRNNTasNet
+- UNet_8k
 
 ### Train
 ```

@@ -42,7 +42,18 @@ class PodcastMix(Dataset):
         random.seed(1)
         self.gain_ramp = np.array(range(1, 100, 1))/100
         np.random.shuffle(self.gain_ramp)
+        self.window = torch.hamming_window(1024)
 
+    def stft(self, x_in):
+        print("x_in:", x_in.shape)
+        X_in = torch.stft(x_in, n_fft=1024, hop_length=768)
+        real, imag = X_in.unbind(-1)
+        complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
+        r_i = torch.view_as_complex(complex_n)
+        phase = torch.angle(r_i)
+        X_in = torch.sqrt(real**2 + imag**2)
+        
+        return X_in
 
     def __len__(self):
         # for now, its a full permutation
@@ -179,9 +190,7 @@ class PodcastMix(Dataset):
         sources = np.vstack(sources_list)
         # Convert sources to tensor
         sources = torch.from_numpy(sources)
-        # print(sources[0].shape)
-        # print(sources[1].shape)
-        # print(mixture.shape)
+        
         if not self.return_id:
             return mixture, sources
         return mixture, sources, [
