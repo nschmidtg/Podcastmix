@@ -45,7 +45,8 @@ class PodcastMix(Dataset):
         self.window = torch.hamming_window(1024)
 
     def stft(self, x_in):
-        X_in = torch.stft(x_in, 1024, 768, window=self.window)
+        print("x_in:", x_in.shape)
+        X_in = torch.stft(x_in, n_fft=1024, hop_length=768)
         real, imag = X_in.unbind(-1)
         complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
         r_i = torch.view_as_complex(complex_n)
@@ -183,8 +184,6 @@ class PodcastMix(Dataset):
             sources_list.append(music_gain * music_signal)
         # compute the mixture
         mixture = sources_list[0] + sources_list[1]
-        if self.spectrogram:
-            mixture = self.stft(mixture)
         mixture = torch.squeeze(mixture)
 
         # Stack sources

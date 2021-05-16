@@ -8,10 +8,10 @@ data:
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
 main_args:
-  config_model: UNet_8k_model/UNet_config.yml
+  config_model: UNet_8k_spec_model/UNet_config.yml
   exp_dir: exp/tmp
   help: null
-  resume_from: UNet_8k_model/exp/tmp/checkpoints/epoch=13-step=93623.ckpt
+  resume_from: null
 model:
   name: UNet_8k
 optim:

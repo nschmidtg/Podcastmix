@@ -81,7 +81,6 @@ def main(conf):
     wer_tracker = (
         MockWERTracker()
     )
-    stft, istft = make_enc_dec('stft', 1024, 1024, sample_rate=conf["sample_rate"], output_padding=512)
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
     if conf["target_model"] == "UNet_8k_spec":
         sys.path.append('UNet_8k_spec_model')
@@ -114,7 +113,7 @@ def main(conf):
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
         mix, sources, ids = test_set[idx]
-        mix = istft(mix)
+        mix = torch.istft(mix)
         sources = istft(sources)
         print("ids of test set:", ids)
         mix, sources = tensors_to_device([mix, sources], device=model_device)
