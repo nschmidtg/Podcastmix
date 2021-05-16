@@ -86,7 +86,6 @@ def main(conf):
         sys.path.append('UNet_model')
         AsteroidModelModule = my_import("unet_model.UNet")
     elif conf["target_model"] == "UNet_8k":
-        print("hola")
         sys.path.append('UNet_8k_model')
         AsteroidModelModule = my_import("unet_model.UNet")
     elif conf["target_model"] == "UNet_8k_spec":
@@ -128,10 +127,8 @@ def main(conf):
         mix, sources = tensors_to_device([mix, sources], device=model_device)
         if conf["target_model"] == "UNet" or conf["target_model"] == "UNet_8k" or conf["target_model"] == "UNet_8k_spec" or conf["target_model"] == "OpenUnmix":
             est_sources = model(mix.unsqueeze(0)).squeeze(0)
-            print("UNet or OpenUnmix est_sources:", est_sources.shape)
         else:
             est_sources = model(mix)
-            print("NOT UNet est_sources:", est_sources.shape)
 
         # sources = sources[None]
         # est_sources = est_sources[None]
