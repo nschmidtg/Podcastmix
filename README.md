@@ -24,9 +24,7 @@ The batch number in the ```[MODEL]_model/[MODEL]_config.yml``` file must match t
 - ConvTasNet
 - DPTNet
 - UNet
-- SuDORMRFNet
-- LSTMTasNet
-- DPRNNTasNet
+- UNet_8k
 
 ### Train
 ```
