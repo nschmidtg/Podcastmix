@@ -6,7 +6,7 @@ Create a conda environment:
 
 ```conda activate thesis```
 
-```sh install_dependencies.sh```
+```pip install -r requirements.txt```
 
 Download the dataset:
 
