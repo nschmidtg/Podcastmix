@@ -54,12 +54,12 @@ class PodcastMix(Dataset):
         r_i = torch.view_as_complex(complex_n)
         phase = torch.angle(r_i)
         X_in = torch.sqrt(real**2 + imag**2)
-        
+
         return X_in
 
     def __len__(self):
         # for now, its a full permutation
-        return 1000
+        # return 1000
         return min([len(self.df_speech), len(self.df_music)])
 
 
