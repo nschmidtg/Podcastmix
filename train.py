@@ -7,19 +7,23 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-
+#from pytorch_lightning import seed_everything
 import sys
 
 from PodcastMix import PodcastMix
 from asteroid.engine.optimizers import make_optimizer
 from asteroid.engine.system import System
-# from asteroid.losses import PITLossWrapper, PairwiseNegSDR, multisrc_neg_sisdr
-from asteroid.losses.mse import SingleSrcMSE
+from asteroid.losses import PITLossWrapper, PairwiseNegSDR, multisrc_neg_sisdr
+from asteroid.losses.mse import SingleSrcMSE, PairwiseMSE
+from MultiSrcMSE import MultiSrcMSE
+from torch.nn import L1Loss
 
 import importlib
 
 import warnings
 warnings.filterwarnings('ignore')
+
+#seed_everything(42, workers=True)
 
 # Keys which are not in the conf.yml file can be added here.
 # In the hierarchical dictionary created when parsing, the key `key` can be
@@ -112,7 +116,7 @@ def main(conf):
             conf["stft"]["hop_size"],
             conf["stft"]["window_size"],
             conf["convolution"]["kernel_size"],
-            conf["convolution"]["stride"],
+            conf["convolution"]["stride"]
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
@@ -215,7 +219,9 @@ def main(conf):
         yaml.safe_dump(conf, outfile)
 
     # Define Loss function.
-    loss_func = SingleSrcMSE()
+    # loss_func = MultiSrcMSE()
+    # loss_func = SingleSrcMSE()
+    loss_func = L1Loss()
     system = System(
         model=model,
         loss_func=loss_func,
@@ -247,7 +253,7 @@ def main(conf):
 
     # Don't ask GPU if they are not available.
     gpus = -1 if torch.cuda.is_available() else None
-    distributed_backend = "dp" if torch.cuda.is_available() else None
+    distributed_backend = "ddp" if torch.cuda.is_available() else None
     print("hereherehere", conf)
     trainer = pl.Trainer(
         max_epochs=conf["training"]["epochs"],
@@ -264,8 +270,9 @@ def main(conf):
     best_k = {k: v.item() for k, v in checkpoint.best_k_models.items()}
     with open(os.path.join(exp_dir, "best_k_models.json"), "w") as f:
         json.dump(best_k, f, indent=0)
-
+    print("checkpoint", checkpoint.best_model_path)
     state_dict = torch.load(checkpoint.best_model_path)
+    
     system.load_state_dict(state_dict=state_dict["state_dict"])
     system.cpu()
 
