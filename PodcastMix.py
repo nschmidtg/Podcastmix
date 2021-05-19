@@ -42,7 +42,9 @@ class PodcastMix(Dataset):
         random.seed(1)
         self.gain_ramp = np.array(range(1, 100, 1))/100
         np.random.shuffle(self.gain_ramp)
+
         self.window = torch.hamming_window(1024)
+        torchaudio.set_audio_backend(backend='soundfile')
 
     def stft(self, x_in):
         print("x_in:", x_in.shape)
@@ -57,6 +59,7 @@ class PodcastMix(Dataset):
 
     def __len__(self):
         # for now, its a full permutation
+        return 100
         return min([len(self.df_speech), len(self.df_music)])
 
 
