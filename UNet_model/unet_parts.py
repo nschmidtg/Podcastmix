@@ -53,12 +53,12 @@ class up(nn.Module):
             )
 
     def forward(self, x1, x2):
-        print("x2 de up_conv:", x2.shape)
+        # print("x2 de up_conv:", x2.shape)
         x2 = self.up_conv(x2)
-        print("x2 y x1 before cat:", x2.shape, x1.shape)
-        print("x2 antes de up_conv y antes de cat:", x2.shape)
+        # print("x2 y x1 before cat:", x2.shape, x1.shape)
+        # print("x2 antes de up_conv y antes de cat:", x2.shape)
         x = torch.cat([x2, x1], dim=1)
-        print("dp de cat", x.shape)
+        # print("dp de cat", x.shape)
         x = self.deconv(x)
 
 
