@@ -4,7 +4,7 @@ model:
 training:
   epochs: 1
   batch_size: 64
-  num_workers: 0
+  num_workers: 24
   half_lr: yes
   early_stop: yes
 # Optim config
