@@ -9,6 +9,7 @@ class UNet(BaseModel):
     #def __init__(self, n_channels, n_classes, bilinear=True):
     def __init__(self, sample_rate, fft_size, hop_size, window_size, kernel_size, stride):
         super(UNet, self).__init__(sample_rate=sample_rate)
+        # self.save_hyperparameters()
         self.sample_rate = sample_rate
         self.window_size = window_size
         self.fft_size = fft_size
@@ -124,8 +125,8 @@ class UNet(BaseModel):
         # print("speech", speech.shape)
         # print("phase", phase.shape)
 
-        polar = torch.polar(speech, phase)
-        # polar = speech * torch.cos(phase) + speech * torch.sin(phase) * 1j
+        # polar = torch.polar(speech, phase)
+        polar = speech * torch.cos(phase) + speech * torch.sin(phase) * 1j
         # print("polar", polar.shape)
         speech_out = torch.istft(polar, self.fft_size, hop_length=self.hop_size, window=window, return_complex=False, onesided=True, center=True)
         # music_out = self.istft(music)

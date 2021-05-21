@@ -7,7 +7,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-#from pytorch_lightning import seed_everything
+from pytorch_lightning import seed_everything
 import sys
 
 from PodcastMix import PodcastMix
@@ -17,7 +17,7 @@ from torch.nn import L1Loss
 
 import importlib
 
-#seed_everything(42, workers=True)
+seed_everything(1, workers=True)
 
 # Keys which are not in the conf.yml file can be added here.
 # In the hierarchical dictionary created when parsing, the key `key` can be
