@@ -21,5 +21,5 @@ with open('podcastmix/metadata/test/speech.csv', 'r') as read_obj:
                      file_path,
                      normalize = True)
                 resampled_audio = torchaudio.transforms.Resample(original_sf, 44100)(audio)
-                torchaudio.save(filepath=destination, src=audio, sample_rate=44100, bits_per_sample=16)
+                torchaudio.save(filepath=destination, src=resampled_audio, sample_rate=44100, bits_per_sample=16)
 
