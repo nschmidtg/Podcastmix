@@ -5,15 +5,11 @@ from torch.nn import LSTM, BatchNorm1d, Linear, Parameter
 import torchaudio
 import torch.nn.functional as F
 from asteroid.models import BaseModel
-from asteroid.filterbanks.enc_dec import Filterbank, Encoder, Decoder
-from asteroid.filterbanks import STFTFB
-from asteroid.filterbanks import make_enc_dec
-
 
 class OpenUnmix(BaseModel):
     #def __init__(self, n_channels, n_classes, bilinear=True):
     def __init__(self, sample_rate, nb_bins, window_size, hop_size):
-        super(OpenUnmix, self).__init__()
+        super(OpenUnmix, self).__init__(sample_rate=sample_rate)
         self.sample_rate = sample_rate
         self.nb_bins = nb_bins
         self.hop_size = hop_size
@@ -64,47 +60,44 @@ class OpenUnmix(BaseModel):
         self.output_scale = Parameter(torch.ones(self.nb_output_bins).float())
         self.output_mean = Parameter(torch.ones(self.nb_output_bins).float())
 
-
-        print(self.nb_bins, self.window_size, self.hop_size)
-        # Create STFT/iSTFT pair in one line
-        self.stft, self.istft = make_enc_dec(
-            'stft',
-            n_filters=1024,
-            kernel_size=1024,
-            stride=32,
-            sample_rate=44100,
-        )
-
-        print("***************:", self.nb_bins)
-
     def forward(self, x_in):
+        # compute normalized spectrogram
+        window_x = torch.hamming_window(self.window_size, device=x_in.get_device())
+        print("window:", window_x.shape)
+        X_in = torch.stft(x_in, self.nb_bins, hop_length=self.hop_size, window=window_x)
+        # print("X_in after stft", X_in.shape)
+        real, imag = X_in.unbind(-1)
+        complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
+        r_i = torch.view_as_complex(complex_n)
+        # print("real", real.shape)
+        # print("imag", imag.shape)
+        phase = torch.angle(r_i)
+        X_in = torch.sqrt(real**2 + imag**2)
+
         print("***************1:", self.nb_bins)
         print("input x_in:", x_in.shape)
         # compute normalized spectrogram
-        X_in = self.stft(x_in)
         print("after stft", X_in.shape)
-        aux_istft = self.istft(X_in)
-        print("shape of aux_istst", aux_istft.shape)
-
         # add channels dimension
         X = X_in.unsqueeze(1)
-        print("X:", X.shape)
+        print("X antes de 2:", X.shape)
         print("***************2:", self.nb_bins)
         # permute so that batch is last for lstm
-        x = X.permute(3, 0, 1, 2)
+        x = X.permute(1, 2, 3, 0)
+        # x = X
         # get current spectrogram shape
         nb_frames, nb_samples, nb_channels, nb_bins = x.data.shape
         print("***************3:", self.nb_bins)
-        mix = x.detach().clone()
+        # mix = x.detach().clone()
         # mix = mix[..., : self.nb_bins]
 
-        print("mix:", mix.shape)
+        # print("mix:", mix.shape)
         print("self.nb_bins:", self.nb_bins)
         # crop
-        # x = x[..., : self.nb_bins]
+        x = x[..., : self.nb_bins]
         # shift and scale input to mean=0 std=1 (across all bins)
-        x = x + self.input_mean
-        x = x * self.input_scale
+        # x = x + self.input_mean
+        # x = x * self.input_scale
 
         print("x after mean", x.shape)
         # to (nb_frames*nb_samples, nb_channels*nb_bins)
@@ -145,17 +138,23 @@ class OpenUnmix(BaseModel):
         # since our output is non-negative, we can apply RELU
         mask = F.relu(x)
         speech = mask * mix
-        music = (1 - mask) * mix
         # permute back to (nb_samples, nb_channels, nb_bins, nb_frames)
+        # polar = torch.polar(speech, phase)
+        polar = speech * torch.cos(phase) + speech * torch.sin(phase) * 1j
         print("before permutation:", speech.shape)
-        speech = speech.permute(1, 2, 3, 0)
+        # print("polar", polar.shape)
+        speech_out = torch.istft(polar, self.fft_size, hop_length=self.hop_size, window=window, return_complex=False, onesided=True, center=True)
+        speech_out = speech_out.squeeze(1)
+        music_out = x_in - speech_out
+
+        # speech = speech.permute(1, 2, 3, 0)
         print("after permutation:", speech.shape)
-        music = music.permute(1, 2, 3, 0)
+        # music = music.permute(1, 2, 3, 0)
 
         # remove channels dimension:
-        speech = speech.squeeze(1)
-        music = music.squeeze(1)
-        print("speech_out", speech.shape)
+        # speech = speech.squeeze(1)
+        # music = music.squeeze(1)
+        # print("speech_out", speech.shape)
 
         # use mask to separate speech from mix
         # speech = X_in * X
@@ -164,15 +163,15 @@ class OpenUnmix(BaseModel):
         # music = X_in * (1 - X)
 
         # use ISTFT to compute wav from normalized spectrogram
-        speech_out = self.istft(speech)
-        music_out = self.istft(music)
+        # speech_out = self.istft(speech)
+        # music_out = self.istft(music)
 
-        print("speech_out", speech_out.shape)
+        # print("speech_out", speech_out.shape)
 
         # remove additional dimention
-        speech_out = speech_out.squeeze(1)
-        music_out = music_out.squeeze(1)
-        print("speech_out", speech_out.shape)
+        # speech_out = speech_out.squeeze(1)
+        # music_out = music_out.squeeze(1)
+        # print("speech_out", speech_out.shape)
 
 
         # add both sources to a tensor to return them
