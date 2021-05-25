@@ -105,8 +105,8 @@ def main(conf):
         model = OpenUnmix(
             conf["data"]["sample_rate"],
             conf["stft"]["nb_bins"],
-            conf["stft"]["hop_size"],
-            conf["stft"]["window_size"]
+            conf["stft"]["window_size"],
+            conf["stft"]["hop_size"]
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
@@ -149,7 +149,7 @@ def main(conf):
         callbacks.append(EarlyStopping(
             monitor="val_loss",
             mode="min",
-            patience=30,
+            patience=50,
             verbose=True
         ))
 
