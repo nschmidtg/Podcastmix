@@ -15,8 +15,6 @@ from asteroid.engine.optimizers import make_optimizer
 from asteroid.engine.system import System
 from torch.nn import L1Loss
 
-import importlib
-
 seed_everything(1, workers=True)
 
 # Keys which are not in the conf.yml file can be added here.
@@ -91,22 +89,6 @@ def main(conf):
             conf["stft"]["window_size"],
             conf["convolution"]["kernel_size"],
             conf["convolution"]["stride"]
-        )
-        optimizer = make_optimizer(model.parameters(), **conf["optim"])
-        if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(
-                optimizer=optimizer,
-                factor=0.5,
-                patience=5
-            )
-    elif(conf["model"]["name"] == "OpenUnmix"):
-        sys.path.append('OpenUnmix_model')
-        from openunmix_model import OpenUnmix
-        model = OpenUnmix(
-            conf["data"]["sample_rate"],
-            conf["stft"]["nb_bins"],
-            conf["stft"]["window_size"],
-            conf["stft"]["hop_size"]
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:

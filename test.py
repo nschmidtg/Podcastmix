@@ -8,18 +8,15 @@ import argparse
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from pprint import pprint
-from pathlib import Path
 import sys
 
 from asteroid.metrics import get_metrics
+from pytorch_lightning import seed_everything
 from PodcastMix import PodcastMix
-from asteroid.losses import PITLossWrapper, pairwise_neg_sisdr
-from asteroid.losses.mse import SingleSrcMSE
-import importlib
-from asteroid.models import save_publishable
 from asteroid.utils import tensors_to_device
-from asteroid.metrics import WERTracker, MockWERTracker
+from asteroid.metrics import MockWERTracker
+
+seed_everything(1, workers=True)
 
 
 
@@ -85,15 +82,6 @@ def main(conf):
     if conf["target_model"] == "UNet":
         sys.path.append('UNet_model')
         AsteroidModelModule = my_import("unet_model.UNet")
-    elif conf["target_model"] == "UNet_8k":
-        sys.path.append('UNet_8k_model')
-        AsteroidModelModule = my_import("unet_model.UNet")
-    elif conf["target_model"] == "UNet_8k_spec":
-        sys.path.append('UNet_8k_spec_model')
-        AsteroidModelModule = my_import("unet_model.UNet")
-    elif conf["target_model"] == "OpenUnmix":
-        sys.path.append('OpenUnmix_model')
-        AsteroidModelModule = my_import("openunmix_model.OpenUnmix")
     else:
         AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
     model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
@@ -110,7 +98,6 @@ def main(conf):
         shuffle_tracks=False
     )  # Uses all segment length
     # Used to reorder sources only
-    loss_func = SingleSrcMSE()
 
     # Randomly choose the indexes of sentences to save.
     eval_save_dir = os.path.join(conf["exp_dir"], conf["out_dir"])
@@ -125,14 +112,11 @@ def main(conf):
         mix, sources, ids = test_set[idx]
         print("ids of test set:", ids)
         mix, sources = tensors_to_device([mix, sources], device=model_device)
-        if conf["target_model"] == "UNet" or conf["target_model"] == "UNet_8k" or conf["target_model"] == "UNet_8k_spec" or conf["target_model"] == "OpenUnmix":
+        if conf["target_model"] == "UNet":
             est_sources = model(mix.unsqueeze(0)).squeeze(0)
         else:
             est_sources = model(mix)
 
-        # sources = sources[None]
-        # est_sources = est_sources[None]
-        loss = loss_func(est_sources, sources)
         mix_np = mix.cpu().data.numpy()
         sources_np = sources.cpu().data.numpy()
         est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
