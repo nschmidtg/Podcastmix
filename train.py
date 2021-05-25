@@ -7,19 +7,17 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-
+from pytorch_lightning import seed_everything
 import sys
 
 from PodcastMix import PodcastMix
 from asteroid.engine.optimizers import make_optimizer
 from asteroid.engine.system import System
-# from asteroid.losses import PITLossWrapper, PairwiseNegSDR, multisrc_neg_sisdr
-from asteroid.losses.mse import SingleSrcMSE
+from torch.nn import L1Loss
 
 import importlib
 
-import warnings
-warnings.filterwarnings('ignore')
+seed_everything(1, workers=True)
 
 # Keys which are not in the conf.yml file can be added here.
 # In the hierarchical dictionary created when parsing, the key `key` can be
@@ -83,26 +81,6 @@ def main(conf):
                 factor=0.5,
                 patience=5
             )
-    elif(conf["model"]["name"] == "DPTNet"):
-        from asteroid.models import DPTNet
-
-        conf["masknet"].update({"n_src": conf["data"]["n_src"]})
-        model = DPTNet(
-            sample_rate=conf["data"]["sample_rate"],
-            **conf["filterbank"],
-            **conf["masknet"]
-        )
-        optimizer = make_optimizer(model.parameters(), **conf["optim"])
-        from asteroid.engine.schedulers import DPTNetScheduler
-
-        scheduler = {
-            "scheduler": DPTNetScheduler(
-                optimizer,
-                len(train_loader) // conf["training"]["batch_size"],
-                64
-            ),
-            "interval": "step",
-        }
     elif(conf["model"]["name"] == "UNet"):
         sys.path.append('UNet_model')
         from unet_model import UNet
@@ -112,7 +90,7 @@ def main(conf):
             conf["stft"]["hop_size"],
             conf["stft"]["window_size"],
             conf["convolution"]["kernel_size"],
-            conf["convolution"]["stride"],
+            conf["convolution"]["stride"]
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
@@ -121,83 +99,14 @@ def main(conf):
                 factor=0.5,
                 patience=5
             )
-    elif(conf["model"]["name"] == "UNet_8k"):
-        sys.path.append('UNet_8k_model')
-        from unet_model import UNet
-        model = UNet(
-            conf["data"]["sample_rate"],
-            conf["stft"]["fft_size"],
-            conf["stft"]["hop_size"],
-            conf["stft"]["window_size"],
-            conf["convolution"]["kernel_size"],
-            conf["convolution"]["stride"],
-        )
-        optimizer = make_optimizer(model.parameters(), **conf["optim"])
-        if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(
-                optimizer=optimizer,
-                factor=0.5,
-                patience=5
-            )
-    elif(conf["model"]["name"] == "UNet_8k_spec"):
-        sys.path.append('UNet_8k_spec_model')
-        from unet_model import UNet
-        model = UNet(
-            conf["data"]["sample_rate"],
-            conf["stft"]["fft_size"],
-            conf["stft"]["hop_size"],
-            conf["stft"]["window_size"],
-            conf["convolution"]["kernel_size"],
-            conf["convolution"]["stride"],
-        )
-        optimizer = make_optimizer(model.parameters(), **conf["optim"])
-        if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(
-                optimizer=optimizer,
-                factor=0.5,
-                patience=5
-            )
-        train_set = PodcastMix(
-            csv_dir=conf["data"]["train_dir"],
-            sample_rate=conf["data"]["sample_rate"],
-            segment=conf["data"]["segment"],
-            shuffle_tracks=True,
-            spectrogram=True
-        )
-
-        val_set = PodcastMix(
-            csv_dir=conf["data"]["valid_dir"],
-            sample_rate=conf["data"]["sample_rate"],
-            segment=conf["data"]["segment"],
-            shuffle_tracks=True,
-            spectrogram=True
-        )
-
-        train_loader = DataLoader(
-            train_set,
-            shuffle=True,
-            batch_size=conf["training"]["batch_size"],
-            num_workers=conf["training"]["num_workers"],
-            drop_last=True,
-            pin_memory=True
-        )
-
-        val_loader = DataLoader(
-            val_set,
-            shuffle=False,
-            batch_size=conf["training"]["batch_size"],
-            num_workers=conf["training"]["num_workers"],
-            drop_last=True,
-            pin_memory=True
-        )
     elif(conf["model"]["name"] == "OpenUnmix"):
         sys.path.append('OpenUnmix_model')
         from openunmix_model import OpenUnmix
         model = OpenUnmix(
             conf["data"]["sample_rate"],
             conf["stft"]["nb_bins"],
-            conf["stft"]["hop_size"],
-            conf["stft"]["window_size"]
+            conf["stft"]["window_size"],
+            conf["stft"]["hop_size"]
         )
         optimizer = make_optimizer(model.parameters(), **conf["optim"])
         if conf["training"]["half_lr"]:
@@ -214,8 +123,7 @@ def main(conf):
     with open(conf_path, "w") as outfile:
         yaml.safe_dump(conf, outfile)
 
-    # Define Loss function.
-    loss_func = SingleSrcMSE()
+    loss_func = L1Loss()
     system = System(
         model=model,
         loss_func=loss_func,
@@ -241,21 +149,20 @@ def main(conf):
         callbacks.append(EarlyStopping(
             monitor="val_loss",
             mode="min",
-            patience=30,
+            patience=50,
             verbose=True
         ))
 
     # Don't ask GPU if they are not available.
     gpus = -1 if torch.cuda.is_available() else None
-    distributed_backend = "dp" if torch.cuda.is_available() else None
-    print("hereherehere", conf)
+    distributed_backend = "ddp" if torch.cuda.is_available() else None
     trainer = pl.Trainer(
         max_epochs=conf["training"]["epochs"],
         callbacks=callbacks,
         default_root_dir=exp_dir,
         gpus=gpus,
         distributed_backend=distributed_backend,
-        limit_train_batches=1.0,  # Useful for fast experiment
+        # limit_train_batches=1.0,  # Useful for fast experiment
         gradient_clip_val=5.0,
         resume_from_checkpoint=conf["main_args"]["resume_from"]
     )
@@ -264,7 +171,6 @@ def main(conf):
     best_k = {k: v.item() for k, v in checkpoint.best_k_models.items()}
     with open(os.path.join(exp_dir, "best_k_models.json"), "w") as f:
         json.dump(best_k, f, indent=0)
-
     state_dict = torch.load(checkpoint.best_model_path)
     system.load_state_dict(state_dict=state_dict["state_dict"])
     system.cpu()

@@ -9,9 +9,9 @@ training:
   early_stop: yes
 # Optim config
 stft:
-  nb_bins: 1026
+  nb_bins: 1024
   window_size: 1024
-  hop_size: 32
+  hop_size: 441
 optim:
   optimizer: adam
   lr: 0.001
