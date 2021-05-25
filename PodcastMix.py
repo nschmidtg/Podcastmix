@@ -22,7 +22,7 @@ class PodcastMix(Dataset):
     dataset_name = "PodcastMix"
 
     def __init__(self, csv_dir, sample_rate=44100, segment=3, return_id=False, 
-                 shuffle_tracks=False, spectrogram=False):
+                 shuffle_tracks=False):
         self.csv_dir = csv_dir
         self.return_id = return_id
         self.speech_csv_path = os.path.join(self.csv_dir, 'speech.csv')
@@ -30,7 +30,6 @@ class PodcastMix(Dataset):
         self.segment = segment
         self.sample_rate = sample_rate
         self.shuffle_tracks = shuffle_tracks
-        self.spectrogram = spectrogram
         # Open csv files
         self.df_speech = pd.read_csv(self.speech_csv_path, engine='python')
         self.df_music = pd.read_csv(self.music_csv_path, engine='python')
@@ -38,22 +37,9 @@ class PodcastMix(Dataset):
         # initialize indexes
         self.speech_inxs = list(range(len(self.df_speech)))
         self.music_inxs = list(range(len(self.df_music)))
-        np.random.seed(1)
-        random.seed(1)
         self.gain_ramp = np.array(range(1, 100, 1))/100
         np.random.shuffle(self.gain_ramp)
-        self.window = torch.hamming_window(1024)
-
-    def stft(self, x_in):
-        print("x_in:", x_in.shape)
-        X_in = torch.stft(x_in, n_fft=1024, hop_length=768)
-        real, imag = X_in.unbind(-1)
-        complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
-        r_i = torch.view_as_complex(complex_n)
-        phase = torch.angle(r_i)
-        X_in = torch.sqrt(real**2 + imag**2)
-        
-        return X_in
+        torchaudio.set_audio_backend(backend='soundfile')
 
     def __len__(self):
         # for now, its a full permutation
@@ -158,10 +144,7 @@ class PodcastMix(Dataset):
         # We want to cleanly separate Speech, so its the first source
         # in the sources_list
         speech_signal = self.load_mono_non_silent_random_segment(row_speech['speech_path'])
-        if self.spectrogram:
-            sources_list.append(self.stft(speech_signal))
-        else:
-            sources_list.append(speech_signal)
+        sources_list.append(speech_signal)
 
         # now for music:
         music_signal = self.load_mono_non_silent_random_segment(row_music['music_path'])
@@ -178,10 +161,7 @@ class PodcastMix(Dataset):
             music_gain = self.gain_ramp[idx % len(self.gain_ramp)] * reduction_factor
 
         # multiply the music by the gain factor and add to the sources_list
-        if self.spectrogram:
-            sources_list.append(self.stft(music_gain * music_signal))
-        else:
-            sources_list.append(music_gain * music_signal)
+        sources_list.append(music_gain * music_signal)
         # compute the mixture
         mixture = sources_list[0] + sources_list[1]
         mixture = torch.squeeze(mixture)
@@ -190,7 +170,7 @@ class PodcastMix(Dataset):
         sources = np.vstack(sources_list)
         # Convert sources to tensor
         sources = torch.from_numpy(sources)
-        
+
         if not self.return_id:
             return mixture, sources
         return mixture, sources, [

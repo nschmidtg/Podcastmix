@@ -2,9 +2,9 @@ model:
   name: UNet
 # Training config
 training:
-  epochs: 100
-  batch_size: 2
-  num_workers: 0
+  epochs: 500
+  batch_size: 32
+  num_workers: 24
   half_lr: yes
   early_stop: yes
 # Optim config
@@ -17,7 +17,7 @@ convolution:
   kernel_size: 5
 optim:
   optimizer: adam
-  lr: 0.001
+  lr: 0.0005
   weight_decay: !!float 1e-5
 # Data config
 data:
