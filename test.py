@@ -94,8 +94,8 @@ def main(conf):
         csv_dir=conf["test_dir"],
         sample_rate=conf["sample_rate"],
         segment=conf["segment"],
-        return_id=True,
-        shuffle_tracks=False
+        shuffle_tracks=False,
+        multi_speakers=True
     )  # Uses all segment length
     # Used to reorder sources only
 
