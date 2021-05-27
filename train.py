@@ -35,14 +35,16 @@ def main(conf):
         csv_dir=conf["data"]["train_dir"],
         sample_rate=conf["data"]["sample_rate"],
         segment=conf["data"]["segment"],
-        shuffle_tracks=True
+        shuffle_tracks=True,
+        multi_speakers=True
     )
 
     val_set = PodcastMix(
         csv_dir=conf["data"]["valid_dir"],
         sample_rate=conf["data"]["sample_rate"],
         segment=conf["data"]["segment"],
-        shuffle_tracks=True
+        shuffle_tracks=True,
+        multi_speakers=True
     )
 
     train_loader = DataLoader(
