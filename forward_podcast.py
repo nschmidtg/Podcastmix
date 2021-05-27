@@ -22,7 +22,7 @@ class PodcastLoader(Dataset):
         return len(self.paths)
     
     def __getitem__(self, index):
-        starting_second = 37
+        starting_second = 150
         podcast_path = self.paths[index]
         print(podcast_path)
         audio_signal, _ = torchaudio.load(
