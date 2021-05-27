@@ -1,5 +1,5 @@
 import torch
-from .unet_parts import down, up, input_layer, last_layer
+from unet_parts import down, up, input_layer, last_layer
 from asteroid.models import BaseModel
 
 class UNet(BaseModel):
