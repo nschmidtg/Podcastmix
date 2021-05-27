@@ -129,19 +129,18 @@ class PodcastMix(Dataset):
 
         return torch.sqrt(torch.mean(audio ** 2))
 
-    def load_speechs(self, idx):
+    def load_speechs(self):
         """ Loads the speaker mix. It could be a single speaker if
-        self.multi_speaker=False, or a random mix between 2 to 4
-        speakers using idx as the sample seed
+        self.multi_speaker=False, or a random mix between 1 to 4
+        speakers
         """
-        random.seed(idx)
         speech_mix = []
         number_of_speakers = random.randint(1, 4) if self.multi_speakers else 1
         for _ in range(number_of_speakers):
             speech_idx = random.sample(self.speech_inxs)
             row_speech = self.df_speech.iloc[speech_idx]
             speech_signal = self.load_mono_non_silent_random_segment(row_speech['speech_path'])
-            speech_mix.append(speech_idx)
+            speech_mix.append(speech_signal)
         speech_mix = torch.mean(speech_mix) if self.multi_speakers else speech_mix
         
         return speech_mix
@@ -160,7 +159,7 @@ class PodcastMix(Dataset):
 
         # We want to cleanly separate Speech, so its the first source
         # in the sources_list
-        speech_signal = self.load_speechs(idx)
+        speech_signal = self.load_speechs()
         sources_list.append(speech_signal)
 
         # now for music:
