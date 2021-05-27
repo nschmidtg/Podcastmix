@@ -25,4 +25,4 @@ data:
   valid_dir: podcastmix/metadata/val
   sample_rate: 44100
   n_src: 2
-  segment: 2
+  segment: 12

@@ -21,10 +21,9 @@ class PodcastMix(Dataset):
 
     dataset_name = "PodcastMix"
 
-    def __init__(self, csv_dir, sample_rate=44100, segment=3, return_id=False, 
+    def __init__(self, csv_dir, sample_rate=44100, segment=3,
                  shuffle_tracks=False, multi_speakers=False):
         self.csv_dir = csv_dir
-        self.return_id = return_id
         self.speech_csv_path = os.path.join(self.csv_dir, 'speech.csv')
         self.music_csv_path = os.path.join(self.csv_dir, 'music.csv')
         self.segment = segment
@@ -197,12 +196,7 @@ class PodcastMix(Dataset):
         # Convert sources to tensor
         sources = torch.from_numpy(sources)
 
-        if not self.return_id:
-            return mixture, sources
-        return mixture, sources, [
-            row_speech['speech_ID'],
-            row_music['music_ID']
-        ]
+        return mixture, sources
 
     def get_infos(self):
         """Get dataset infos (for publishing models).
