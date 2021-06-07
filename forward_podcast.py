@@ -15,14 +15,14 @@ class PodcastLoader(Dataset):
     def __init__(self, csv_dir, sample_rate=44100, segment=3):
         self.segment = segment
         self.sample_rate = sample_rate
-        self.paths = [os.path.join(csv_dir, f) for f in os.listdir(csv_dir) if os.path.isfile(os.path.join(csv_dir, f))]
+        self.paths = [os.path.join(csv_dir, f) for f in os.listdir(csv_dir) if (os.path.isfile(os.path.join(csv_dir, f)) and '.wav' in f)]
         torchaudio.set_audio_backend(backend='soundfile')
 
     def __len__(self):
         return len(self.paths)
     
     def __getitem__(self, index):
-        starting_second = 150
+        starting_second = 0
         podcast_path = self.paths[index]
         print(podcast_path)
         audio_signal, _ = torchaudio.load(
