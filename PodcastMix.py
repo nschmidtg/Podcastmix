@@ -21,8 +21,8 @@ class PodcastMix(Dataset):
 
     dataset_name = "PodcastMix"
 
-    def __init__(self, csv_dir, sample_rate=44100, segment=3,
-                 shuffle_tracks=False, multi_speakers=False):
+    def __init__(self, csv_dir, sample_rate=44100, segment=12,
+                 shuffle_tracks=False, multi_speakers=False, solo_music_ratio=0.2):
         self.csv_dir = csv_dir
         self.speech_csv_path = os.path.join(self.csv_dir, 'speech.csv')
         self.music_csv_path = os.path.join(self.csv_dir, 'music.csv')
@@ -30,10 +30,12 @@ class PodcastMix(Dataset):
         self.sample_rate = sample_rate
         self.shuffle_tracks = shuffle_tracks
         self.multi_speakers = multi_speakers
+        self.solo_music_ratio = solo_music_ratio
         # Open csv files
         self.df_speech = pd.read_csv(self.speech_csv_path, engine='python')
         self.df_music = pd.read_csv(self.music_csv_path, engine='python')
-        self.seg_len = int(self.segment * self.sample_rate)
+        # create dictionary of speakers
+        # df_speech.loc[df_speech['speaker_id'] == "p257"]
         # initialize indexes
         self.speech_inxs = list(range(len(self.df_speech)))
         self.music_inxs = list(range(len(self.df_music)))
@@ -46,7 +48,7 @@ class PodcastMix(Dataset):
         return min([len(self.df_speech), len(self.df_music)])
 
 
-    def compute_rand_offset_duration(self, audio_path, original_sr, original_num_frames):
+    def compute_rand_offset_duration(self, original_sr, original_num_frames):
         """ Computes a random offset and the number of frames to read the audio_path
         in order to get a subsection of length equal to self.segment. If the number 
         of frames in the segment is bigger than the original_num_frames, it returns
@@ -91,7 +93,6 @@ class PodcastMix(Dataset):
         while torch.sum(torch.abs(audio_signal)) == 0:
             # If there is a seg, start point is set randomly
             offset, duration = self.compute_rand_offset_duration(
-                audio_path,
                 sr,
                 length
             )
@@ -129,29 +130,55 @@ class PodcastMix(Dataset):
 
         return torch.sqrt(torch.mean(audio ** 2))
 
-    def load_speechs(self):
+    def load_speechs(self, speech_idx):
         """ Loads the speaker mix. It could be a single speaker if
-        self.multi_speaker=False, or a random mix between 1 to 4
-        speakers
+        self.multi_speaker=False, or a random mix of 1 to 4
+        phrases from the speaker of speech_idx.
         """
         speech_mix = []
-        number_of_speakers = random.randint(1, 4) if self.multi_speakers else 1
-        # print("number_of_speakers:", number_of_speakers)
-        for _ in range(number_of_speakers):
-            speech_idx = random.sample(self.speech_inxs, 1)[0]
-            # print("speech_idx:", speech_idx)
-            row_speech = self.df_speech.iloc[speech_idx]
-            # print("row_speech:", row_speech)
-            speech_signal = self.load_mono_non_silent_random_segment(row_speech['speech_path'])
-            speech_mix.append(speech_signal)
-        speech_mix = torch.stack(speech_mix)
-        #speech_mix = speech_mix.squeeze(0)
-        #print("speech_mix:", speech_mix.shape)
-        #speech_mix = torch.Tensor(speech_mix)
-        # print('antes', speech_mix)
-        speech_mix = torch.mean(speech_mix, dim=0) if self.multi_speakers else speech_mix
-        # print("final", speech_mix.shape)
-        speech_mix = speech_mix.squeeze(1)
+        speaker_csv_id = self.df_speech.iloc[speech_idx].speaker_id
+        speaker_dict = self.df_speech.loc[
+            self.df_speech['speaker_id'] == speaker_csv_id
+        ]
+        speech_mix = torch.zeros(self.segment * self.sample_rate)
+        i = 0
+        while(i < len(speech_mix)):
+            row_speech = speaker_dict.sample()
+            audio_length = row_speech['length']
+            audio_path = row_speech['speech_path']
+            audio_signal = torch.zeros(1)
+            offset_read = duration = 0
+            while torch.sum(torch.abs(audio_signal)) == 0:
+                # If there is a seg, start point is set randomly
+                offset_read, duration = self.compute_rand_offset_duration(
+                    44100,
+                    audio_length
+                )
+                # load the audio with the computed offsets
+                audio_signal, sr = torchaudio.load(
+                    audio_path,
+                    frame_offset=offset_read,
+                    num_frames=duration,
+                    normalize=True
+                )
+            offset_write = random.uniform(0, min(len(speech_mix) - i, int(self.solo_music_ratio * len(speech_mix))))
+            speech_mix[offset_write:offset_write + duration] = audio_signal
+            i += offset_write + duration
+        
+        return speech_mix
+
+            
+
+
+
+        
+
+
+        # speech_signal = self.load_mono_non_silent_random_segment(row_speech['speech_path'])
+        # speech_mix.append(speech_signal)
+        # speech_mix = torch.stack(speech_mix)
+        # speech_mix = torch.mean(speech_mix, dim=0) if self.multi_speakers else speech_mix
+        # speech_mix = speech_mix.squeeze(1)
         return speech_mix
 
 
@@ -162,13 +189,12 @@ class PodcastMix(Dataset):
             random.shuffle(self.speech_inxs)
         # get corresponding index from the list
         music_idx = self.music_inxs[idx]
+        speech_idx = self.speech_inxs[idx]
         # Get the row in speech dataframe
         row_music = self.df_music.iloc[music_idx]
         sources_list = []
 
-        # We want to cleanly separate Speech, so its the first source
-        # in the sources_list
-        speech_signal = self.load_speechs()
+        speech_signal = self.load_speechs(speech_idx)
         sources_list.append(speech_signal)
 
         # now for music:
