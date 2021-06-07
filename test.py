@@ -94,8 +94,8 @@ def main(conf):
         csv_dir=conf["test_dir"],
         sample_rate=conf["sample_rate"],
         segment=conf["segment"],
-        return_id=True,
-        shuffle_tracks=False
+        shuffle_tracks=False,
+        multi_speakers=False
     )  # Uses all segment length
     # Used to reorder sources only
 
@@ -109,8 +109,7 @@ def main(conf):
     torch.no_grad().__enter__()
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
-        mix, sources, ids = test_set[idx]
-        print("ids of test set:", ids)
+        mix, sources = test_set[idx]
         mix, sources = tensors_to_device([mix, sources], device=model_device)
         if conf["target_model"] == "UNet":
             est_sources = model(mix.unsqueeze(0)).squeeze(0)
