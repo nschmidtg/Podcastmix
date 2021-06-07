@@ -95,7 +95,7 @@ def main(conf):
         sample_rate=conf["sample_rate"],
         segment=conf["segment"],
         shuffle_tracks=False,
-        multi_speakers=True
+        multi_speakers=False
     )  # Uses all segment length
     # Used to reorder sources only
 

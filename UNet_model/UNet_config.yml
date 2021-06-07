@@ -3,7 +3,7 @@ model:
 # Training config
 training:
   epochs: 500
-  batch_size: 32
+  batch_size: 8
   num_workers: 24
   half_lr: yes
   early_stop: yes
