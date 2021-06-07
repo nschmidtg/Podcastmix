@@ -31,9 +31,9 @@ class UNet(BaseModel):
         self.down6 = down(256, 512, self.kernel_size, self.stride)
 
         # up blocks
-        self.up1 = up(512, 256, self.kernel_size, self.stride, (0,1), 1)
-        self.up2 = up(256, 128, self.kernel_size, self.stride, (0,1), 2)
-        self.up3 = up(128, 64, self.kernel_size, self.stride, (0,0), 3)
+        self.up1 = up(512, 256, self.kernel_size, self.stride, (0,0), 1)
+        self.up2 = up(256, 128, self.kernel_size, self.stride, (0,0), 2)
+        self.up3 = up(128, 64, self.kernel_size, self.stride, (0,1), 3)
         self.up4 = up(64, 32, self.kernel_size, self.stride, (0,0), 4)
         self.up5 = up(32, 16, self.kernel_size, self.stride, (0,0), 5)
         self.last_layer = last_layer(16, 1, self.kernel_size, self.stride, (0, 0))
