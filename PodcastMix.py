@@ -21,10 +21,9 @@ class PodcastMix(Dataset):
 
     dataset_name = "PodcastMix"
 
-    def __init__(self, csv_dir, sample_rate=44100, segment=3, return_id=False, 
+    def __init__(self, csv_dir, sample_rate=44100, segment=3,
                  shuffle_tracks=False, multi_speakers=False):
         self.csv_dir = csv_dir
-        self.return_id = return_id
         self.speech_csv_path = os.path.join(self.csv_dir, 'speech.csv')
         self.music_csv_path = os.path.join(self.csv_dir, 'music.csv')
         self.segment = segment
@@ -84,6 +83,7 @@ class PodcastMix(Dataset):
         Returns:
         - audio_signal (torchaudio) : waveform of the
         """
+        # print("audio_path:", audio_path)
         info = torchaudio.info(audio_path)
         sr, length = info.sample_rate, info.num_frames
         audio_signal = torch.tensor([0.])
@@ -136,13 +136,22 @@ class PodcastMix(Dataset):
         """
         speech_mix = []
         number_of_speakers = random.randint(1, 4) if self.multi_speakers else 1
+        # print("number_of_speakers:", number_of_speakers)
         for _ in range(number_of_speakers):
-            speech_idx = random.sample(self.speech_inxs)
+            speech_idx = random.sample(self.speech_inxs, 1)[0]
+            # print("speech_idx:", speech_idx)
             row_speech = self.df_speech.iloc[speech_idx]
+            # print("row_speech:", row_speech)
             speech_signal = self.load_mono_non_silent_random_segment(row_speech['speech_path'])
             speech_mix.append(speech_signal)
-        speech_mix = torch.mean(speech_mix) if self.multi_speakers else speech_mix
-        
+        speech_mix = torch.stack(speech_mix)
+        #speech_mix = speech_mix.squeeze(0)
+        #print("speech_mix:", speech_mix.shape)
+        #speech_mix = torch.Tensor(speech_mix)
+        # print('antes', speech_mix)
+        speech_mix = torch.mean(speech_mix, dim=0) if self.multi_speakers else speech_mix
+        # print("final", speech_mix.shape)
+        speech_mix = speech_mix.squeeze(1)
         return speech_mix
 
 
@@ -187,12 +196,7 @@ class PodcastMix(Dataset):
         # Convert sources to tensor
         sources = torch.from_numpy(sources)
 
-        if not self.return_id:
-            return mixture, sources
-        return mixture, sources, [
-            row_speech['speech_ID'],
-            row_music['music_ID']
-        ]
+        return mixture, sources
 
     def get_infos(self):
         """Get dataset infos (for publishing models).
