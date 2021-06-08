@@ -126,11 +126,13 @@ class PodcastMix(Dataset):
 
         return audio_signal
 
-    def rms(self, audio):
+    def rms(self, speech, music):
         """ computes the RMS of an audio signal
         """
-
-        return torch.sqrt(torch.mean(audio ** 2))
+        print(speech.shape)
+        speech = speech[speech.nonzero()]
+        print(speech.shape)
+        return torch.sqrt(torch.mean(speech ** 2)) / torch.sqrt(torch.mean(music ** 2))
 
     def load_speechs(self, speech_idx):
         """ Loads the speaker mix. It could be a single speaker if
@@ -143,38 +145,59 @@ class PodcastMix(Dataset):
             self.df_speech['speaker_id'] == speaker_csv_id
         ]
         speech_mix = torch.zeros(self.segment_total * self.sample_rate)
-        i = 0
+        speech_acum = 0
         speechs = []
         num_of_zeros = len(speech_mix) * self.solo_music_ratio
-        while(i < num_of_zeros):
+        while(speech_acum < len(speech_mix)):
             row_speech = speaker_dict.sample()
-            audio_length = row_speech['length']
-            audio_path = row_speech['speech_path']
-            if audio_length > num_of_zeros - i:
-                duration = num_of_zeros - i
+            audio_length = int(row_speech['length'])
+            print("audio_legnth", audio_length)
+            audio_path = row_speech['speech_path'].values[0]
+            print(audio_path, type(audio_path))
+            print(audio_length, type(audio_length))
+            if audio_length > (len(speech_mix) - speech_acum):
+                duration = len(speech_mix) - speech_acum
             else:
                 duration = audio_length
             audio_signal, _ = torchaudio.load(
                 audio_path,
                 frame_offset=0,
-                num_frames=duration,
+                num_frames=int(duration),
                 normalize=True
             )
-            speechs.append(audio_signal)
-            i += duration
+            print("cada audio", audio_signal)
+            speechs.append(audio_signal.squeeze(0))
+            print("speechs", speechs)
+            speech_acum += duration
         
         silence_segments = len(speechs) + 1
+        print("num os zeros", num_of_zeros)
         mean = num_of_zeros // silence_segments
         silence_segment_lengths = np.random.normal(mean, sqrt(mean), silence_segments)
+        print("segmentos", silence_segment_lengths)
         # make sure there are no negative values
         silence_segment_lengths[silence_segment_lengths < 0] = 0
-        silence_segment_lengths = int(silence_segment_lengths / np.sum(silence_segment_lengths) * num_of_zeros)
+        print("silence_segment_lengths", len(silence_segment_lengths))
+        silences_norm = silence_segment_lengths / (np.sum(silence_segment_lengths) + speech_acum)
+        print("silences_norm", silences_norm)
+        silence_segment_lengths = silences_norm * len(speech_mix)
         i = 0
         index = 0
         for speech in speechs:
-            speech_mix[i + silence_segment_lengths[index]:i + silence_segment_lengths[index] + len(speech)] = speech
+            print(index)
+            print(silence_segment_lengths[index])
+            print(speech_mix.shape)
+            print("len de speech", len(speech))
+            print("len de silencio", silence_segment_lengths[index])
+            print("antes de concat", speech_mix)
+            i += int(silence_segment_lengths[index])
+            speech_mix[i:i + len(speech)] = speech
+            print("despues de concat", speech_mix)
+         
             i += len(speech)
-            i += silence_segment_lengths[index]
+            print("remaining", len(speech_mix) - i)
+            # i += int(silence_segment_lengths[index])
+            index += 1
             
         return speech_mix
 
@@ -185,7 +208,7 @@ class PodcastMix(Dataset):
             random.shuffle(self.music_inxs)
             random.shuffle(self.speech_inxs)
         # get random offset
-        offset = random.uniform(0, self.segment_total * self.sample_rate - self.segment * self.sample_rate)
+        offset_truncate = int(random.uniform(0, self.segment_total * self.sample_rate - self.segment * self.sample_rate))
         # get corresponding index from the list
         music_idx = self.music_inxs[idx]
         speech_idx = self.speech_inxs[idx]
@@ -194,24 +217,39 @@ class PodcastMix(Dataset):
         sources_list = []
 
         speech_signal = self.load_speechs(speech_idx)
-        sources_list.append(speech_signal[offset:offset + self.segment * self.sample_rate])
+        print("after loading speech:", speech_signal)
+        speech_signal = speech_signal[offset_truncate:offset_truncate + self.segment * self.sample_rate]
+        print("speech_signal", speech_signal.shape)
+        sources_list.append(speech_signal)
 
         # now for music:
         music_signal = self.load_mono_non_silent_random_segment(row_music['music_path'])
-
+        music_signal = music_signal.squeeze(0)
+        music_signal = music_signal[offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
+        print("after loading music:", music_signal)
+        # music_signal = music_signal.squeeze(0)
+        print("after loading music1:", music_signal)
         # gain based on RMS in order to have RMS(speech_signal) >= RMS(music_singal)
-        reduction_factor = self.rms(speech_signal) / self.rms(music_signal)
+        reduction_factor = self.rms(speech_signal, music_signal)
 
         # now we know that rms(r * music_signal) == rms(speech_signal)
         if self.shuffle_tracks:
             # random gain for training and validation
-            music_gain = random.uniform(1e-3, 1) * reduction_factor
+            music_gain = random.uniform(1e-2, 1) * reduction_factor
         else:
             # fixed gain for testing
             music_gain = self.gain_ramp[idx % len(self.gain_ramp)] * reduction_factor
 
         # multiply the music by the gain factor and add to the sources_list
-        sources_list.append((music_gain * music_signal)[offset:offset + self.segment * self.sample_rate])
+        print("music_gain", music_gain)
+        music_signal = music_gain * music_signal
+        print("after loading music2:", music_signal)
+        print("offset_truncate", offset_truncate)
+        # music_signal = music_signal[offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
+        print("music_signal3", music_signal)
+        sources_list.append(music_signal)
+
+        print("heeeey:", len(sources_list))
         # compute the mixture
         mixture = sources_list[0] + sources_list[1]
         mixture = torch.squeeze(mixture)
