@@ -17,7 +17,8 @@ class UNet(BaseModel):
         # declare layers
 
         # input batch normalization
-        self.input_layer = input_layer(1)
+        self.input_layer_speech = input_layer(1)
+        self.input_layer_music = input_layer(1)
 
         # down blocks for speech
         self.down_speech_1 = down(1, 16, self.kernel_size, self.stride)
@@ -67,11 +68,14 @@ class UNet(BaseModel):
 
         # add channels dimension
         X = X_in.unsqueeze(1)
-        X = self.input_layer(X)
+
+        # input layer
+        X_speech = self.input_layer_speech(X)
+        X_music = self.input_layer_music(X)
 
         # first down layer
-        X1_speech = self.down_speech_1(X)
-        X1_music = self.down_music_1(X)
+        X1_speech = self.down_speech_1(X_speech)
+        X1_music = self.down_music_1(X_music)
 
         # second down layer
         X2_speech = self.down_speech_2(X1_speech)
