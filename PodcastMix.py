@@ -130,6 +130,7 @@ class PodcastMix(Dataset):
         """ computes the RMS ration between the speech and the music
         deleting the silences between the speechs
         """
+        print(speech.shape, music.shape)
         speech = speech[speech.nonzero()]
 
         return torch.sqrt(torch.mean(speech ** 2)) / torch.sqrt(torch.mean(music ** 2))
@@ -202,7 +203,7 @@ class PodcastMix(Dataset):
             i += len(speech)
             index += 1
 
-        return speech_mix
+        return speech_mix.unsqueeze(0)
 
 
     def __getitem__(self, idx):
@@ -226,11 +227,11 @@ class PodcastMix(Dataset):
 
         # now for music:
         music_signal = self.load_mono_non_silent_random_segment(row_music)
-        music_signal = music_signal.squeeze(0)
+        # music_signal = music_signal.squeeze(0)
         music_signal = music_signal[offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
 
         # gain based on RMS in order to have RMS(speech_signal) >= RMS(music_singal)
-        reduction_factor = self.rms(speech_signal, music_signal)
+        reduction_factor = self.rms(speech_signal[0], music_signal[0])
 
         # now we know that rms(r * music_signal) == rms(speech_signal)
         if self.shuffle_tracks:
