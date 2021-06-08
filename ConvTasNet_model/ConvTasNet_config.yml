@@ -16,10 +16,11 @@ masknet:
 # Training config
 training:
   epochs: 500
-  batch_size: 2
-  num_workers: 24
+  batch_size: 1
+  num_workers: 1
   half_lr: yes
   early_stop: yes
+  multi_speakers: no
 # Optim config
 optim:
   optimizer: adam
