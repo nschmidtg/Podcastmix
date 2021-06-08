@@ -87,7 +87,6 @@ class PodcastMix(Dataset):
         Returns:
         - audio_signal (torchaudio) : waveform of the
         """
-        # 
         info = torchaudio.info(audio_path)
         sr, length = info.sample_rate, info.num_frames
         audio_signal = torch.tensor([0.])
@@ -148,15 +147,15 @@ class PodcastMix(Dataset):
         speech_acum = 0
         speechs = []
         num_of_zeros = len(speech_mix) * self.solo_music_ratio
-        while(speech_acum < len(speech_mix)):
+        while(speech_acum < (len(speech_mix) - num_of_zeros)):
             row_speech = speaker_dict.sample()
             audio_length = int(row_speech['length'])
             
             audio_path = row_speech['speech_path'].values[0]
             
             
-            if audio_length > (len(speech_mix) - speech_acum):
-                duration = len(speech_mix) - speech_acum
+            if audio_length > (len(speech_mix) - speech_acum - num_of_zeros):
+                duration = len(speech_mix) - speech_acum - num_of_zeros
             else:
                 duration = audio_length
             audio_signal, _ = torchaudio.load(
@@ -172,29 +171,29 @@ class PodcastMix(Dataset):
         
         silence_segments = len(speechs) + 1
         
-        mean = num_of_zeros // silence_segments
+        mean = (len(speech_mix) - speech_acum) // silence_segments
+        print("mean", mean, silence_segments)
         silence_segment_lengths = np.random.normal(mean, sqrt(mean), silence_segments)
-        
+        print("0", silence_segment_lengths)
         # make sure there are no negative values
         silence_segment_lengths[silence_segment_lengths < 0] = 0
-        
-        silences_norm = silence_segment_lengths / (np.sum(silence_segment_lengths) + speech_acum)
-        
-        silence_segment_lengths = silences_norm * len(speech_mix)
+        print("1", silence_segment_lengths)
+        silences_norm = silence_segment_lengths / np.sum(silence_segment_lengths)
+        print("2", silences_norm)
+        silence_segment_lengths = silences_norm * (len(speech_mix) - speech_acum)
+        print("3", silence_segment_lengths)
         i = 0
         index = 0
+        print("largo de speech_mix", len(speech_mix))
         for speech in speechs:
-            
-            
-            
-            
-            
-            
+            print("len de silencio", int(silence_segment_lengths[index]))
+            print("len de speech", len(speech))
             i += int(silence_segment_lengths[index])
             speech_mix[i:i + len(speech)] = speech
-            
-         
             i += len(speech)
+            print("remaining", len(speech_mix) - i)
+         
+            #i += len(speech)
             
             # i += int(silence_segment_lengths[index])
             index += 1
