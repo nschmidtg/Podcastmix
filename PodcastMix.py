@@ -112,7 +112,7 @@ class PodcastMix(Dataset):
         if not sr == self.sample_rate:
             audio_signal = torchaudio.transforms.Resample(orig_freq = sr, new_freq = self.sample_rate)(audio_signal)
         # zero pad if the size is smaller than seq_duration
-        seq_duration_samples = int(self.segment * self.sample_rate)
+        seq_duration_samples = int(self.segment_total * self.sample_rate)
         total_samples = audio_signal.shape[-1]
         if seq_duration_samples > total_samples:
             padding_offset = random.randint(0, seq_duration_samples - total_samples)
