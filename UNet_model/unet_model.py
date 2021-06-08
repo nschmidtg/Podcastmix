@@ -48,7 +48,10 @@ class UNet(BaseModel):
         self.up_music_3 = up(128, 64, self.kernel_size, self.stride, (0,0), 3)
         self.up_music_4 = up(64, 32, self.kernel_size, self.stride, (0,0), 4)
         self.up_music_5 = up(32, 16, self.kernel_size, self.stride, (0,0), 5)
-        self.last_layer = last_layer(16, 1, self.kernel_size, self.stride, (0, 0))
+
+        # last layer sigmoid
+        self.last_layer_speech = last_layer(16, 1, self.kernel_size, self.stride, (0, 0))
+        self.last_layer_music = last_layer(16, 1, self.kernel_size, self.stride, (0, 0))
 
 
 
@@ -112,19 +115,26 @@ class UNet(BaseModel):
         X1_music = self.up_music_5(X1_music, X2_music)
 
         # last up layer (no concat after transposed conv)
-        X = self.last_layer(X1)
+        X_speech = self.last_layer_speech(X1_speech)
+        X_music = self.last_layer_music(X1_music)
 
         # remove channels dimension:
-        X = X.squeeze(1)
+        X_speech = X_speech.squeeze(1)
+        X_music = X_music.squeeze(1)
 
         # use mask to separate speech from mix
-        speech = X_in * X
-        polar = speech * torch.cos(phase) + speech * torch.sin(phase) * 1j
-        speech_out = torch.istft(polar, self.fft_size, hop_length=self.hop_size, window=window, return_complex=False, onesided=True, center=True)
+        speech = X_in * X_speech
+        # and music
+        music = X_in * X_music
+        # istft
+        polar_speech = speech * torch.cos(phase) + speech * torch.sin(phase) * 1j
+        polar_music = music * torch.cos(phase) + music * torch.sin(phase) * 1j
+        speech_out = torch.istft(polar_speech, self.fft_size, hop_length=self.hop_size, window=window, return_complex=False, onesided=True, center=True)
+        music_out = torch.istft(polar_music, self.fft_size, hop_length=self.hop_size, window=window, return_complex=False, onesided=True, center=True)
 
         # remove additional dimention
         speech_out = speech_out.squeeze(1)
-        music_out = x_in - speech_out
+        music_out = music_out.squeeze(1)
 
         # add both sources to a tensor to return them
         T_data = torch.stack([speech_out, music_out], dim=1)
