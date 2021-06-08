@@ -92,7 +92,6 @@ class PodcastMix(Dataset):
         #sr, length = info.sample_rate, info.num_frames
         audio_signal = torch.tensor([0.])
         # iterate until the segment is not silence
-        print(row['music_path'])
         while torch.sum(torch.abs(audio_signal)) == 0:
             # If there is a seg, start point is set randomly
             offset, duration = self.compute_rand_offset_duration(
@@ -161,7 +160,6 @@ class PodcastMix(Dataset):
             row_speech = speaker_dict.sample()
             audio_length = int(row_speech['length'])
             audio_path = row_speech['speech_path'].values[0]
-            print(audio_path)
             # crop last audio to fit in the remaining space between the number of
             # desired zeros and the currently added speechs
             if audio_length > (len(speech_mix) - speech_acum - num_of_zeros):
@@ -222,18 +220,14 @@ class PodcastMix(Dataset):
         # load a podcasts-like mix of the speechs from the same VCTK speaker
         speech_signal = self.load_speechs(speech_idx)
         # crop it to fit the training segment
-        print("size of speech before truncate", len(speech_signal))
         offset_truncate = int(random.uniform(0, self.segment_total * self.sample_rate - self.segment * self.sample_rate))
         speech_signal = speech_signal[offset_truncate:offset_truncate + self.segment * self.sample_rate]
-        print("size of after before truncate", len(speech_signal))
         sources_list.append(speech_signal)
 
         # now for music:
         music_signal = self.load_mono_non_silent_random_segment(row_music)
         music_signal = music_signal.squeeze(0)
-        print("size of music before truncate", len(music_signal))
         music_signal = music_signal[offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
-        print("size of music after truncate", len(music_signal))
 
         # gain based on RMS in order to have RMS(speech_signal) >= RMS(music_singal)
         reduction_factor = self.rms(speech_signal, music_signal)
