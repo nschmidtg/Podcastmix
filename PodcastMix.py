@@ -87,7 +87,7 @@ class PodcastMix(Dataset):
         Returns:
         - audio_signal (torchaudio) : waveform of the
         """
-        # print("audio_path:", audio_path)
+        # 
         info = torchaudio.info(audio_path)
         sr, length = info.sample_rate, info.num_frames
         audio_signal = torch.tensor([0.])
@@ -129,9 +129,9 @@ class PodcastMix(Dataset):
     def rms(self, speech, music):
         """ computes the RMS of an audio signal
         """
-        print(speech.shape)
+        
         speech = speech[speech.nonzero()]
-        print(speech.shape)
+        
         return torch.sqrt(torch.mean(speech ** 2)) / torch.sqrt(torch.mean(music ** 2))
 
     def load_speechs(self, speech_idx):
@@ -151,10 +151,10 @@ class PodcastMix(Dataset):
         while(speech_acum < len(speech_mix)):
             row_speech = speaker_dict.sample()
             audio_length = int(row_speech['length'])
-            print("audio_legnth", audio_length)
+            
             audio_path = row_speech['speech_path'].values[0]
-            print(audio_path, type(audio_path))
-            print(audio_length, type(audio_length))
+            
+            
             if audio_length > (len(speech_mix) - speech_acum):
                 duration = len(speech_mix) - speech_acum
             else:
@@ -165,37 +165,37 @@ class PodcastMix(Dataset):
                 num_frames=int(duration),
                 normalize=True
             )
-            print("cada audio", audio_signal)
+            
             speechs.append(audio_signal.squeeze(0))
-            print("speechs", speechs)
+            
             speech_acum += duration
         
         silence_segments = len(speechs) + 1
-        print("num os zeros", num_of_zeros)
+        
         mean = num_of_zeros // silence_segments
         silence_segment_lengths = np.random.normal(mean, sqrt(mean), silence_segments)
-        print("segmentos", silence_segment_lengths)
+        
         # make sure there are no negative values
         silence_segment_lengths[silence_segment_lengths < 0] = 0
-        print("silence_segment_lengths", len(silence_segment_lengths))
+        
         silences_norm = silence_segment_lengths / (np.sum(silence_segment_lengths) + speech_acum)
-        print("silences_norm", silences_norm)
+        
         silence_segment_lengths = silences_norm * len(speech_mix)
         i = 0
         index = 0
         for speech in speechs:
-            print(index)
-            print(silence_segment_lengths[index])
-            print(speech_mix.shape)
-            print("len de speech", len(speech))
-            print("len de silencio", silence_segment_lengths[index])
-            print("antes de concat", speech_mix)
+            
+            
+            
+            
+            
+            
             i += int(silence_segment_lengths[index])
             speech_mix[i:i + len(speech)] = speech
-            print("despues de concat", speech_mix)
+            
          
             i += len(speech)
-            print("remaining", len(speech_mix) - i)
+            
             # i += int(silence_segment_lengths[index])
             index += 1
             
@@ -217,18 +217,18 @@ class PodcastMix(Dataset):
         sources_list = []
 
         speech_signal = self.load_speechs(speech_idx)
-        print("after loading speech:", speech_signal)
+        
         speech_signal = speech_signal[offset_truncate:offset_truncate + self.segment * self.sample_rate]
-        print("speech_signal", speech_signal.shape)
+        
         sources_list.append(speech_signal)
 
         # now for music:
         music_signal = self.load_mono_non_silent_random_segment(row_music['music_path'])
         music_signal = music_signal.squeeze(0)
         music_signal = music_signal[offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
-        print("after loading music:", music_signal)
+        
         # music_signal = music_signal.squeeze(0)
-        print("after loading music1:", music_signal)
+        
         # gain based on RMS in order to have RMS(speech_signal) >= RMS(music_singal)
         reduction_factor = self.rms(speech_signal, music_signal)
 
@@ -241,15 +241,15 @@ class PodcastMix(Dataset):
             music_gain = self.gain_ramp[idx % len(self.gain_ramp)] * reduction_factor
 
         # multiply the music by the gain factor and add to the sources_list
-        print("music_gain", music_gain)
+        
         music_signal = music_gain * music_signal
-        print("after loading music2:", music_signal)
-        print("offset_truncate", offset_truncate)
+        
+        
         # music_signal = music_signal[offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
-        print("music_signal3", music_signal)
+        
         sources_list.append(music_signal)
 
-        print("heeeey:", len(sources_list))
+        
         # compute the mixture
         mixture = sources_list[0] + sources_list[1]
         mixture = torch.squeeze(mixture)
