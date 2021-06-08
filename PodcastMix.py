@@ -36,8 +36,6 @@ class PodcastMix(Dataset):
         # Open csv files
         self.df_speech = pd.read_csv(self.speech_csv_path, engine='python')
         self.df_music = pd.read_csv(self.music_csv_path, engine='python')
-        # create dictionary of speakers
-        # df_speech.loc[df_speech['speaker_id'] == "p257"]
         # initialize indexes
         self.speech_inxs = list(range(len(self.df_speech)))
         self.music_inxs = list(range(len(self.df_music)))
@@ -78,7 +76,7 @@ class PodcastMix(Dataset):
 
         return offset, segment_frames
 
-    def load_mono_non_silent_random_segment(self, audio_path):
+    def load_mono_non_silent_random_segment(self, row):
         """ Randomly selects a non_silent part of the audio given by audio_path
 
         Parameters:
@@ -87,8 +85,10 @@ class PodcastMix(Dataset):
         Returns:
         - audio_signal (torchaudio) : waveform of the
         """
-        info = torchaudio.info(audio_path)
-        sr, length = info.sample_rate, info.num_frames
+        #info = torchaudio.info(audio_path)
+        sr = 44100
+        length = int(row['length'])
+        #sr, length = info.sample_rate, info.num_frames
         audio_signal = torch.tensor([0.])
         # iterate until the segment is not silence
         while torch.sum(torch.abs(audio_signal)) == 0:
@@ -98,8 +98,8 @@ class PodcastMix(Dataset):
                 length
             )
             # load the audio with the computed offsets
-            audio_signal, sr = torchaudio.load(
-                audio_path,
+            audio_signal, _ = torchaudio.load(
+                row['music_path'],
                 frame_offset=offset,
                 num_frames=duration,
                 normalize=True
@@ -126,11 +126,11 @@ class PodcastMix(Dataset):
         return audio_signal
 
     def rms(self, speech, music):
-        """ computes the RMS of an audio signal
+        """ computes the RMS ration between the speech and the music
+        deleting the silences between the speechs
         """
-        
         speech = speech[speech.nonzero()]
-        
+
         return torch.sqrt(torch.mean(speech ** 2)) / torch.sqrt(torch.mean(music ** 2))
 
     def load_speechs(self, speech_idx):
@@ -143,17 +143,24 @@ class PodcastMix(Dataset):
         speaker_dict = self.df_speech.loc[
             self.df_speech['speaker_id'] == speaker_csv_id
         ]
+        # initialize the final speech mix with zeros
         speech_mix = torch.zeros(self.segment_total * self.sample_rate)
+        # counter to track the number of samples already in the speech_mix
         speech_acum = 0
+        # array to save each speech
         speechs = []
+        # how much zeros should be in the final speech_mix tensor
         num_of_zeros = len(speech_mix) * self.solo_music_ratio
         while(speech_acum < (len(speech_mix) - num_of_zeros)):
+            # keep adding speechs from the same speaker until the proportion of
+            # zeros remaining in the tensor is equal to self.solo_music_ratio
+
+            # sample a speech from the speaker dict
             row_speech = speaker_dict.sample()
             audio_length = int(row_speech['length'])
-            
             audio_path = row_speech['speech_path'].values[0]
-            
-            
+            # crop last audio to fit in the remaining space between the number of
+            # desired zeros and the currently added speechs
             if audio_length > (len(speech_mix) - speech_acum - num_of_zeros):
                 duration = len(speech_mix) - speech_acum - num_of_zeros
             else:
@@ -164,40 +171,36 @@ class PodcastMix(Dataset):
                 num_frames=int(duration),
                 normalize=True
             )
-            
             speechs.append(audio_signal.squeeze(0))
-            
             speech_acum += duration
-        
+        # there can be silences in the beginning, in the middle of each
+        # speech and at the end (N+1)
         silence_segments = len(speechs) + 1
-        
+        # mean of the normal distibution is the number of desired zeros
+        # divided by the number of silence segments
         mean = (len(speech_mix) - speech_acum) // silence_segments
-        print("mean", mean, silence_segments)
+        # sample from the normal distribution using sqrt(mean) as standar deviation
+        # each one of the elements in silence_segment_length represents the length of
+        # each one of the silences in terms of samples
         silence_segment_lengths = np.random.normal(mean, sqrt(mean), silence_segments)
-        print("0", silence_segment_lengths)
         # make sure there are no negative values
         silence_segment_lengths[silence_segment_lengths < 0] = 0
-        print("1", silence_segment_lengths)
+        # the samples could not fit perfectly in the speech_mix tensor, so
+        # we respect the proportion but scale it to fit in the speech_mix
         silences_norm = silence_segment_lengths / np.sum(silence_segment_lengths)
-        print("2", silences_norm)
         silence_segment_lengths = silences_norm * (len(speech_mix) - speech_acum)
-        print("3", silence_segment_lengths)
+        # inialize the indexes to iterate over the speech array adding them and
+        # the silence segments to the speech_mix array
         i = 0
         index = 0
-        print("largo de speech_mix", len(speech_mix))
         for speech in speechs:
-            print("len de silencio", int(silence_segment_lengths[index]))
-            print("len de speech", len(speech))
+            # skip to add the respective silence at the beginning
             i += int(silence_segment_lengths[index])
+            # add the speech after the silence
             speech_mix[i:i + len(speech)] = speech
             i += len(speech)
-            print("remaining", len(speech_mix) - i)
-         
-            #i += len(speech)
-            
-            # i += int(silence_segment_lengths[index])
             index += 1
-            
+
         return speech_mix
 
 
@@ -206,8 +209,6 @@ class PodcastMix(Dataset):
             # shuffle on first epochs of training and validation. Not testing
             random.shuffle(self.music_inxs)
             random.shuffle(self.speech_inxs)
-        # get random offset
-        offset_truncate = int(random.uniform(0, self.segment_total * self.sample_rate - self.segment * self.sample_rate))
         # get corresponding index from the list
         music_idx = self.music_inxs[idx]
         speech_idx = self.speech_inxs[idx]
@@ -215,19 +216,18 @@ class PodcastMix(Dataset):
         row_music = self.df_music.iloc[music_idx]
         sources_list = []
 
+        # load a podcasts-like mix of the speechs from the same VCTK speaker
         speech_signal = self.load_speechs(speech_idx)
-        
+        # crop it to fit the training segment
+        offset_truncate = int(random.uniform(0, self.segment_total * self.sample_rate - self.segment * self.sample_rate))
         speech_signal = speech_signal[offset_truncate:offset_truncate + self.segment * self.sample_rate]
-        
         sources_list.append(speech_signal)
 
         # now for music:
-        music_signal = self.load_mono_non_silent_random_segment(row_music['music_path'])
+        music_signal = self.load_mono_non_silent_random_segment(row_music)
         music_signal = music_signal.squeeze(0)
         music_signal = music_signal[offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
-        
-        # music_signal = music_signal.squeeze(0)
-        
+
         # gain based on RMS in order to have RMS(speech_signal) >= RMS(music_singal)
         reduction_factor = self.rms(speech_signal, music_signal)
 
@@ -240,15 +240,9 @@ class PodcastMix(Dataset):
             music_gain = self.gain_ramp[idx % len(self.gain_ramp)] * reduction_factor
 
         # multiply the music by the gain factor and add to the sources_list
-        
         music_signal = music_gain * music_signal
-        
-        
-        # music_signal = music_signal[offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
-        
         sources_list.append(music_signal)
 
-        
         # compute the mixture
         mixture = sources_list[0] + sources_list[1]
         mixture = torch.squeeze(mixture)
