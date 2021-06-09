@@ -2,7 +2,7 @@ model:
   name: ConvTasNet
 # filterbank config
 filterbank:
-  n_filters: 512
+  n_filters: 128
   kernel_size: 16
   stride: 8
 # Network config
@@ -10,9 +10,9 @@ masknet:
   n_blocks: 8
   n_repeats: 3
   mask_act: relu
-  bn_chan: 128
-  skip_chan: 128
-  hid_chan: 256
+  bn_chan: 64
+  skip_chan: 64
+  hid_chan: 128
 # Training config
 training:
   epochs: 500
@@ -20,6 +20,7 @@ training:
   num_workers: 24
   half_lr: yes
   early_stop: yes
+  multi_speakers: no
 # Optim config
 optim:
   optimizer: adam

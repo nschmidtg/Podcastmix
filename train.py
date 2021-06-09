@@ -36,7 +36,7 @@ def main(conf):
         sample_rate=conf["data"]["sample_rate"],
         segment=conf["data"]["segment"],
         shuffle_tracks=True,
-        multi_speakers=True
+        multi_speakers=conf["training"]["multi_speakers"]
     )
 
     val_set = PodcastMix(
@@ -44,7 +44,7 @@ def main(conf):
         sample_rate=conf["data"]["sample_rate"],
         segment=conf["data"]["segment"],
         shuffle_tracks=True,
-        multi_speakers=True
+        multi_speakers=conf["training"]["multi_speakers"]
     )
 
     train_loader = DataLoader(
