@@ -148,6 +148,7 @@ def main(conf):
         distributed_backend=distributed_backend,
         # limit_train_batches=1.0,  # Useful for fast experiment
         gradient_clip_val=5.0,
+        precision=32,
         resume_from_checkpoint=conf["main_args"]["resume_from"]
     )
     trainer.fit(system)

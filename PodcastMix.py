@@ -130,7 +130,7 @@ class PodcastMix(Dataset):
         """ computes the RMS ration between the speech and the music
         deleting the silences between the speechs
         """
-        print(speech.shape, music.shape)
+        # print(speech.shape, music.shape)
         speech = speech[speech.nonzero()]
 
         return torch.sqrt(torch.mean(speech ** 2)) / torch.sqrt(torch.mean(music ** 2))
@@ -203,7 +203,7 @@ class PodcastMix(Dataset):
             i += len(speech)
             index += 1
 
-        return speech_mix.unsqueeze(0)
+        return speech_mix
 
 
     def __getitem__(self, idx):
@@ -220,18 +220,20 @@ class PodcastMix(Dataset):
 
         # load a podcasts-like mix of the speechs from the same VCTK speaker
         speech_signal = self.load_speechs(speech_idx)
+        # print("speech_signal", speech_signal.shape)
         # crop it to fit the training segment
         offset_truncate = int(random.uniform(0, self.segment_total * self.sample_rate - self.segment * self.sample_rate))
         speech_signal = speech_signal[offset_truncate:offset_truncate + self.segment * self.sample_rate]
-        sources_list.append(speech_signal)
+        # speech_signal = speech_signal[speech_signal==0] = 1e-15
+        # sources_list.append(speech_signal)
 
         # now for music:
         music_signal = self.load_mono_non_silent_random_segment(row_music)
-        # music_signal = music_signal.squeeze(0)
+        music_signal = music_signal.squeeze(0)
         music_signal = music_signal[offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
 
         # gain based on RMS in order to have RMS(speech_signal) >= RMS(music_singal)
-        reduction_factor = self.rms(speech_signal[0], music_signal[0])
+        reduction_factor = self.rms(speech_signal, music_signal)
 
         # now we know that rms(r * music_signal) == rms(speech_signal)
         if self.shuffle_tracks:
@@ -243,6 +245,10 @@ class PodcastMix(Dataset):
 
         # multiply the music by the gain factor and add to the sources_list
         music_signal = music_gain * music_signal
+        # avoid zeros
+        speech_signal[torch.abs(speech_signal)<1e-8] = 1e-8
+        music_signal[torch.abs(music_signal)<1e-8] = 1e-8
+        sources_list.append(speech_signal)
         sources_list.append(music_signal)
 
         # compute the mixture

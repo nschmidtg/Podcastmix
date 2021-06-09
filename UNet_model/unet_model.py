@@ -37,16 +37,16 @@ class UNet(BaseModel):
         self.down_music_6 = down(256, 512, self.kernel_size, self.stride)
 
         # up blocks for speech
-        self.up_speech_1 = up(512, 256, self.kernel_size, self.stride, (0,1), 1)
-        self.up_speech_2 = up(256, 128, self.kernel_size, self.stride, (0,1), 2)
-        self.up_speech_3 = up(128, 64, self.kernel_size, self.stride, (0,0), 3)
+        self.up_speech_1 = up(512, 256, self.kernel_size, self.stride, (0,0), 1)
+        self.up_speech_2 = up(256, 128, self.kernel_size, self.stride, (0,0), 2)
+        self.up_speech_3 = up(128, 64, self.kernel_size, self.stride, (0,1), 3)
         self.up_speech_4 = up(64, 32, self.kernel_size, self.stride, (0,0), 4)
         self.up_speech_5 = up(32, 16, self.kernel_size, self.stride, (0,0), 5)
 
         # up blocks for music
-        self.up_music_1 = up(512, 256, self.kernel_size, self.stride, (0,1), 1)
-        self.up_music_2 = up(256, 128, self.kernel_size, self.stride, (0,1), 2)
-        self.up_music_3 = up(128, 64, self.kernel_size, self.stride, (0,0), 3)
+        self.up_music_1 = up(512, 256, self.kernel_size, self.stride, (0,0), 1)
+        self.up_music_2 = up(256, 128, self.kernel_size, self.stride, (0,0), 2)
+        self.up_music_3 = up(128, 64, self.kernel_size, self.stride, (0,1), 3)
         self.up_music_4 = up(64, 32, self.kernel_size, self.stride, (0,0), 4)
         self.up_music_5 = up(32, 16, self.kernel_size, self.stride, (0,0), 5)
 
@@ -126,10 +126,12 @@ class UNet(BaseModel):
         X_speech = X_speech.squeeze(1)
         X_music = X_music.squeeze(1)
 
+        # create the mask
+        X_mask_speech = X_speech / (X_speech + X_music)
         # use mask to separate speech from mix
-        speech = X_in * X_speech
+        speech = X_in * X_mask_speech
         # and music
-        music = X_in * X_music
+        music = X_in * (1 - X_mask_speech)
         # istft
         polar_speech = speech * torch.cos(phase) + speech * torch.sin(phase) * 1j
         polar_music = music * torch.cos(phase) + music * torch.sin(phase) * 1j
