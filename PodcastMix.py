@@ -131,7 +131,7 @@ class PodcastMix(Dataset):
         deleting the silences between the speechs
         """
         # print(speech.shape, music.shape)
-        speech = speech[speech.nonzero()]
+        speech = speech[torch.abs(speech) < 1e-8]
 
         return torch.sqrt(torch.mean(speech ** 2)) / torch.sqrt(torch.mean(music ** 2))
 
