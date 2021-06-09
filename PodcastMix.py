@@ -22,14 +22,14 @@ class PodcastMix(Dataset):
     dataset_name = "PodcastMix"
 
     def __init__(self, csv_dir, sample_rate=44100, segment=2,
-                 shuffle_tracks=False, multi_speakers=False, solo_music_ratio=0.2):
+                 shuffle_tracks=False, multi_speakers=False):
         self.csv_dir = csv_dir
         self.speech_csv_path = os.path.join(self.csv_dir, 'speech.csv')
         self.music_csv_path = os.path.join(self.csv_dir, 'music.csv')
         self.segment = segment
-        self.segment_total = 12
+        self.segment_total = 4
         self.sample_rate = sample_rate
-        self.solo_music_ratio = solo_music_ratio
+        # self.solo_music_ratio = solo_music_ratio
         self.shuffle_tracks = shuffle_tracks
         self.multi_speakers = multi_speakers
         # Open csv files
@@ -172,6 +172,10 @@ class PodcastMix(Dataset):
         # We want to cleanly separate Speech, so its the first source
         # in the sources_list
         speech_signal = self.load_speechs()
+        offset_truncate = int(random.uniform(0, self.segment_total * self.sample_rate - self.segment * self.sample_rate - 1))
+        print("speech_signal shape", speech_signal.shape)
+        speech_signal = speech_signal[..., offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
+        print("speech_signal shape2", speech_signal.shape)
         sources_list.append(speech_signal)
 
         # now for music:
@@ -189,7 +193,9 @@ class PodcastMix(Dataset):
             music_gain = self.gain_ramp[idx % len(self.gain_ramp)] * reduction_factor
 
         # multiply the music by the gain factor and add to the sources_list
-        sources_list.append(music_gain * music_signal)
+        music_signal = music_gain * music_signal
+        music_signal = music_signal[..., offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
+        sources_list.append(music_signal)
         # compute the mixture
         mixture = sources_list[0] + sources_list[1]
         mixture = torch.squeeze(mixture)
