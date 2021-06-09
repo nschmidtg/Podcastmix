@@ -27,7 +27,7 @@ class PodcastMix(Dataset):
         self.speech_csv_path = os.path.join(self.csv_dir, 'speech.csv')
         self.music_csv_path = os.path.join(self.csv_dir, 'music.csv')
         self.segment = segment
-        self.segment_total = 4
+        self.segment_total = 12
         self.sample_rate = sample_rate
         # self.solo_music_ratio = solo_music_ratio
         self.shuffle_tracks = shuffle_tracks
