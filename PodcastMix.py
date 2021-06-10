@@ -45,6 +45,7 @@ class PodcastMix(Dataset):
 
     def __len__(self):
         # for now, its a full permutation
+        # return 50
         return min([len(self.df_speech), len(self.df_music)])
 
 
