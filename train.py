@@ -151,7 +151,7 @@ def main(conf):
         gradient_clip_val=5.0,
         resume_from_checkpoint=conf["main_args"]["resume_from"],
         precision=32,
-        plugins=DDPPlugin(find_unused_parameters=False)
+        #plugins=DDPPlugin(find_unused_parameters=False)
     )
     trainer.fit(system)
 

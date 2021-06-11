@@ -95,7 +95,7 @@ def main(conf):
         sample_rate=conf["sample_rate"],
         segment=conf["segment"],
         shuffle_tracks=False,
-        multi_speakers=conf["multi_speakers"]
+        multi_speakers=False
     )  # Uses all segment length
     # Used to reorder sources only
 
@@ -121,14 +121,20 @@ def main(conf):
         est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
         # For each utterance, we get a dictionary with the mixture path,
         # the input and output metrics
-        utt_metrics = get_metrics(
-            mix_np,
-            sources_np,
-            est_sources_np,
-            sample_rate=conf["sample_rate"],
-            metrics_list=COMPUTE_METRICS,
-        )
-        series_list.append(pd.Series(utt_metrics))
+        try:
+            utt_metrics = get_metrics(
+                mix_np,
+                sources_np,
+                est_sources_np,
+                sample_rate=conf["sample_rate"],
+                metrics_list=COMPUTE_METRICS,
+            )
+            series_list.append(pd.Series(utt_metrics))
+        except:
+            print("Error. Index", idx)
+            print(mix_np)
+            print(sources_np)
+            print(est_sources_np)
 
         # Save some examples in a folder. Wav files and metrics as text.
         if idx in save_idx:
