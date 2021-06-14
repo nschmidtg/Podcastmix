@@ -20,6 +20,7 @@ training:
   num_workers: 24
   half_lr: yes
   early_stop: yes
+  multi_speakers: no
 # Optim config
 optim:
   optimizer: adam

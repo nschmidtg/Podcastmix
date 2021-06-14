@@ -7,6 +7,7 @@ training:
   num_workers: 24
   half_lr: yes
   early_stop: yes
+  multi_speakers: no
 # Optim config
 stft:
   fft_size: 1024
@@ -25,4 +26,4 @@ data:
   valid_dir: podcastmix/metadata/val
   sample_rate: 44100
   n_src: 2
-  segment: 12
+  segment: 2

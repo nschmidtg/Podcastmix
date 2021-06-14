@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning import seed_everything
+from pytorch_lightning.plugins import DDPPlugin
 import sys
 
 from PodcastMix import PodcastMix
@@ -36,7 +37,7 @@ def main(conf):
         sample_rate=conf["data"]["sample_rate"],
         segment=conf["data"]["segment"],
         shuffle_tracks=True,
-        multi_speakers=True
+        multi_speakers=conf["training"]["multi_speakers"]
     )
 
     val_set = PodcastMix(
@@ -44,7 +45,7 @@ def main(conf):
         sample_rate=conf["data"]["sample_rate"],
         segment=conf["data"]["segment"],
         shuffle_tracks=True,
-        multi_speakers=True
+        multi_speakers=conf["training"]["multi_speakers"]
     )
 
     train_loader = DataLoader(
@@ -148,13 +149,17 @@ def main(conf):
         distributed_backend=distributed_backend,
         # limit_train_batches=1.0,  # Useful for fast experiment
         gradient_clip_val=5.0,
-        resume_from_checkpoint=conf["main_args"]["resume_from"]
+        resume_from_checkpoint=conf["main_args"]["resume_from"],
+        precision=32,
+        #plugins=DDPPlugin(find_unused_parameters=False)
     )
     trainer.fit(system)
 
     best_k = {k: v.item() for k, v in checkpoint.best_k_models.items()}
     with open(os.path.join(exp_dir, "best_k_models.json"), "w") as f:
+        print(best_k,f)
         json.dump(best_k, f, indent=0)
+    print(checkpoint.best_model_path)
     state_dict = torch.load(checkpoint.best_model_path)
     system.load_state_dict(state_dict=state_dict["state_dict"])
     system.cpu()
