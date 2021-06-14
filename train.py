@@ -157,7 +157,9 @@ def main(conf):
 
     best_k = {k: v.item() for k, v in checkpoint.best_k_models.items()}
     with open(os.path.join(exp_dir, "best_k_models.json"), "w") as f:
+        print(best_k,f)
         json.dump(best_k, f, indent=0)
+    print(checkpoint.best_model_path)
     state_dict = torch.load(checkpoint.best_model_path)
     system.load_state_dict(state_dict=state_dict["state_dict"])
     system.cpu()

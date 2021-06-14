@@ -92,6 +92,7 @@ class PodcastMix(Dataset):
         sr = 44100
         length = int(row['length'])
         audio_signal = torch.tensor([0.])
+        offset=duration=0
         # iterate until the segment is not silence
         while torch.sum(torch.abs(audio_signal)) == 0:
             # If there is a seg, start point is set randomly
@@ -107,6 +108,8 @@ class PodcastMix(Dataset):
                 num_frames=duration,
                 normalize=True
             )
+        print("music_path:", row[music_or_speech + '_path'])
+        print("music_offset and duration", offset, duration)
         # convert to mono
         if len(audio_signal) == 2:
             audio_signal = torch.mean(audio_signal, dim=0).unsqueeze(0)
@@ -212,6 +215,7 @@ class PodcastMix(Dataset):
         # in the sources_list
         speech_signal = self.load_speechs(speech_idx)
         offset_truncate = int(random.uniform(0, self.segment_total * self.sample_rate - self.segment * self.sample_rate - 1))
+        print("offset_truncate", offset_truncate)
         # print("speech_signal shape", speech_signal.shape)
         speech_signal = speech_signal[..., offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
         # print("speech_signal shape2", speech_signal.shape)
@@ -236,7 +240,7 @@ class PodcastMix(Dataset):
         music_signal = music_signal[..., offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
         sources_list.append(music_signal)
         # compute the mixture
-        mixture = sources_list[0] + sources_list[1]
+        mixture = 0.5 * sources_list[0] + 0.5 * sources_list[1]
         mixture = torch.squeeze(mixture)
 
         # Stack sources

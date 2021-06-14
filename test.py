@@ -85,6 +85,7 @@ def main(conf):
     else:
         AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
     model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
+    print("model_path", model_path)
     # model = ConvTasNet
     # Handle device placement
     if conf["use_gpu"]:
