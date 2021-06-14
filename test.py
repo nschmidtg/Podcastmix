@@ -111,11 +111,16 @@ def main(conf):
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
         mix, sources = test_set[idx]
+        mix = (mix - torch.mean(mix)) / torch.std(mix)
+        sources[0] = (sources[0] - torch.mean(sources[0])) / torch.std(sources[0])
+        sources[1] = (sources[1] - torch.mean(sources[1])) / torch.std(sources[1])
         mix, sources = tensors_to_device([mix, sources], device=model_device)
         if conf["target_model"] == "UNet":
             est_sources = model(mix.unsqueeze(0)).squeeze(0)
         else:
             est_sources = model(mix)
+        est_sources[0] = (est_sources[0] - torch.mean(est_sources[0])) / torch.std(est_sources[0])
+        est_sources[1] = (est_sources[1] - torch.mean(est_sources[1])) / torch.std(est_sources[1])
 
         mix_np = mix.cpu().data.numpy()
         sources_np = sources.cpu().data.numpy()
