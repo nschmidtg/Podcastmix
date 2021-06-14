@@ -134,6 +134,22 @@ class PodcastMix(Dataset):
 
         return torch.sqrt(torch.mean(audio ** 2))
 
+    def load_random_segment(self, audio_signal, sr,audio_length, audio_path, max_segment):
+        while audio_length - torch.count_nonzero(audio_signal) == audio_length:
+            # If there is a seg, start point is set randomly
+            offset, duration = self.compute_rand_offset_duration(
+                sr,
+                audio_length,
+                max_segment
+            )
+            # load the audio with the computed offsets
+            audio_signal, sr = torchaudio.load(
+                audio_path,
+                frame_offset=offset,
+                num_frames=duration
+            )
+        return audio_signal, duration
+
     def load_speechs(self, speech_idx):
         """ Loads the speaker mix. It could be a single speaker if
         self.multi_speaker=False, or a random mix between 1 to 4
@@ -153,23 +169,9 @@ class PodcastMix(Dataset):
             row_speech = speaker_dict.sample()
             audio_length = int(row_speech['length'])
             audio_path = row_speech['speech_path'].values[0]
-            while torch.sum(torch.abs(speech_signal)) == 0:
-                # If there is a seg, start point is set randomly
-                offset, duration = self.compute_rand_offset_duration(
-                    sr,
-                    audio_length,
-                    (self.segment_total * self.sample_rate) - speech_counter
-                )
-                # load the audio with the computed offsets
-                speech_signal, sr = torchaudio.load(
-                    audio_path,
-                    frame_offset=offset,
-                    num_frames=duration
-                )
+            speech_signal, duration = self.load_random_segment(speech_signal, sr, audio_length, audio_path, (self.segment_total * self.sample_rate) - speech_counter)
             speech_counter += duration
 
-            # row_speech = self.df_speech.iloc[speech_idx]
-            # speech_signal = self.load_mono_non_silent_random_segment(row_speech, 'speech')
             speech_mix.append(speech_signal)
             # re-initialize signal
             speech_signal = torch.tensor([0.])
@@ -184,19 +186,8 @@ class PodcastMix(Dataset):
             row_speech = non_speaker_dict.sample()
             audio_length = int(row_speech['length'])
             audio_path = row_speech['speech_path'].values[0]
-            while torch.sum(torch.abs(speech_signal)) == 0:
-                # If there is a seg, start point is set randomly
-                offset, duration = self.compute_rand_offset_duration(
-                    sr,
-                    audio_length,
-                    self.segment
-                )
-                # load the audio with the computed offsets
-                speech_signal, sr = torchaudio.load(
-                    audio_path,
-                    frame_offset=offset,
-                    num_frames=duration
-                )
+            speech_signal, _ = self.load_random_segment(speech_signal, sr, audio_length, audio_path, self.segment)
+            # where the random new speaker will be located
             offset, duration = self.compute_rand_offset_duration(
                 sr,
                 audio_length,
@@ -238,7 +229,7 @@ class PodcastMix(Dataset):
         music_signal = self.load_mono_non_silent_random_segment(row_music, 'music')
         speech_cropped = torch.zeros(1)
         music_cropped = torch.zeros(1)
-        while torch.sum(torch.abs(speech_cropped)) == 0 or torch.sum(torch.abs(music_cropped)) == 0:
+        while (self.segment * self.sample_rate) - torch.count_nonzero(speech_cropped) == (self.segment * self.sample_rate) or (self.segment * self.sample_rate) - torch.count_nonzero(music_cropped) == (self.segment * self.sample_rate):
             offset_truncate = int(random.uniform(0, self.segment_total * self.sample_rate - self.segment * self.sample_rate - 1))
             speech_cropped = speech_signal[..., offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
             music_cropped = music_signal[..., offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
