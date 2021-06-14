@@ -39,7 +39,8 @@ class PodcastMix(Dataset):
         # initialize indexes
         self.speech_inxs = list(range(len(self.df_speech)))
         self.music_inxs = list(range(len(self.df_music)))
-        self.gain_ramp = np.array(range(1, 100, 1))/100
+        self.denominator_gain = 10
+        self.gain_ramp = np.array(range(1, self.denominator_gain, 1))/self.denominator_gain
         np.random.shuffle(self.gain_ramp)
         torchaudio.set_audio_backend(backend='soundfile')
 
@@ -226,7 +227,7 @@ class PodcastMix(Dataset):
         # now we know that rms(r * music_signal) == rms(speech_signal)
         if self.shuffle_tracks:
             # random gain for training and validation
-            music_gain = random.uniform(1e-3, 1) * reduction_factor
+            music_gain = random.uniform(1/self.denominator_gain, 1) * reduction_factor
         else:
             # fixed gain for testing
             music_gain = self.gain_ramp[idx % len(self.gain_ramp)] * reduction_factor
