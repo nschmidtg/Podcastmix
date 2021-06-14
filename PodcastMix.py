@@ -202,7 +202,11 @@ class PodcastMix(Dataset):
                 audio_length,
                 self.segment_total
             )
-            speech_mix[offset:offset + duration] += speech_signal[offset:offset + duration]
+            print("speech_signal", speech_signal.shape)
+            print("speech_mix", speech_mix.shape)
+            print("offset", offset)
+            print("duration", duration)
+            speech_mix[..., offset:offset + duration] += 0.5 * speech_signal[..., offset:offset + duration]
         #speech_mix = torch.Tensor(speech_mix)
         # speech_mix = torch.mean(speech_mix, dim=0) if self.multi_speakers else speech_mix
         speech_mix = speech_mix.squeeze(1)
@@ -212,7 +216,9 @@ class PodcastMix(Dataset):
         """
         Receives mono audio and the normalize it
         """
-        return (track - torch.mean(track)) / torch.std(track.std)
+        print("dentrode normalize", track.shape)
+        # return (track - torch.mean(track)) / torch.std(track)
+        return track/torch.max(torch.abs(track))
 
     def __getitem__(self, idx):
         if(idx == 0 and self.shuffle_tracks):
@@ -252,7 +258,7 @@ class PodcastMix(Dataset):
 
         # multiply the music by the gain factor and add to the sources_list
         music_signal = music_gain * music_signal
-        music_signal = self.normalize_audio(music_signal)
+        # music_signal = self.normalize_audio(music_signal)
         sources_list.append(music_signal)
         # compute the mixture
         mixture = 0.5 * (sources_list[0] + sources_list[1])
