@@ -190,8 +190,8 @@ class PodcastMix(Dataset):
             # where the random new speaker will be located
             offset, duration = self.compute_rand_offset_duration(
                 sr,
-                audio_length,
-                self.segment_total
+                self.segment_total,
+                audio_length
             )
             print("speech_signal", speech_signal.shape)
             print("speech_mix", speech_mix.shape)
