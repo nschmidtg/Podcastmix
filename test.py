@@ -85,6 +85,7 @@ def main(conf):
     else:
         AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
     model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
+    print("model_path", model_path)
     # model = ConvTasNet
     # Handle device placement
     if conf["use_gpu"]:
@@ -121,14 +122,20 @@ def main(conf):
         est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
         # For each utterance, we get a dictionary with the mixture path,
         # the input and output metrics
-        utt_metrics = get_metrics(
-            mix_np,
-            sources_np,
-            est_sources_np,
-            sample_rate=conf["sample_rate"],
-            metrics_list=COMPUTE_METRICS,
-        )
-        series_list.append(pd.Series(utt_metrics))
+        try:
+            utt_metrics = get_metrics(
+                mix_np,
+                sources_np,
+                est_sources_np,
+                sample_rate=conf["sample_rate"],
+                metrics_list=COMPUTE_METRICS,
+            )
+            series_list.append(pd.Series(utt_metrics))
+        except:
+            print("Error. Index", idx)
+            print(mix_np)
+            print(sources_np)
+            print(est_sources_np)
 
         # Save some examples in a folder. Wav files and metrics as text.
         if idx in save_idx:
