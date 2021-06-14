@@ -105,8 +105,7 @@ class PodcastMix(Dataset):
             audio_signal, sr = torchaudio.load(
                 row[music_or_speech + '_path'],
                 frame_offset=offset,
-                num_frames=duration,
-                normalize=True
+                num_frames=duration
             )
         # convert to mono
         if len(audio_signal) == 2:
@@ -165,8 +164,7 @@ class PodcastMix(Dataset):
                 speech_signal, sr = torchaudio.load(
                     audio_path,
                     frame_offset=offset,
-                    num_frames=duration,
-                    normalize=True
+                    num_frames=duration
                 )
             speech_counter += duration
 
@@ -177,6 +175,34 @@ class PodcastMix(Dataset):
             speech_signal = torch.tensor([0.])
         speech_mix = torch.cat((speech_mix), 1)
         #speech_mix = speech_mix.squeeze(0)
+        if self.multi_speakers and speech_idx % 10 == 0:
+            # every 10 iterations overlap another speaker
+            non_speaker_dict = self.df_speech.loc[
+                self.df_speech['speaker_id'] != speaker_csv_id
+            ]
+            speech_signal = torch.tensor([0.])
+            row_speech = non_speaker_dict.sample()
+            audio_length = int(row_speech['length'])
+            audio_path = row_speech['speech_path'].values[0]
+            while torch.sum(torch.abs(speech_signal)) == 0:
+                # If there is a seg, start point is set randomly
+                offset, duration = self.compute_rand_offset_duration(
+                    sr,
+                    audio_length,
+                    self.segment
+                )
+                # load the audio with the computed offsets
+                speech_signal, sr = torchaudio.load(
+                    audio_path,
+                    frame_offset=offset,
+                    num_frames=duration
+                )
+            offset, duration = self.compute_rand_offset_duration(
+                sr,
+                audio_length,
+                self.segment_total
+            )
+            speech_mix[offset:offset + duration] += speech_signal[offset:offset + duration]
         #speech_mix = torch.Tensor(speech_mix)
         # speech_mix = torch.mean(speech_mix, dim=0) if self.multi_speakers else speech_mix
         speech_mix = speech_mix.squeeze(1)
