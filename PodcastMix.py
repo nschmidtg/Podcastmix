@@ -118,8 +118,8 @@ class PodcastMix(Dataset):
         length = int(row['length'])
         audio_signal = torch.tensor([0.])
         # iterate until the segment is not silence
-        audio_signal = self.load_mono_random_segment(audio_signal, length, row['music_path'], self.segment_total)
-
+        audio_signal = self.load_mono_random_segment(audio_signal, length, row['music_path'], self.segment_total * sr)
+        print("music raw", audio_signal)
         # resample if sr is different than the specified in dataloader
         # print("audio signal", audio_signal.shape)
         if not sr == self.sample_rate:
@@ -179,9 +179,9 @@ class PodcastMix(Dataset):
             row_speech = self.speakers_dict[non_speaker_id].sample()
             audio_length = int(row_speech['length'])
             audio_path = row_speech['speech_path'].values[0]
-            speech_signal = self.load_mono_random_segment(speech_signal, audio_length, audio_path, self.segment)
-            offset = random.randint(0, self.segment_total * sr - speech_signal.shape[1])
-            speech_mix[..., offset:offset + speech_signal.shape[1]] += speech_signal[...,:]
+            speech_signal = self.load_mono_random_segment(speech_signal, audio_length, audio_path, self.segment * sr)
+            offset = random.randint(0, self.segment_total * sr - speech_signal.shape[-1])
+            speech_mix[..., offset:offset + speech_signal.shape[-1]] += speech_signal[...,:]
         speech_mix = speech_mix.squeeze(1)
         # resample if sr is different than the specified in dataloader
         if not sr == self.sample_rate:
