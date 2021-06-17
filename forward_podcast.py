@@ -12,7 +12,7 @@ import torchaudio
 
 class PodcastLoader(Dataset):
     dataset_name = "PodcastMix"
-    def __init__(self, csv_dir, sample_rate=44100, segment=3):
+    def __init__(self, csv_dir, sample_rate=conf["sample_rate"], segment=3):
         self.segment = segment
         self.sample_rate = sample_rate
         self.paths = [os.path.join(csv_dir, f) for f in os.listdir(csv_dir) if (os.path.isfile(os.path.join(csv_dir, f)) and '.wav' in f)]
@@ -75,6 +75,13 @@ parser.add_argument(
     default=2,
     required=True,
     help="Number of seconds to separate",
+)
+parser.add_argument(
+    "--sample_rate",
+    type=int,
+    default=8192,
+    required=True,
+    help="Sample rate",
 )
 
 def my_import(name):
