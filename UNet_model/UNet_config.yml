@@ -2,8 +2,8 @@ model:
   name: UNet
 # Training config
 training:
-  epochs: 500
-  batch_size: 8
+  epochs: 30
+  batch_size: 32
   num_workers: 24
   half_lr: yes
   early_stop: yes
@@ -13,18 +13,18 @@ training:
 stft:
   fft_size: 1024
   window_size: 1024
-  hop_size: 441
+  hop_size: 128
 convolution:
   stride: 2
   kernel_size: 5
 optim:
   optimizer: adam
-  lr: 0.001
-  weight_decay: !!float 1e-5
+  lr: 0.0005
+  weight_decay: 0.
 # Data config
 data:
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
-  sample_rate: 44100
+  sample_rate: 8192
   n_src: 2
   segment: 2

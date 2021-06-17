@@ -15,7 +15,7 @@ masknet:
   hid_chan: 256
 # Training config
 training:
-  epochs: 500
+  epochs: 30
   batch_size: 2
   num_workers: 24
   half_lr: yes
@@ -30,6 +30,6 @@ optim:
 data:
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
-  sample_rate: 44100
+  sample_rate: 8192
   n_src: 2
   segment: 2
