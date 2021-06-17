@@ -22,13 +22,14 @@ class PodcastMix(Dataset):
     dataset_name = "PodcastMix"
 
     def __init__(self, csv_dir, sample_rate=44100, segment=2,
-                 shuffle_tracks=False, multi_speakers=False):
+                 shuffle_tracks=False, multi_speakers=False, normalize=True):
         self.csv_dir = csv_dir
         self.speech_csv_path = os.path.join(self.csv_dir, 'speech.csv')
         self.music_csv_path = os.path.join(self.csv_dir, 'music.csv')
         self.segment = segment
         self.segment_total = 12
         self.sample_rate = sample_rate
+        self.normalize = normalize
         # self.solo_music_ratio = solo_music_ratio
         self.shuffle_tracks = shuffle_tracks
         self.multi_speakers = multi_speakers
@@ -188,28 +189,33 @@ class PodcastMix(Dataset):
             audio_path = row_speech['speech_path'].values[0]
             speech_signal, _ = self.load_random_segment(speech_signal, sr, audio_length, audio_path, self.segment)
             # where the random new speaker will be located
-            offset, duration = self.compute_rand_offset_duration(
-                sr,
-                self.segment_total,
-                audio_length
-            )
-            print("speech_signal", speech_signal.shape)
-            print("speech_mix", speech_mix.shape)
-            print("offset", offset)
-            print("duration", duration)
-            speech_mix[..., offset:offset + duration] += 0.5 * speech_signal[..., offset:offset + duration]
+            # offset, duration = self.compute_rand_offset_duration(
+            #     sr,
+            #     audio_length,
+            #     self.segment_total
+            # )
+            # print(f'{audio_length}')
+            offset = random.randint(0, self.segment_total * sr - speech_signal.shape[1])
+            # print("speech_signal", speech_signal.shape)
+            # print("speech_mix", speech_mix.shape)
+            # print("offset", offset)
+            # print("duration", duration)
+            # speech_mix = 0.5 * speech_mix
+            speech_mix[..., offset:offset + speech_signal.shape[1]] += speech_signal[...,:]
         #speech_mix = torch.Tensor(speech_mix)
         # speech_mix = torch.mean(speech_mix, dim=0) if self.multi_speakers else speech_mix
         speech_mix = speech_mix.squeeze(1)
         return speech_mix
 
-    def normalize_audio(self, track):
+    def normalize_audio(self, sources, mixture):
         """
         Receives mono audio and the normalize it
         """
-        print("dentrode normalize", track.shape)
-        # return (track - torch.mean(track)) / torch.std(track)
-        return track/torch.max(torch.abs(track))
+        #print("dentrode normalize", track.shape)
+        ref = mixture
+        mixture = (mixture - torch.mean(ref)) / torch.std(ref)
+        sources = (sources - torch.mean(ref)) / torch.std(ref)
+        return sources, mixture
 
     def __getitem__(self, idx):
         if(idx == 0 and self.shuffle_tracks):
@@ -235,7 +241,8 @@ class PodcastMix(Dataset):
             music_cropped = music_signal[..., offset_truncate:offset_truncate + (self.segment * self.sample_rate)]
         speech_signal = speech_cropped
         music_signal = music_cropped
-        speech_signal = self.normalize_audio(speech_signal)
+        #if self.normalize:
+        #    speech_signal = self.normalize_audio(speech_signal)
         sources_list.append(speech_signal)
         # gain based on RMS in order to have RMS(speech_signal) >= RMS(music_singal)
         reduction_factor = self.rms(speech_signal) / self.rms(music_signal)
@@ -249,17 +256,21 @@ class PodcastMix(Dataset):
 
         # multiply the music by the gain factor and add to the sources_list
         music_signal = music_gain * music_signal
-        # music_signal = self.normalize_audio(music_signal)
+        #if self.normalize:
+        #music_signal = self.normalize_audio(music_signal)
         sources_list.append(music_signal)
         # compute the mixture
         mixture = 0.5 * (sources_list[0] + sources_list[1])
-        mixture = self.normalize_audio(mixture)
+        # mixture = self.normalize_audio(mixture)
         mixture = torch.squeeze(mixture)
 
         # Stack sources
         sources = np.vstack(sources_list)
         # Convert sources to tensor
         sources = torch.from_numpy(sources)
+        if self.normalize:
+            sources, mixture = self.normalize_audio(sources, mixture)
+        # sources = torch.from_numpy(sources)
 
         return mixture, sources
 

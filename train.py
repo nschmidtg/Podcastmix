@@ -37,7 +37,8 @@ def main(conf):
         sample_rate=conf["data"]["sample_rate"],
         segment=conf["data"]["segment"],
         shuffle_tracks=True,
-        multi_speakers=conf["training"]["multi_speakers"]
+        multi_speakers=conf["training"]["multi_speakers"],
+        normalize=conf["training"]["normalize"]
     )
 
     val_set = PodcastMix(
@@ -45,7 +46,8 @@ def main(conf):
         sample_rate=conf["data"]["sample_rate"],
         segment=conf["data"]["segment"],
         shuffle_tracks=True,
-        multi_speakers=conf["training"]["multi_speakers"]
+        multi_speakers=conf["training"]["multi_speakers"],
+        normalize=conf["training"]["normalize"]
     )
 
     train_loader = DataLoader(
@@ -151,7 +153,7 @@ def main(conf):
         gradient_clip_val=5.0,
         resume_from_checkpoint=conf["main_args"]["resume_from"],
         precision=32,
-        #plugins=DDPPlugin(find_unused_parameters=False)
+        plugins=DDPPlugin(find_unused_parameters=False)
     )
     trainer.fit(system)
 
