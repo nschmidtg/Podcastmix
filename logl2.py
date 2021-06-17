@@ -2,26 +2,7 @@ from torch.nn.modules.loss import _Loss
 import torch
 
 class LogL2Time(_Loss):
-    r"""Measure mean square error on a batch.
-    Supports both tensors with and without source axis.
-
-    Shape:
-        - est_targets: :math:`(batch, ...)`.
-        - targets: :math:`(batch, ...)`.
-
-    Returns:
-        :class:`torch.Tensor`: with shape :math:`(batch)`
-
-    Examples
-        >>> import torch
-        >>> from asteroid.losses import PITLossWrapper
-        >>> targets = torch.randn(10, 2, 32000)
-        >>> est_targets = torch.randn(10, 2, 32000)
-        >>> # singlesrc_mse / multisrc_mse support both 'pw_pt' and 'perm_avg'.
-        >>> loss_func = PITLossWrapper(singlesrc_mse, pit_from='pw_pt')
-        >>> loss = loss_func(est_targets, targets)
-    """
-
+    
     def forward(self, est_targets, targets):
         if targets.size() != est_targets.size() or targets.ndim < 2:
             raise TypeError(
