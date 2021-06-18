@@ -2,9 +2,9 @@ model:
   name: UNet
 # Training config
 training:
-  epochs: 30
-  batch_size: 32
-  num_workers: 24
+  epochs: 100
+  batch_size: 2
+  num_workers: 12
   half_lr: yes
   early_stop: yes
   multi_speakers: yes
@@ -13,7 +13,7 @@ training:
 stft:
   fft_size: 1024
   window_size: 1024
-  hop_size: 128
+  hop_size: 441
 convolution:
   stride: 2
   kernel_size: 5
@@ -25,6 +25,6 @@ optim:
 data:
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
-  sample_rate: 8192
+  sample_rate: 44100
   n_src: 2
   segment: 2

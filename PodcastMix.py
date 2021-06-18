@@ -5,6 +5,7 @@ import torchaudio
 import os
 import numpy as np
 import random
+from resampler import Resampler
 
 class PodcastMix(Dataset):
     """Dataset class for PodcastMix source separation tasks.
@@ -29,7 +30,10 @@ class PodcastMix(Dataset):
         self.segment = segment
         self.segment_total = 12
         self.sample_rate = sample_rate
+        # print("sample_rate", self.sample_rate)
         self.normalize = normalize
+        # resampler
+        self.resampler = Resampler(input_sr = 44100, output_sr = self.sample_rate, dtype=torch.float32, filter='hann', num_zeros=6)
         # self.solo_music_ratio = solo_music_ratio
         self.shuffle_tracks = shuffle_tracks
         self.multi_speakers = multi_speakers
@@ -119,13 +123,15 @@ class PodcastMix(Dataset):
         audio_signal = torch.tensor([0.])
         # iterate until the segment is not silence
         audio_signal = self.load_mono_random_segment(audio_signal, length, row['music_path'], self.segment_total * sr)
-        print("music raw", audio_signal)
+        # print("music raw", audio_signal)
         # resample if sr is different than the specified in dataloader
         # print("audio signal", audio_signal.shape)
-        if not sr == self.sample_rate:
-            audio_signal = torchaudio.transforms.Resample(orig_freq = sr, new_freq = self.sample_rate)(audio_signal)
+        # if not sr == self.sample_rate:
+            # print("audiosignallll", audio_signal.shape)
+            # audio_signal = self.resampler.forward(audio_signal)
+
         # zero pad if the size is smaller than seq_duration
-        seq_duration_samples = int(self.segment_total * self.sample_rate)
+        seq_duration_samples = int(self.segment_total * sr)
         total_samples = audio_signal.shape[-1]
         if seq_duration_samples > total_samples:
             # add zeros at beginning and at with random offset
@@ -184,8 +190,8 @@ class PodcastMix(Dataset):
             speech_mix[..., offset:offset + speech_signal.shape[-1]] += speech_signal[...,:]
         speech_mix = speech_mix.squeeze(1)
         # resample if sr is different than the specified in dataloader
-        if not sr == self.sample_rate:
-            speech_mix = torchaudio.transforms.Resample(orig_freq = sr, new_freq = self.sample_rate)(speech_mix)
+        # if not sr == self.sample_rate:
+        #     speech_mix = self.resampler.forward(speech_mix)
         return speech_mix
 
     def normalize_audio(self, sources, mixture):
@@ -222,6 +228,9 @@ class PodcastMix(Dataset):
             music_cropped = music_signal[..., offset_truncate:offset_truncate + (target_resampled_number_samples)]
         speech_signal = speech_cropped
         music_signal = music_cropped
+        if not self.sample_rate == 44100:
+            speech_signal = self.resampler.forward(speech_signal)
+            music_signal = self.resampler.forward(music_signal)
         # append speech
         sources_list.append(speech_signal)
         # gain based on RMS in order to have RMS(speech_signal) >= RMS(music_singal)
