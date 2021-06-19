@@ -2,12 +2,13 @@ model:
   name: UNet
 # Training config
 training:
-  epochs: 500
-  batch_size: 8
-  num_workers: 24
+  epochs: 100
+  batch_size: 2
+  num_workers: 12
   half_lr: yes
   early_stop: yes
-  multi_speakers: no
+  multi_speakers: yes
+  normalize: yes
 # Optim config
 stft:
   fft_size: 1024
@@ -19,7 +20,7 @@ convolution:
 optim:
   optimizer: adam
   lr: 0.0005
-  weight_decay: !!float 1e-5
+  weight_decay: 0.
 # Data config
 data:
   train_dir: podcastmix/metadata/train

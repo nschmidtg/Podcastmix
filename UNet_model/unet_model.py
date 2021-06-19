@@ -99,6 +99,7 @@ class UNet(BaseModel):
 
 
         # # first up layer
+        # print("X5", X5_speech.shape, X6_speech.shape)
         X5_speech = self.up_speech_1(X5_speech, X6_speech)
         X5_music = self.up_music_1(X5_music, X6_music)
 
