@@ -96,7 +96,8 @@ def main(conf):
         sample_rate=conf["sample_rate"],
         segment=conf["segment"],
         shuffle_tracks=False,
-        multi_speakers=False
+        multi_speakers=conf["multi_speakers"],
+        normalize=False    # normalization occurs after dataloader here
     )  # Uses all segment length
     # Used to reorder sources only
 
@@ -107,15 +108,23 @@ def main(conf):
         conf["n_save_ex"] = len(test_set)
     save_idx = random.sample(range(len(test_set)), conf["n_save_ex"])
     series_list = []
+    m = torch.zeros(1)
+    s0 = torch.zeros(1)
+    s1 = torch.zeros(1)
     torch.no_grad().__enter__()
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
         mix, sources = test_set[idx]
-        mix, sources = tensors_to_device([mix, sources], device=model_device)
+        m_norm = (mix - torch.mean(mix)) / torch.std(mix)
+        # s0 = (sources[0] - torch.mean(mix)) / torch.std(mix)
+        # s1 = (sources[1] - torch.mean(mix)) / torch.std(mix)
+        m_norm, _ = tensors_to_device([m_norm, sources], device=model_device)
         if conf["target_model"] == "UNet":
-            est_sources = model(mix.unsqueeze(0)).squeeze(0)
+            est_sources = model(m_norm.unsqueeze(0)).squeeze(0)
         else:
-            est_sources = model(mix)
+            est_sources = model(m_norm)
+        # unnormalize
+        est_sources = est_sources * torch.std(mix) + torch.mean(mix)
 
         mix_np = mix.cpu().data.numpy()
         sources_np = sources.cpu().data.numpy()
@@ -209,6 +218,7 @@ if __name__ == "__main__":
         train_conf = yaml.safe_load(f)
     arg_dic["sample_rate"] = train_conf["data"]["sample_rate"]
     arg_dic["segment"] = train_conf["data"]["segment"]
+    arg_dic["multi_speakers"] = train_conf["training"]["multi_speakers"]
     arg_dic["train_conf"] = train_conf
 
     main(arg_dic)
