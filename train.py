@@ -14,8 +14,9 @@ import sys
 from PodcastMix import PodcastMix
 from asteroid.engine.optimizers import make_optimizer
 from asteroid.engine.system import System
-from l2 import L2Time
-from torch.nn import L1Loss
+#from l2 import L2Time
+from logl2 import LogL2Time
+#from torch.nn import L1Loss
 seed_everything(1, workers=True)
 
 # Keys which are not in the conf.yml file can be added here.
@@ -110,7 +111,7 @@ def main(conf):
     with open(conf_path, "w") as outfile:
         yaml.safe_dump(conf, outfile)
 
-    loss_func = L2Time()
+    loss_func = LogL2Time()
     system = System(
         model=model,
         loss_func=loss_func,
