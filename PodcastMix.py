@@ -162,7 +162,7 @@ class PodcastMix(Dataset):
         speaker_csv_id = self.df_speech.iloc[speech_idx].speaker_id
         speech_counter = 0
         sr = 44100
-        speech_signal = torch.zeros(self.segment_total * sr)
+        speech_signal = torch.zeros(1)
         # original speech sample_rate
         while speech_counter < (self.segment_total * sr): # have not resampled yet
             row_speech = self.speakers_dict[speaker_csv_id].sample()
