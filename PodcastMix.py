@@ -120,7 +120,7 @@ class PodcastMix(Dataset):
         # music sample_rate
         sr = 44100
         length = int(row['length'])
-        audio_signal = torch.tensor([0.])
+        audio_signal = torch.zeros(self.segment_total * sr)
         # iterate until the segment is not silence
         audio_signal = self.load_mono_random_segment(audio_signal, length, row['music_path'], self.segment_total * sr)
         # print("music raw", audio_signal)
@@ -161,9 +161,9 @@ class PodcastMix(Dataset):
         # number_of_speakers = random.randint(1, 4) if self.multi_speakers else 1
         speaker_csv_id = self.df_speech.iloc[speech_idx].speaker_id
         speech_counter = 0
-        speech_signal = torch.tensor([0.])
-        # original speech sample_rate
         sr = 44100
+        speech_signal = torch.zeros(1)
+        # original speech sample_rate
         while speech_counter < (self.segment_total * sr): # have not resampled yet
             row_speech = self.speakers_dict[speaker_csv_id].sample()
             audio_length = int(row_speech['length'])
@@ -172,13 +172,13 @@ class PodcastMix(Dataset):
             speech_mix.append(speech_signal)
             speech_counter += speech_signal.shape[-1]
             # re-initialize empty audio signal
-            speech_signal = torch.tensor([0.])
+            speech_signal = torch.zeros(self.segment_total * sr)
         speech_mix = torch.cat((speech_mix), 1)
         #speech_mix = speech_mix.squeeze(0)
         if self.multi_speakers and speech_idx % 10 == 0:
             # every 10 iterations overlap another speaker
             
-            speech_signal = torch.tensor([0.])
+            speech_signal = torch.zeros(self.segment * sr)
             list_of_speakers = list(self.speakers_dict.keys())
             list_of_speakers.remove(speaker_csv_id)
             non_speaker_id = random.sample(list_of_speakers, 1)[0]
@@ -219,9 +219,10 @@ class PodcastMix(Dataset):
         # in the sources_list
         speech_signal = self.load_speechs(speech_idx)
         music_signal = self.load_non_silent_random_music(row_music)
-        speech_cropped = torch.zeros(1)
-        music_cropped = torch.zeros(1)
+        
         target_resampled_number_samples = self.segment * self.sample_rate
+        speech_cropped = torch.zeros(target_resampled_number_samples)
+        music_cropped = torch.zeros(target_resampled_number_samples)
         while (torch.count_nonzero(speech_cropped)) == 0 or (torch.count_nonzero(music_cropped) == 0):
             offset_truncate = int(random.uniform(0, music_signal.shape[-1] - target_resampled_number_samples - 1))
             speech_cropped = speech_signal[..., offset_truncate:offset_truncate + (target_resampled_number_samples)]
