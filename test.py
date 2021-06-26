@@ -108,9 +108,7 @@ def main(conf):
         conf["n_save_ex"] = len(test_set)
     save_idx = random.sample(range(len(test_set)), conf["n_save_ex"])
     series_list = []
-    m = torch.zeros(1)
-    s0 = torch.zeros(1)
-    s1 = torch.zeros(1)
+
     torch.no_grad().__enter__()
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
