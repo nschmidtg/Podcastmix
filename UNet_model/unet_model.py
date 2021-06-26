@@ -37,16 +37,16 @@ class UNet(BaseModel):
         self.down_music_6 = down(256, 512, self.kernel_size, self.stride)
 
         # up blocks for speech
-        self.up_speech_1 = up(512, 256, self.kernel_size, self.stride, (0,1), 1)
-        self.up_speech_2 = up(256, 128, self.kernel_size, self.stride, (0,1), 2)
-        self.up_speech_3 = up(128, 64, self.kernel_size, self.stride, (0,0), 3)
+        self.up_speech_1 = up(512, 256, self.kernel_size, self.stride, (0,0), 1)
+        self.up_speech_2 = up(256, 128, self.kernel_size, self.stride, (0,0), 2)
+        self.up_speech_3 = up(128, 64, self.kernel_size, self.stride, (0,1), 3)
         self.up_speech_4 = up(64, 32, self.kernel_size, self.stride, (0,0), 4)
         self.up_speech_5 = up(32, 16, self.kernel_size, self.stride, (0,0), 5)
 
         # up blocks for music
-        self.up_music_1 = up(512, 256, self.kernel_size, self.stride, (0,1), 1)
-        self.up_music_2 = up(256, 128, self.kernel_size, self.stride, (0,1), 2)
-        self.up_music_3 = up(128, 64, self.kernel_size, self.stride, (0,0), 3)
+        self.up_music_1 = up(512, 256, self.kernel_size, self.stride, (0,0), 1)
+        self.up_music_2 = up(256, 128, self.kernel_size, self.stride, (0,0), 2)
+        self.up_music_3 = up(128, 64, self.kernel_size, self.stride, (0,1), 3)
         self.up_music_4 = up(64, 32, self.kernel_size, self.stride, (0,0), 4)
         self.up_music_5 = up(32, 16, self.kernel_size, self.stride, (0,0), 5)
 
@@ -58,7 +58,7 @@ class UNet(BaseModel):
 
     def forward(self, x_in):
         # compute normalized spectrogram
-        window = torch.hamming_window(self.window_size, device='cpu')
+        window = torch.hamming_window(self.window_size, device=x_in.get_device())
         X_in = torch.stft(x_in, self.fft_size, self.hop_size, window=window)
         real, imag = X_in.unbind(-1)
         complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
