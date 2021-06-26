@@ -12,7 +12,7 @@ import torchaudio
 
 class PodcastLoader(Dataset):
     dataset_name = "PodcastMix"
-    def __init__(self, csv_dir, sample_rate=conf["sample_rate"], segment=3):
+    def __init__(self, csv_dir, sample_rate=44100, segment=3):
         self.segment = segment
         self.sample_rate = sample_rate
         self.paths = [os.path.join(csv_dir, f) for f in os.listdir(csv_dir) if (os.path.isfile(os.path.join(csv_dir, f)) and '.wav' in f)]
@@ -24,16 +24,13 @@ class PodcastLoader(Dataset):
     def __getitem__(self, index):
         starting_second = 0
         podcast_path = self.paths[index]
-        print(podcast_path)
         audio_signal, _ = torchaudio.load(
             podcast_path,
             frame_offset=starting_second * self.sample_rate,
             num_frames=self.segment * self.sample_rate,
             normalize=True
         )
-        print(audio_signal)
         audio_signal = torch.mean(audio_signal, dim=0)
-        print("audio_signal", audio_signal.shape)
         return audio_signal
 
 
@@ -115,11 +112,14 @@ def main(conf):
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
         mix = test_set[idx]
-        mix = tensors_to_device(mix, device=model_device)
+        m_norm = (mix - torch.mean(mix)) / torch.std(mix)
+        m_norm = tensors_to_device(m_norm, device=model_device)
         if conf["target_model"] == "UNet":
             est_sources = model(mix.unsqueeze(0)).squeeze(0)
         else:
             est_sources = model(mix)
+        
+        est_sources = est_sources * torch.std(mix) + torch.mean(mix)
 
         mix_np = mix.cpu().data.numpy()
         est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
