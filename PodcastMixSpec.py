@@ -26,7 +26,7 @@ class PodcastMixSpec(Dataset):
                  shuffle_tracks=False, multi_speakers=False, normalize=True,
                  window_size=1024, fft_size=1024, hop_size=441):
         self.fft_size = fft_size
-        self.hop_size = self.hop_size
+        self.hop_size = hop_size
         self.window_size = window_size
         self.csv_dir = csv_dir
         self.speech_csv_path = os.path.join(self.csv_dir, 'speech.csv')
@@ -264,16 +264,22 @@ class PodcastMixSpec(Dataset):
         if self.normalize:
             sources, mixture = self.normalize_audio(sources, mixture)
         # stft? what happens with the phase?
-        # compute spectrogram
-        X_in = torch.stft(sources, self.fft_size, self.hop_size, window=self.window)
-        breakpoint()
+        sources = self.compute_mag_phase(sources)
+        mixture = self.compute_mag_phase(mixture)
+        
+
+        return mixture, sources
+    
+    def compute_mag_phase(self, torch_signals):
+        X_in = torch.stft(torch_signals, self.fft_size, self.hop_size, window=self.window)
         real, imag = X_in.unbind(-1)
         complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
         r_i = torch.view_as_complex(complex_n)
         phase = torch.angle(r_i)
         X_in = torch.sqrt(real**2 + imag**2)
-
-        return mixture, sources
+        # concat mag and phase: [torch_signals, mag/phase, n_bins, n_frames]
+        torch_signals = torch.cat((X_in.unsqueeze(1), phase.unsqueeze(1)), dim=1)
+        return torch_signals
 
     def get_infos(self):
         """Get dataset infos (for publishing models).
