@@ -265,11 +265,12 @@ class PodcastMixSpec(Dataset):
             sources, mixture = self.normalize_audio(sources, mixture)
         # stft? what happens with the phase?
         sources = self.compute_mag_phase(sources)
+        mixture = mixture.unsqueeze(0)
         mixture = self.compute_mag_phase(mixture)
-        
+        mixture = mixture.squeeze(0)
 
         return mixture, sources
-    
+
     def compute_mag_phase(self, torch_signals):
         X_in = torch.stft(torch_signals, self.fft_size, self.hop_size, window=self.window)
         real, imag = X_in.unbind(-1)
