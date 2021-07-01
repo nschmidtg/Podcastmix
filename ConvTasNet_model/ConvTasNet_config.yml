@@ -4,23 +4,24 @@ model:
 filterbank:
   n_filters: 512
   kernel_size: 16
-  stride: 8
+  stride: 4
 # Network config
 masknet:
   n_blocks: 8
-  n_repeats: 3
+  n_repeats: 5
   mask_act: relu
   bn_chan: 256
   skip_chan: 256
-  hid_chan: 256
+  hid_chan: 512
 # Training config
 training:
-  epochs: 30
+  epochs: 100
   batch_size: 2
-  num_workers: 24
+  num_workers: 0
   half_lr: yes
   early_stop: yes
-  multi_speakers: no
+  multi_speakers: yes
+  normalize: yes
 # Optim config
 optim:
   optimizer: adam
