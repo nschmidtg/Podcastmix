@@ -39,7 +39,10 @@ def main(conf):
         segment=conf["data"]["segment"],
         shuffle_tracks=True,
         multi_speakers=conf["training"]["multi_speakers"],
-        normalize=conf["training"]["normalize"]
+        normalize=conf["training"]["normalize"],
+        window_size=1024,
+        fft_size=1024,
+        hop_size=441,
     )
 
     val_set = PodcastMixSpec(
@@ -48,7 +51,10 @@ def main(conf):
         segment=conf["data"]["segment"],
         shuffle_tracks=True,
         multi_speakers=conf["training"]["multi_speakers"],
-        normalize=conf["training"]["normalize"]
+        normalize=conf["training"]["normalize"],
+        window_size=1024,
+        fft_size=1024,
+        hop_size=441,
     )
 
     train_loader = DataLoader(
