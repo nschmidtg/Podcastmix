@@ -260,11 +260,8 @@ class PodcastMixSpec(Dataset):
         sources = np.vstack(sources_list)
         # Convert sources to tensor
         sources = torch.from_numpy(sources)
-        # TODO: move this to the nextwork
-        if self.normalize:
-            sources, mixture = self.normalize_audio(sources, mixture)
-        # stft? what happens with the phase?
         sources = self.compute_mag_phase(sources)
+        
         mixture = mixture.unsqueeze(0)
         mixture = self.compute_mag_phase(mixture)
         mixture = mixture.squeeze(0)
