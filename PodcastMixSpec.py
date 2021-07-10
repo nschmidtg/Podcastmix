@@ -61,7 +61,7 @@ class PodcastMixSpec(Dataset):
 
     def __len__(self):
         # for now, its a full permutation
-        return 50
+        # return 50
         return min([len(self.df_speech), len(self.df_music)])
 
     def compute_rand_offset_duration(self, original_num_frames, segment_frames):
@@ -263,7 +263,7 @@ class PodcastMixSpec(Dataset):
         # Convert sources to tensor
         sources = torch.from_numpy(sources)
         if self.normalize:
-            sources, mixture, mean, std = self.normalize_audio(sources, mixture)
+            sources, mixture = self.normalize_audio(sources, mixture)
         sources = self.compute_mag_phase(sources)
 
         mixture = mixture.unsqueeze(0)
