@@ -61,7 +61,7 @@ class PodcastMixSpec(Dataset):
 
     def __len__(self):
         # for now, its a full permutation
-        # return 50
+        return 50
         return min([len(self.df_speech), len(self.df_music)])
 
     def compute_rand_offset_duration(self, original_num_frames, segment_frames):
@@ -265,11 +265,11 @@ class PodcastMixSpec(Dataset):
         mixture = mixture.unsqueeze(0)
         mixture = self.compute_mag_phase(mixture)
         mixture = mixture.squeeze(0)
-
+        # print(mixture.shape, sources.shape, "mixture, sources")
         return mixture, sources
 
     def compute_mag_phase(self, torch_signals):
-        X_in = torch.stft(torch_signals, self.fft_size, self.hop_size, window=self.window)
+        X_in = torch.stft(torch_signals, self.fft_size, self.hop_size, window=self.window, return_complex=False)
         real, imag = X_in.unbind(-1)
         complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
         r_i = torch.view_as_complex(complex_n)

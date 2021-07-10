@@ -52,7 +52,7 @@ class UNet(BaseModel):
 
 
     def forward(self, X_in):
-        # shape of X_in: [batch, mag/phase, bins, frames] debo quitar la phase
+        # shape of X_in: [batch, mag/phase, bins, frames] must remove phase
         X_in = X_in.permute(1,0,2,3)[0]
         # add channels dimension
         X = X_in.unsqueeze(1)
