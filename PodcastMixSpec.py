@@ -203,11 +203,22 @@ class PodcastMixSpec(Dataset):
         """
         Receives spectrogram and the normalize it
         """
-        ref = mixture
+        print("inside normalize spectrogram", mixture.shape)
+        ref = mixture[0]
         mean = torch.mean(ref)
         std = torch.std(ref)
-        mixture = (mixture - mean) / std
-        sources = (sources - mean) / std
+        mix = (mixture[0] - mean) / std
+        speech = sources[0]
+        music = sources[1]
+        speech_mag_norm = (speech[0] - mean) / std
+        music_mag_norm = (music[0] - mean) / std
+        speech[0] = speech_mag_norm
+        music[0] = music_mag_norm
+
+        sources = torch.stack([speech, music], dim=0)
+
+        mixture[0] = mix
+
         return sources, mixture
 
     def __getitem__(self, idx):

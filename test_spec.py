@@ -86,7 +86,6 @@ def main(conf):
         AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
     model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
     print("model_path", model_path)
-    # model = ConvTasNet
     # Handle device placement
     if conf["use_gpu"]:
         model.cuda()
@@ -120,13 +119,17 @@ def main(conf):
         print("shape of the mix returned from dataloader", mix.shape)
         mean = torch.mean(mix[0])
         std = torch.std(mix[0])
-        m_norm = (mix - mean) / std
+        m_norm = (mix[0] - mean) / std
+        mix[0] = m_norm
         # s0 = (sources[0] - torch.mean(mix)) / torch.std(mix)
         # s1 = (sources[1] - torch.mean(mix)) / torch.std(mix)
-        m_norm, _ = tensors_to_device([m_norm, sources], device=model_device)
+        m_norm, _ = tensors_to_device([mix, sources], device=model_device)
         est_sources = model(m_norm.unsqueeze(0)).squeeze(0)
         # unnormalize spectrogram
         est_sources = est_sources * std + mean
+        
+        # pass to cpu
+        est_sources = est_sources.cpu()
 
         # convert spectrograms to audio using mixture phase
         phase = mix[1]
@@ -138,18 +141,20 @@ def main(conf):
         music = sources[1]
         polar_speech = speech[0] * torch.cos(speech[1]) + speech[0] * torch.sin(speech[1]) * 1j
         polar_music = music[0] * torch.cos(music[1]) + music[0] * torch.sin(music[1]) * 1j
+        polar_mix = mix[0] * torch.cos(phase) + mix[0] * torch.sin(phase) * 1j
         speech_audio = torch.istft(polar_speech, 1024, 441, 1024, return_complex=False, onesided=True, center=True)
         music_audio = torch.istft(polar_music, 1024, 441, 1024, return_complex=False, onesided=True, center=True)
+        mix_audio = torch.istft(polar_mix, 1024, 441, 1024, return_complex=False, onesided=True, center=True)
 
-         # remove additional dimention
-        speech_out = speech_audio.squeeze(1)
-        music_out = music_audio.squeeze(1)
-
+        # remove additional dimention
+        speech_out = speech_audio.squeeze(0)
+        music_out = music_audio.squeeze(0)
+        mix_out = mix_audio.squeeze(0)
         # add both sources to a tensor to return them
-        sources = torch.stack([speech_out, music_out], dim=1)
+        sources = torch.stack([speech_out, music_out], dim=0)
 
-        mix_np = mix.cpu().data.numpy()
-        sources_np = sources.cpu().data.numpy()
+        mix_np = mix_out.cpu().data.numpy()
+        sources_np = sources.data.numpy()
         est_sources_np = est_sources_audio.squeeze(0).cpu().data.numpy()
         # For each utterance, we get a dictionary with the mixture path,
         # the input and output metrics
@@ -165,9 +170,9 @@ def main(conf):
             series_list.append(pd.Series(utt_metrics))
         except:
             print("Error. Index", idx)
-            print(mix_np)
-            print(sources_np)
-            print(est_sources_np)
+            print(mix_np.shape)
+            print(sources_np.shape)
+            print(est_sources_np.shape)
 
         # Save some examples in a folder. Wav files and metrics as text.
         if idx in save_idx:
