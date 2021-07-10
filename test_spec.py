@@ -119,13 +119,10 @@ def main(conf):
         print("shape of the mix returned from dataloader", mix.shape)
         mean = torch.mean(mix[0])
         std = torch.std(mix[0])
-        phase = mix[1]
-        m_norm = (mix[0] - mean) / std
-        mix_aux = mix
-        mix_aux[0] = m_norm
+        mix[0] = (mix[0] - mean) / std
         # s0 = (sources[0] - torch.mean(mix)) / torch.std(mix)
         # s1 = (sources[1] - torch.mean(mix)) / torch.std(mix)
-        m_norm, _ = tensors_to_device([mix_aux, sources], device=model_device)
+        m_norm, _ = tensors_to_device([mix, sources], device=model_device)
         est_sources = model(m_norm.unsqueeze(0)).squeeze(0)
         # unnormalize spectrogram
         est_sources = est_sources * std + mean
@@ -134,7 +131,7 @@ def main(conf):
         est_sources = est_sources.cpu()
 
         # convert spectrograms to audio using mixture phase
-        polar_sources = est_sources * torch.cos(phase) + est_sources * torch.sin(phase) * 1j
+        polar_sources = est_sources * torch.cos(mix[1]) + est_sources * torch.sin(mix[1]) * 1j
         est_sources_audio = torch.istft(polar_sources, 1024, 441, 1024, return_complex=False, onesided=True, center=True)
 
         # ground truth sources spectrograms to audio
@@ -142,10 +139,14 @@ def main(conf):
         music = sources[1]
         polar_speech = speech[0] * torch.cos(speech[1]) + speech[0] * torch.sin(speech[1]) * 1j
         polar_music = music[0] * torch.cos(music[1]) + music[0] * torch.sin(music[1]) * 1j
-        polar_mix = mix[0] * torch.cos(phase) + mix[0] * torch.sin(phase) * 1j
-        speech_audio = torch.istft(polar_speech, 1024, 441, 1024, return_complex=False, onesided=True, center=True)
-        music_audio = torch.istft(polar_music, 1024, 441, 1024, return_complex=False, onesided=True, center=True)
-        mix_audio = torch.istft(polar_mix, 1024, 441, 1024, return_complex=False, onesided=True, center=True)
+
+
+        # unnormalize mix
+        mix[0] = (mix[0] * std) + mean
+        polar_mix = mix[0] * torch.cos(mix[1]) + mix[0] * torch.sin(mix[1]) * 1j
+        speech_audio = torch.istft(polar_speech, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True)
+        music_audio = torch.istft(polar_music, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True)
+        mix_audio = torch.istft(polar_mix, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True)
 
         # remove additional dimention
         speech_out = speech_audio.squeeze(0)
