@@ -119,11 +119,13 @@ def main(conf):
         print("shape of the mix returned from dataloader", mix.shape)
         mean = torch.mean(mix[0])
         std = torch.std(mix[0])
+        phase = mix[1]
         m_norm = (mix[0] - mean) / std
-        mix[0] = m_norm
+        mix_aux = mix
+        mix_aux[0] = m_norm
         # s0 = (sources[0] - torch.mean(mix)) / torch.std(mix)
         # s1 = (sources[1] - torch.mean(mix)) / torch.std(mix)
-        m_norm, _ = tensors_to_device([mix, sources], device=model_device)
+        m_norm, _ = tensors_to_device([mix_aux, sources], device=model_device)
         est_sources = model(m_norm.unsqueeze(0)).squeeze(0)
         # unnormalize spectrogram
         est_sources = est_sources * std + mean
@@ -132,7 +134,6 @@ def main(conf):
         est_sources = est_sources.cpu()
 
         # convert spectrograms to audio using mixture phase
-        phase = mix[1]
         polar_sources = est_sources * torch.cos(phase) + est_sources * torch.sin(phase) * 1j
         est_sources_audio = torch.istft(polar_sources, 1024, 441, 1024, return_complex=False, onesided=True, center=True)
 
