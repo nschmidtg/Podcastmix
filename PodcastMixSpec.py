@@ -265,14 +265,11 @@ class PodcastMixSpec(Dataset):
         if self.normalize:
             sources, mixture, mean, std = self.normalize_audio(sources, mixture)
         sources = self.compute_mag_phase(sources)
-        
+
         mixture = mixture.unsqueeze(0)
         mixture = self.compute_mag_phase(mixture)
         mixture = mixture.squeeze(0)
 
-        mixture[1] = torch.cat((mixture[1], mean, std))
-        print(mixture.shape)
-        
         return mixture, sources
 
     def compute_mag_phase(self, torch_signals):

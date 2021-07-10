@@ -123,16 +123,20 @@ def main(conf):
 
         mean = torch.mean(mix_audio)
         std = torch.std(mix_audio)
-        mix_audio = (mix_audio - mean) / std
+        mix_audio_norm = (mix_audio - mean) / std
+        print("mix_audio", mix_audio_norm.shape)
         
-        X_in = torch.stft(mix_audio, 1024, 441, window=torch.hamming_window(1024), return_complex=False)
+        X_in = torch.stft(mix_audio_norm, 1024, 441, window=torch.hamming_window(1024), return_complex=False)
+        print("X_in", X_in.shape)
         real, imag = X_in.unbind(-1)
-        complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
+        print("real", real.shape)
+        complex_n = torch.cat((real.unsqueeze(0), imag.unsqueeze(0)), dim=0).permute(1,2,0).contiguous()
+        print("complex_n", complex_n.shape)
         r_i = torch.view_as_complex(complex_n)
         phase = torch.angle(r_i)
         X_in = torch.sqrt(real**2 + imag**2)
-        # concat mag and phase: [torch_signals, mag/phase, n_bins, n_frames]
-        mix_norm = torch.cat((X_in.unsqueeze(1), phase.unsqueeze(1)), dim=1)
+
+        mix_norm = torch.cat((X_in.unsqueeze(0), phase.unsqueeze(0)), dim=0)
 
         m_norm, _ = tensors_to_device([mix_norm, sources], device=model_device)
         est_sources = model(m_norm.unsqueeze(0)).squeeze(0)
