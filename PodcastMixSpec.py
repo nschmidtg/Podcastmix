@@ -199,13 +199,15 @@ class PodcastMixSpec(Dataset):
         #     speech_mix = self.resampler.forward(speech_mix)
         return speech_mix
 
-    def normalize_audio(self, sources, mixture):
+    def normalize_spectrogram(self, sources, mixture):
         """
-        Receives mono audio and the normalize it
+        Receives spectrogram and the normalize it
         """
         ref = mixture
-        mixture = (mixture - torch.mean(ref)) / torch.std(ref)
-        sources = (sources - torch.mean(ref)) / torch.std(ref)
+        mean = torch.mean(ref)
+        std = torch.std(ref)
+        mixture = (mixture - mean) / std
+        sources = (sources - mean) / std
         return sources, mixture
 
     def __getitem__(self, idx):
@@ -265,7 +267,9 @@ class PodcastMixSpec(Dataset):
         mixture = mixture.unsqueeze(0)
         mixture = self.compute_mag_phase(mixture)
         mixture = mixture.squeeze(0)
-        # print(mixture.shape, sources.shape, "mixture, sources")
+        if self.normalize:
+            sources, mixture = self.normalize_spectrogram(sources, mixture)
+        print(mixture.shape, sources.shape, "mixture, sources")
         return mixture, sources
 
     def compute_mag_phase(self, torch_signals):
