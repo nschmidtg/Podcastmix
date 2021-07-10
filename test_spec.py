@@ -132,7 +132,7 @@ def main(conf):
 
         # convert spectrograms to audio using mixture phase
         polar_sources = est_sources * torch.cos(mix[1]) + est_sources * torch.sin(mix[1]) * 1j
-        est_sources_audio = torch.istft(polar_sources, 1024, 441, 1024, return_complex=False, onesided=True, center=True)
+        est_sources_audio = torch.istft(polar_sources, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True)
 
         # ground truth sources spectrograms to audio
         speech = sources[0]
