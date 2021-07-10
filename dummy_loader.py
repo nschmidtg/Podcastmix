@@ -16,6 +16,11 @@ train_set = PodcastMixSpec(
     hop_size=441,
 )
 a=train_set.__getitem__(0)
-polar_mix = a[1][0][0] * torch.cos(a[1][0][1]) + a[1][0][0] * torch.sin(a[1][0][1]) * 1j
+mix = a[0]
+mean = torch.mean(mix[0])
+std = torch.std(mix[0])
+mix[0] = (mix[0] - mean) / std
+mix[0] = (mix[0] * std) + mean
+polar_mix = mix[0] * torch.cos(mix[1]) + mix[0] * torch.sin(mix[1]) * 1j
 music = torch.istft(polar_mix, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True)
 torchaudio.save('podcast_fake.wav', music.unsqueeze(0), sample_rate=44100)
