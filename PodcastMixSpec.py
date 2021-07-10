@@ -208,7 +208,7 @@ class PodcastMixSpec(Dataset):
         std = torch.std(ref)
         mixture = (mixture - mean) / std
         sources = (sources - mean) / std
-        return sources, mixture, mean, std
+        return sources, mixture
 
     def __getitem__(self, idx):
         if(idx == 0 and self.shuffle_tracks):
