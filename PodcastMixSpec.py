@@ -199,27 +199,16 @@ class PodcastMixSpec(Dataset):
         #     speech_mix = self.resampler.forward(speech_mix)
         return speech_mix
 
-    def normalize_spectrogram(self, sources, mixture):
+    def normalize_audio(self, sources, mixture):
         """
-        Receives spectrogram and the normalize it
+        Receives mono audio and the normalize it
         """
-        print("inside normalize spectrogram", mixture.shape)
-        ref = mixture[0]
+        ref = mixture
         mean = torch.mean(ref)
         std = torch.std(ref)
-        mix = (mixture[0] - mean) / std
-        speech = sources[0]
-        music = sources[1]
-        speech_mag_norm = (speech[0] - mean) / std
-        music_mag_norm = (music[0] - mean) / std
-        speech[0] = speech_mag_norm
-        music[0] = music_mag_norm
-
-        sources = torch.stack([speech, music], dim=0)
-
-        mixture[0] = mix
-
-        return sources, mixture
+        mixture = (mixture - mean) / std
+        sources = (sources - mean) / std
+        return sources, mixture, mean, std
 
     def __getitem__(self, idx):
         if(idx == 0 and self.shuffle_tracks):
@@ -273,14 +262,17 @@ class PodcastMixSpec(Dataset):
         sources = np.vstack(sources_list)
         # Convert sources to tensor
         sources = torch.from_numpy(sources)
+        if self.normalize:
+            sources, mixture, mean, std = self.normalize_audio(sources, mixture)
         sources = self.compute_mag_phase(sources)
         
         mixture = mixture.unsqueeze(0)
         mixture = self.compute_mag_phase(mixture)
         mixture = mixture.squeeze(0)
-        if self.normalize:
-            sources, mixture = self.normalize_spectrogram(sources, mixture)
-        print(mixture.shape, sources.shape, "mixture, sources")
+
+        mixture[1] = torch.cat((mixture[1], mean, std))
+        print(mixture.shape)
+        
         return mixture, sources
 
     def compute_mag_phase(self, torch_signals):
