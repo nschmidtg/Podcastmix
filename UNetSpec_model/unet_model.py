@@ -4,13 +4,8 @@ from asteroid.models import BaseModel
 
 class UNet(BaseModel):
     #def __init__(self, n_channels, n_classes, bilinear=True):
-    def __init__(self, sample_rate, fft_size, hop_size, window_size, kernel_size, stride):
+    def __init__(self, sample_rate, kernel_size, stride):
         super(UNet, self).__init__(sample_rate=sample_rate)
-        # self.save_hyperparameters()
-        self.sample_rate = sample_rate
-        self.window_size = window_size
-        self.fft_size = fft_size
-        self.hop_size = hop_size
         self.kernel_size = kernel_size
         self.stride = stride
 
@@ -56,7 +51,9 @@ class UNet(BaseModel):
 
 
 
-    def forward(self, x_in):
+    def forward(self, X_in):
+        # shape of X_in: [batch, mag/phase, bins, frames] must remove phase
+        X_in = X_in.permute(1,0,2,3)[0]
         # add channels dimension
         X = X_in.unsqueeze(1)
 
@@ -124,27 +121,15 @@ class UNet(BaseModel):
         speech = X_in * X_mask_speech
         # and music
         music = X_in * (1 - X_mask_speech)
-        # istft
-        polar_speech = speech * torch.cos(phase) + speech * torch.sin(phase) * 1j
-        polar_music = music * torch.cos(phase) + music * torch.sin(phase) * 1j
-        speech_out = torch.istft(polar_speech, self.fft_size, hop_length=self.hop_size, window=window, return_complex=False, onesided=True, center=True)
-        music_out = torch.istft(polar_music, self.fft_size, hop_length=self.hop_size, window=window, return_complex=False, onesided=True, center=True)
-
-        # remove additional dimention
-        speech_out = speech_out.squeeze(1)
-        music_out = music_out.squeeze(1)
-
+        
         # add both sources to a tensor to return them
-        T_data = torch.stack([speech_out, music_out], dim=1)
+        T_data = torch.stack([speech, music], dim=1)
 
         return T_data
 
     def get_model_args(self):
         """Arguments needed to re-instantiate the model."""
         model_args = {
-            "fft_size": self.fft_size,
-            "hop_size": self.hop_size,
-            "window_size": self.window_size,
             "kernel_size": self.kernel_size,
             "stride": self.stride
         }
