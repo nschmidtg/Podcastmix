@@ -39,7 +39,10 @@ def main(conf):
         segment=conf["data"]["segment"],
         shuffle_tracks=True,
         multi_speakers=conf["training"]["multi_speakers"],
-        normalize=conf["training"]["normalize"]
+        normalize=conf["training"]["normalize"],
+        window_size=1024,
+        fft_size=1024,
+        hop_size=441,
     )
 
     val_set = PodcastMixSpec(
@@ -48,7 +51,10 @@ def main(conf):
         segment=conf["data"]["segment"],
         shuffle_tracks=True,
         multi_speakers=conf["training"]["multi_speakers"],
-        normalize=conf["training"]["normalize"]
+        normalize=conf["training"]["normalize"],
+        window_size=1024,
+        fft_size=1024,
+        hop_size=441,
     )
 
     train_loader = DataLoader(
@@ -73,9 +79,9 @@ def main(conf):
         from unet_model import UNet
         model = UNet(
             conf["data"]["sample_rate"],
-            conf["stft"]["fft_size"],
-            conf["stft"]["hop_size"],
-            conf["stft"]["window_size"],
+            # conf["stft"]["fft_size"],
+            # conf["stft"]["hop_size"],
+            # conf["stft"]["window_size"],
             conf["convolution"]["kernel_size"],
             conf["convolution"]["stride"]
         )
@@ -137,7 +143,7 @@ def main(conf):
         gradient_clip_val=5.0,
         resume_from_checkpoint=conf["main_args"]["resume_from"],
         precision=32,
-        # plugins=DDPPlugin(find_unused_parameters=False)
+        plugins=DDPPlugin(find_unused_parameters=False)
     )
     trainer.fit(system)
 

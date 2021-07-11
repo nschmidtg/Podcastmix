@@ -1,9 +1,9 @@
 model: 
-  name: UNet
+  name: UNetSpec
 # Training config
 training:
-  epochs: 100
-  batch_size: 2
+  epochs: 200
+  batch_size: 16
   num_workers: 12
   half_lr: yes
   early_stop: yes
