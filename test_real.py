@@ -177,8 +177,7 @@ def main(conf):
 
         # Save some examples in a folder. Wav files and metrics as text.
         
-        # if idx in save_idx:
-        if idx in [0]:
+        if idx in save_idx:
             local_save_dir = os.path.join(ex_save_dir, "ex_{}/".format(idx))
             os.makedirs(local_save_dir, exist_ok=True)
             sf.write(
