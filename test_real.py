@@ -11,7 +11,6 @@ from tqdm import tqdm
 from torch.utils.data.dataset import Dataset
 import torchaudio
 import sys
-
 from asteroid.metrics import get_metrics
 from pytorch_lightning import seed_everything
 from asteroid.utils import tensors_to_device
@@ -47,12 +46,12 @@ class PodcastLoader(Dataset):
         music, _ = torchaudio.load(
             music_path
         )
-        sources_list.append(speech)
-        sources_list.append(music)
+        sources_list.append(speech[0][88200*8:88200*9])
+        sources_list.append(music[0][88200*8:88200*9])
         sources = np.vstack(sources_list)
         sources = torch.from_numpy(sources)
 
-        return mixture, sources
+        return mixture[0][88200*8:88200*9], sources
 
 
 
@@ -182,7 +181,7 @@ def main(conf):
             os.makedirs(local_save_dir, exist_ok=True)
             sf.write(
                 local_save_dir + "mixture.wav",
-                mix_np[0],
+                mix_np,
                 conf["sample_rate"]
             )
             # Loop over the sources and estimates
