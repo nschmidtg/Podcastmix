@@ -47,12 +47,12 @@ class PodcastLoader(Dataset):
         music, _ = torchaudio.load(
             music_path
         )
-        sources_list.append(speech[0:88200])
-        sources_list.append(music[0:88200])
+        sources_list.append(speech)
+        sources_list.append(music)
         sources = np.vstack(sources_list)
         sources = torch.from_numpy(sources)
 
-        return mixture[0:88200], sources
+        return mixture, sources
 
 
 
@@ -256,7 +256,5 @@ if __name__ == "__main__":
 
 """
 usage:
-CUDA_VISIBLE_DEVICES=1 python test.py --target_model ConvTasNet \
-    --test_dir augmented_dataset/metadata/test/ --task linear_mono \
-        --out_dir=ConvTasNet_model/eval/tmp --exp_dir=ConvTasNet_model/exp/tmp
+python test_real.py --target_model ConvTasNet --test_dir podcastmix/test-real/metadata --out_dir=ConvTasNet/eval/tmp --exp_dir=../../Desktop/experiments-defense-epochs/ConvTasNet_model/exp-92-epochs-LogL1/tmp/ --use_gpu=0
 """

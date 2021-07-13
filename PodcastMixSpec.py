@@ -53,7 +53,7 @@ class PodcastMixSpec(Dataset):
         # initialize indexes
         self.speech_inxs = list(range(len(self.df_speech)))
         self.music_inxs = list(range(len(self.df_music)))
-        self.denominator_gain = 10
+        self.denominator_gain = 10000
         self.gain_ramp = np.array(range(1, self.denominator_gain, 1))/self.denominator_gain
         np.random.shuffle(self.gain_ramp)
         torchaudio.set_audio_backend(backend='soundfile')
