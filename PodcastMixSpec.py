@@ -53,7 +53,7 @@ class PodcastMixSpec(Dataset):
         # initialize indexes
         self.speech_inxs = list(range(len(self.df_speech)))
         self.music_inxs = list(range(len(self.df_music)))
-        self.denominator_gain = 10000
+        self.denominator_gain = 100
         self.gain_ramp = np.array(range(1, self.denominator_gain, 1))/self.denominator_gain
         np.random.shuffle(self.gain_ramp)
         torchaudio.set_audio_backend(backend='soundfile')
@@ -61,7 +61,7 @@ class PodcastMixSpec(Dataset):
 
     def __len__(self):
         # for now, its a full permutation
-        # return 50
+        # return 500
         return min([len(self.df_speech), len(self.df_music)])
 
     def compute_rand_offset_duration(self, original_num_frames, segment_frames):
