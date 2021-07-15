@@ -11,11 +11,12 @@ from pytorch_lightning import seed_everything
 from pytorch_lightning.plugins import DDPPlugin
 import sys
 
-from PodcastMix import PodcastMix
+from PodcastMixMulti import PodcastMixMulti
 from asteroid.engine.optimizers import make_optimizer
 from asteroid.engine.system import System
 #from l2 import L2Time
 from logl2 import LogL2Time
+from logl2 import LogL2Spec
 #from torch.nn import L1Loss
 seed_everything(1, workers=True)
 
@@ -33,24 +34,32 @@ parser.add_argument(
 )
 
 def main(conf):
-    train_set = PodcastMix(
+    train_set = PodcastMixMulti(
         csv_dir=conf["data"]["train_dir"],
         sample_rate=conf["data"]["sample_rate"],
+        original_sample_rate=["data"]["original_sample_rate"],
         segment=conf["data"]["segment"],
+        domain=conf["data"]["domain"],
+        fft_size=conf["data"]["fft_size"],
+        window_size=conf["data"]["window_size"],
+        hop_size=conf["data"]["hop_size"],
         shuffle_tracks=True,
         multi_speakers=conf["training"]["multi_speakers"],
         normalize=conf["training"]["normalize"]
     )
-
-    val_set = PodcastMix(
+    val_set = PodcastMixMulti(
         csv_dir=conf["data"]["valid_dir"],
         sample_rate=conf["data"]["sample_rate"],
+        original_sample_rate=["data"]["original_sample_rate"],
         segment=conf["data"]["segment"],
+        domain=conf["data"]["domain"],
+        fft_size=conf["data"]["fft_size"],
+        window_size=conf["data"]["window_size"],
+        hop_size=conf["data"]["hop_size"],
         shuffle_tracks=True,
         multi_speakers=conf["training"]["multi_speakers"],
         normalize=conf["training"]["normalize"]
     )
-
     train_loader = DataLoader(
         train_set,
         shuffle=True,
@@ -59,7 +68,6 @@ def main(conf):
         drop_last=True,
         pin_memory=True
     )
-
     val_loader = DataLoader(
         val_set,
         shuffle=False,
@@ -68,41 +76,34 @@ def main(conf):
         drop_last=True,
         pin_memory=True
     )
+    
     if(conf["model"]["name"] == "ConvTasNet"):
         from asteroid.models import ConvTasNet
-
         conf["masknet"].update({"n_src": conf["data"]["n_src"]})
-        scheduler = None
         model = ConvTasNet(
             **conf["filterbank"],
             **conf["masknet"],
             sample_rate=conf["data"]["sample_rate"]
         )
-        optimizer = make_optimizer(model.parameters(), **conf["optim"])
-        if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(
-                optimizer=optimizer,
-                factor=0.5,
-                patience=5
-            )
-    elif(conf["model"]["name"] == "UNet"):
+        loss_func = LogL2Time()
+        plugins = None
+    else:
         sys.path.append('UNet_model')
         from unet_model import UNet
         model = UNet(
             conf["data"]["sample_rate"],
-            conf["stft"]["fft_size"],
-            conf["stft"]["hop_size"],
-            conf["stft"]["window_size"],
             conf["convolution"]["kernel_size"],
             conf["convolution"]["stride"]
         )
-        optimizer = make_optimizer(model.parameters(), **conf["optim"])
-        if conf["training"]["half_lr"]:
-            scheduler = ReduceLROnPlateau(
-                optimizer=optimizer,
-                factor=0.5,
-                patience=5
-            )
+        loss_func = LogL2Spec()
+        plugins = DDPPlugin(find_unused_parameters=False)
+    optimizer = make_optimizer(model.parameters(), **conf["optim"])
+    if conf["training"]["half_lr"]:
+        scheduler = ReduceLROnPlateau(
+            optimizer=optimizer,
+            factor=0.5,
+            patience=5
+        )
 
     # Just after instantiating, save the args. Easy loading in the future.
     exp_dir = conf["model"]["name"] + "_model/" + conf["main_args"]["exp_dir"]
@@ -111,7 +112,6 @@ def main(conf):
     with open(conf_path, "w") as outfile:
         yaml.safe_dump(conf, outfile)
 
-    loss_func = LogL2Time()
     system = System(
         model=model,
         loss_func=loss_func,
@@ -150,11 +150,10 @@ def main(conf):
         default_root_dir=exp_dir,
         gpus=gpus,
         distributed_backend=distributed_backend,
-        # limit_train_batches=1.0,  # Useful for fast experiment
         gradient_clip_val=5.0,
         resume_from_checkpoint=conf["main_args"]["resume_from"],
         precision=32,
-        # plugins=DDPPlugin(find_unused_parameters=False)
+        plugins=plugins
     )
     trainer.fit(system)
 
