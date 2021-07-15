@@ -37,7 +37,7 @@ def main(conf):
     train_set = PodcastMixMulti(
         csv_dir=conf["data"]["train_dir"],
         sample_rate=conf["data"]["sample_rate"],
-        original_sample_rate=["data"]["original_sample_rate"],
+        original_sample_rate=conf["data"]["original_sample_rate"],
         segment=conf["data"]["segment"],
         domain=conf["data"]["domain"],
         fft_size=conf["data"]["fft_size"],
@@ -50,7 +50,7 @@ def main(conf):
     val_set = PodcastMixMulti(
         csv_dir=conf["data"]["valid_dir"],
         sample_rate=conf["data"]["sample_rate"],
-        original_sample_rate=["data"]["original_sample_rate"],
+        original_sample_rate=conf["data"]["original_sample_rate"],
         segment=conf["data"]["segment"],
         domain=conf["data"]["domain"],
         fft_size=conf["data"]["fft_size"],
@@ -88,7 +88,7 @@ def main(conf):
         loss_func = LogL2Time()
         plugins = None
     else:
-        sys.path.append('UNet_model')
+        sys.path.append('UNetSpec_model')
         from unet_model import UNet
         model = UNet(
             conf["data"]["sample_rate"],
