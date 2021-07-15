@@ -4,12 +4,12 @@ train_set = PodcastMixMulti(
     original_sample_rate=44100,
     sample_rate=44100,
     segment=2,
-    domain='time',
+    domain='spectrogram',
     shuffle_tracks=True,
     multi_speakers=True,
     normalize=False,
     window_size=1024,
-    fft=1024,
+    fft_size=1024,
     hop_size=441,
 )
 a=train_set.__getitem__(0)

@@ -34,9 +34,9 @@ class LogL2Spec(_Loss):
         # print("squared_abs_dif", squared_abs_dif.shape)
         sum_of_squared_abs_dif = torch.sum(squared_abs_dif, dim=(2,3))
         # print("sum_of_squared_abs_dif", sum_of_squared_abs_dif.shape)
-        sum_of_log_of_previous = torch.sum(torch.log10(sum_of_squared_abs_dif), dim=1)
-        # print("sum_of_log_of_previous", sum_of_log_of_previous.shape)
-        loss = 10 / (number_of_sources * n_bins * n_frames) * sum_of_log_of_previous
+        sum_of_log = torch.sum(torch.log10(sum_of_squared_abs_dif), dim=1)
+        # print("sum_of_log", sum_of_log.shape)
+        loss = 10 / (number_of_sources * n_bins * n_frames) * sum_of_log
         # print("loss", loss.shape)
         loss = loss.mean(dim=0)
         # print("loss", loss.shape)

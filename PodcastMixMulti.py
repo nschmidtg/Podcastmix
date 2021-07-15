@@ -14,7 +14,7 @@ class PodcastMixMulti(Dataset):
     dataset_name = "PodcastMix"
 
     def __init__(self, csv_dir, sample_rate=44100, original_sample_rate= 44100, segment=2,
-                 domain='spectrogram', fft=1024, window_size=1024, hop_size=441,
+                 domain='spectrogram', fft_size=1024, window_size=1024, hop_size=441,
                  shuffle_tracks=False, multi_speakers=False, normalize=True):
         self.csv_dir = csv_dir
         self.segment = segment
@@ -26,7 +26,7 @@ class PodcastMixMulti(Dataset):
         self.shuffle_tracks = shuffle_tracks
         self.multi_speakers = multi_speakers
         self.domain = domain
-        self.fft = fft
+        self.fft_size = fft_size
         self.window = torch.hann_window(window_size)
         self.hop_size = hop_size
 
