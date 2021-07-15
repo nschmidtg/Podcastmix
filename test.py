@@ -126,9 +126,10 @@ def main(conf):
     series_list = []
 
     # # read mean and std from json
-    # TODO:
-    mean = None
-    std = None
+    with open('mean_std.json') as json_file:
+        data = json.load(json_file)
+        mean = data['sum_accum_mean'] / data['n_items']
+        std = data['sum_accum_std'] / data['n_items']
     window = torch.hamming_window(conf["window_size"])
 
     torch.no_grad().__enter__()
