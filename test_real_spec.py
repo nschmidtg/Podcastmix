@@ -1,4 +1,3 @@
-from PodcastMixSpec import PodcastMixSpec
 import os
 import random
 import soundfile as sf
@@ -9,15 +8,79 @@ import argparse
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from torch.utils.data.dataset import Dataset
+import torchaudio
 import sys
-
 from asteroid.metrics import get_metrics
 from pytorch_lightning import seed_everything
-from PodcastMixSpec import PodcastMixSpec
 from asteroid.utils import tensors_to_device
 from asteroid.metrics import MockWERTracker
 
-seed_everything(1, workers=True)
+seed_everything(1)
+
+class PodcastLoader(Dataset):
+    dataset_name = "PodcastMix"
+    def __init__(self, csv_dir, sample_rate=44100, fft_size=1024, hop_size=441, window_size=1024, segment=3):
+        self.csv_dir = csv_dir
+        self.sample_rate = sample_rate
+        self.fft_size = fft_size
+        self.hop_size = hop_size
+        self.window_size = window_size
+        self.segment = segment
+        self.window = torch.hann_window(self.window_size)
+        self.mix_csv_path = os.path.join(self.csv_dir, 'mix.csv')
+        self.df_mix = pd.read_csv(self.mix_csv_path, engine='python')
+        torchaudio.set_audio_backend(backend='soundfile')
+        print("*****", self.df_mix.shape)
+
+    def __len__(self):
+        return self.df_mix.shape[0]
+
+    def compute_mag_phase(self, torch_signals):
+        X_in = torch.stft(torch_signals, self.fft_size, self.hop_size, window=self.window, return_complex=False)
+        real, imag = X_in.unbind(-1)
+        complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
+        r_i = torch.view_as_complex(complex_n)
+        phase = torch.angle(r_i)
+        X_in = torch.sqrt(real**2 + imag**2)
+        # concat mag and phase: [torch_signals, mag/phase, n_bins, n_frames]
+        torch_signals = torch.cat((X_in.unsqueeze(1), phase.unsqueeze(1)), dim=1)
+        return torch_signals
+    
+    def __getitem__(self, index):
+        row = self.df_mix.iloc[index]
+        podcast_path = row['mix_path']
+        speech_path = row['speech_path']
+        music_path = row['music_path']
+        sources_list = []
+        start_second = 1
+        # breakpoint()
+        mixture, _ = torchaudio.load(
+            podcast_path,
+            frame_offset=start_second *  self.sample_rate,
+            num_frames=self.segment * self.sample_rate + start_second * start_second,
+        )
+        speech, _ = torchaudio.load(
+            speech_path,
+            frame_offset=start_second *  self.sample_rate,
+            num_frames=self.segment * self.sample_rate + start_second * start_second,
+        )
+        music, _ = torchaudio.load(
+            music_path,
+            frame_offset=start_second *  self.sample_rate,
+            num_frames=self.segment * self.sample_rate + start_second * start_second,
+        )
+        sources_list.append(speech[0])
+        sources_list.append(music[0])
+        sources = np.vstack(sources_list)
+        sources = torch.from_numpy(sources)
+        sources = self.compute_mag_phase(sources)
+
+        #mixture = mixture.unsqueeze(0)
+        mixture = self.compute_mag_phase(mixture)
+        # mixture = mixture.squeeze(0)
+
+        return mixture[0], sources
 
 
 
@@ -73,6 +136,7 @@ def my_import(name):
         mod = getattr(mod, comp)
     return mod
 
+
 def main(conf):
     compute_metrics = COMPUTE_METRICS
     wer_tracker = (
@@ -86,21 +150,20 @@ def main(conf):
         AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
     model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
     print("model_path", model_path)
+    # model = ConvTasNet
     # Handle device placement
     if conf["use_gpu"]:
         model.cuda()
     model_device = next(model.parameters()).device
-    test_set = PodcastMixSpec(
-        csv_dir=conf["test_dir"],
-        sample_rate=conf["sample_rate"],
-        segment=conf["segment"],
-        shuffle_tracks=False,
-        multi_speakers=conf["multi_speakers"],
-        normalize=False,
-        window_size=1024,
+    test_set = PodcastLoader(
+        conf["test_dir"],
+        sample_rate=44100,
         fft_size=1024,
-        hop_size=441
-    )
+        hop_size=441,
+        window_size=1024,
+        segment=2
+    )  # Uses all segment length
+    # Used to reorder sources only
 
     # Randomly choose the indexes of sentences to save.
     eval_save_dir = os.path.join(conf["exp_dir"], conf["out_dir"])
@@ -112,8 +175,6 @@ def main(conf):
 
     torch.no_grad().__enter__()
     for idx in tqdm(range(len(test_set))):
-        # Forward the network on the mixture.
-        # receive magnitude and phases
         mix, sources = test_set[idx]
         # mean and std of magnitude spectrogram
         polar_mix = mix[0] * torch.cos(mix[1]) + mix[0] * torch.sin(mix[1]) * 1j
@@ -169,7 +230,7 @@ def main(conf):
         est_sources_np = est_sources_audio.squeeze(0).cpu().data.numpy()
         # For each utterance, we get a dictionary with the mixture path,
         # the input and output metrics
-
+        
         try:
             utt_metrics = get_metrics(
                 mix_np,
@@ -181,11 +242,12 @@ def main(conf):
             series_list.append(pd.Series(utt_metrics))
         except:
             print("Error. Index", idx)
-            print(mix_np.shape)
-            print(sources_np.shape)
-            print(est_sources_np.shape)
+            print(mix_np)
+            print(sources_np)
+            print(est_sources_np)
 
         # Save some examples in a folder. Wav files and metrics as text.
+        
         if idx in save_idx:
             local_save_dir = os.path.join(ex_save_dir, "ex_{}/".format(idx))
             os.makedirs(local_save_dir, exist_ok=True)
@@ -265,7 +327,5 @@ if __name__ == "__main__":
 
 """
 usage:
-CUDA_VISIBLE_DEVICES=1 python test.py --target_model ConvTasNet \
-    --test_dir augmented_dataset/metadata/test/ --task linear_mono \
-        --out_dir=ConvTasNet_model/eval/tmp --exp_dir=ConvTasNet_model/exp/tmp
+python test_real_spec.py --target_model UNetSpec --test_dir podcastmix/test_real/metadata --out_dir=UNetSpec/eval/tmp --exp_dir=../../Downloads/experiments-UNetSpec_model-80-epochs/UNetSpec_model/exp/tmp/ --use_gpu=0 --n_save_ex=-1
 """
