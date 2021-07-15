@@ -96,7 +96,6 @@ def main(conf):
     else:
         AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
     model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
-    print("model_path", model_path)
     # model = ConvTasNet
     # Handle device placement
     if conf["use_gpu"]:
@@ -142,7 +141,6 @@ def main(conf):
             # using mix phase, unnormalize estimated sources and
             # compare them with the ground truth sources 
             mix_audio_norm = (mix - mean) / std
-            print("mix_audio", mix_audio_norm.shape)
             
             # audio to spectrogram
             mix_audio_norm = mix_audio_norm.unsqueeze(0)
