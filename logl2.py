@@ -20,9 +20,9 @@ class LogL2Spec(_Loss):
     
     def forward(self, est_targets, targets):
         # remove phase from targets
-        # print("targets shape", targets.shape)
-        targets = targets.permute(2, 0, 1, 3, 4)[0].squeeze(0)
-        # print("targets shape", targets.shape)
+        print("targets shape", targets.shape)
+        targets = targets.permute(2, 0, 1, 3, 4)[0]
+        print("targets shape", targets.shape)
         if targets.size() != est_targets.size() or targets.ndim < 2:
             raise TypeError(
                 f"Inputs must be of shape [batch, *], got {targets.size()} and {est_targets.size()} instead"
