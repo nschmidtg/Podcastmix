@@ -207,11 +207,7 @@ class PodcastMixMulti(Dataset):
             if len(speech_mix) < other_speech_signal.shape[-1]:
                 # the second speaker is longer than the original one
                 other_speech_signal_length = len(speech_mix)
-            print("speech_mix", speech_mix.shape)
-            print("other_speech_signal_length", other_speech_signal_length)
-            print("other_speech_signal", other_speech_signal.shape)
             offset = random.randint(0, len(speech_mix) - other_speech_signal_length)
-            print("offset", offset)
             speech_mix[offset:offset + other_speech_signal_length] += other_speech_signal[0][:other_speech_signal_length]
             speech_mix = speech_mix / 2
 
@@ -238,8 +234,6 @@ class PodcastMixMulti(Dataset):
         self.n_items += 1
         mixture = (mixture - self.sum_accum_mean/self.n_items) / (self.sum_accum_std / self.n_items)
         sources = (sources - self.sum_accum_mean/self.n_items) / (self.sum_accum_std / self.n_items)
-        print(self.n_items)
-        print(self.sum_accum_mean)
         with open(self.mean_std_filepath, 'w') as outfile:
             json.dump(
                 {
