@@ -238,12 +238,14 @@ class PodcastMixMulti(Dataset):
         self.n_items += 1
         mixture = (mixture - self.sum_accum_mean/self.n_items) / (self.sum_accum_std / self.n_items)
         sources = (sources - self.sum_accum_mean/self.n_items) / (self.sum_accum_std / self.n_items)
+        print(self.n_items)
+        print(self.sum_accum_mean)
         with open(self.mean_std_filepath, 'w') as outfile:
             json.dump(
                 {
-                    'n_items': self.n_items,
-                    'sum_accum_mean': self.sum_accum_mean,
-                    'sum_accum_std': self.sum_accum_std
+                    'n_items': int(self.n_items),
+                    'sum_accum_mean': float(self.sum_accum_mean),
+                    'sum_accum_std': float(self.sum_accum_std)
                 },
                 outfile
             )
