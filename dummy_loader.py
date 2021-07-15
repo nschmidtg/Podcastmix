@@ -19,5 +19,5 @@ std = torch.std(mix[0])
 mix[0] = (mix[0] - mean) / std
 mix[0] = (mix[0] * std) + mean
 polar_mix = mix[0] * torch.cos(mix[1]) + mix[0] * torch.sin(mix[1]) * 1j
-music = torch.istft(polar_mix, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True)
+music = torch.istft(polar_mix, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True, normalized=True)
 torchaudio.save('podcast_fake7.wav', music.unsqueeze(0), sample_rate=44100)
