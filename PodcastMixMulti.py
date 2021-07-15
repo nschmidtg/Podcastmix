@@ -3,6 +3,7 @@ from torch.utils.data import Dataset
 import pandas as pd
 import torchaudio
 import os
+import json
 import numpy as np
 import random
 from resampler import Resampler
@@ -29,6 +30,10 @@ class PodcastMixMulti(Dataset):
         self.fft_size = fft_size
         self.window = torch.hann_window(window_size)
         self.hop_size = hop_size
+        self.n_items = 0
+        self.sum_accum_mean = 0
+        self.sum_accum_std = 0
+        self.mean_std_filepath = 'mean_std.json'
 
         if not self.sample_rate == self.original_sample_rate:
             self.resampler = Resampler(
@@ -37,6 +42,13 @@ class PodcastMixMulti(Dataset):
                 dtype=torch.float32,
                 filter='hann'
             )
+        if self.normalize and os.path.isfile(self.mean_std_filepath):
+            with open(self.mean_std_filepath) as json_file:
+                data = json.load(json_file)
+                self.n_items = data['n_items']
+                self.sum_accum_mean = data['sum_accum_mean']
+                self.sum_accum_std = data['sum_accum_std']
+
 
         # declare dataframes
         self.speech_csv_path = os.path.join(self.csv_dir, 'speech.csv')
@@ -219,8 +231,22 @@ class PodcastMixMulti(Dataset):
         Receives mono audio and the normalize it
         """
         ref = mixture
-        mixture = (mixture - torch.mean(ref)) / torch.std(ref)
-        sources = (sources - torch.mean(ref)) / torch.std(ref)
+        mean = torch.mean(ref)
+        std = torch.std(ref)
+        self.sum_accum_mean += mean
+        self.sum_accum_std += std
+        self.n_items += 1
+        mixture = (mixture - self.sum_accum_mean/self.n_items) / (self.sum_accum_std / self.n_items)
+        sources = (sources - self.sum_accum_mean/self.n_items) / (self.sum_accum_std / self.n_items)
+        with open(self.mean_std_filepath, 'w') as outfile:
+            json.dump(
+                {
+                    'n_items': self.n_items,
+                    'sum_accum_mean': self.sum_accum_mean,
+                    'sum_accum_std': self.sum_accum_std
+                },
+                outfile
+            )
         return sources, mixture
 
     def __getitem__(self, idx):
