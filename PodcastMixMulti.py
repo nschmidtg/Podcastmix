@@ -33,7 +33,7 @@ class PodcastMixMulti(Dataset):
         if not self.sample_rate == self.original_sample_rate:
             self.resampler = Resampler(
                 input_sr=self.original_sample_rate,
-                output_sr=self.sample_rate, 
+                output_sr=self.sample_rate,
                 dtype=torch.float32,
                 filter='hann'
             )
@@ -50,13 +50,13 @@ class PodcastMixMulti(Dataset):
                 self.df_speech['speaker_id'] == speaker_id
             ]
         self.df_music = pd.read_csv(self.music_csv_path, engine='python')
-        
+
         # initialize indexes
         self.speech_inxs = list(range(len(self.df_speech)))
         self.music_inxs = list(range(len(self.df_music)))
 
         # declare the resolution of the reduction factor.
-        # this will create N different gain values max 
+        # this will create N different gain values max
         # 1/denominator_gain to multiply the music gain
         self.denominator_gain = 100
         self.gain_ramp = np.array(range(1, self.denominator_gain, 1))/self.denominator_gain
@@ -69,6 +69,7 @@ class PodcastMixMulti(Dataset):
 
     def __len__(self):
         # for now, its a full permutation
+        # return 200
         return min([len(self.df_speech), len(self.df_music)])
 
     def compute_rand_offset_duration(self, original_num_frames, segment_frames):
@@ -177,10 +178,10 @@ class PodcastMixMulti(Dataset):
             speech_mix = torch.cat((speech_mix, speech_signal[0]))
             speech_counter += speech_signal.shape[-1]
 
-        # we have a segment of at least self.segment length speech audio 
+        # we have a segment of at least self.segment length speech audio
         # from the same speaker
         if self.multi_speakers and speech_idx % 10 == 0:
-            # every 10 iterations overlap another speaker 
+            # every 10 iterations overlap another speaker
             list_of_speakers = list(self.speakers_dict.keys())
             list_of_speakers.remove(speaker_csv_id)
             non_speaker_id = random.sample(list_of_speakers, 1)[0]
@@ -189,15 +190,19 @@ class PodcastMixMulti(Dataset):
             other_speech_signal, _ = torchaudio.load(
                 audio_path
             )
-            
+
             other_speech_signal_length = other_speech_signal.shape[-1]
             if len(speech_mix) < other_speech_signal.shape[-1]:
                 # the second speaker is longer than the original one
                 other_speech_signal_length = len(speech_mix)
+            print("speech_mix", speech_mix.shape)
+            print("other_speech_signal_length", other_speech_signal_length)
+            print("other_speech_signal", other_speech_signal.shape)
             offset = random.randint(0, len(speech_mix) - other_speech_signal_length)
-            speech_mix[offset:offset + other_speech_signal_length] += other_speech_signal[0]
+            print("offset", offset)
+            speech_mix[offset:offset + other_speech_signal_length] += other_speech_signal[0][:other_speech_signal_length]
             speech_mix = speech_mix / 2
-        
+
         # we have a segment with the two speakers, the second in a random start.
         # now we randomly shift the array to pick the start
         offset = random.randint(0, array_size)
