@@ -278,7 +278,7 @@ class PodcastMixMulti(Dataset):
         return mixture, sources
     
     def compute_mag_phase(self, torch_signals):
-        X_in = torch.stft(torch_signals, self.fft_size, self.hop_size, window=self.window, return_complex=False)
+        X_in = torch.stft(torch_signals, self.fft_size, self.hop_size, window=self.window, return_complex=False, normalized=True)
         real, imag = X_in.unbind(-1)
         complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
         r_i = torch.view_as_complex(complex_n)

@@ -37,7 +37,7 @@ class PodcastLoader(Dataset):
         return self.df_mix.shape[0]
 
     def compute_mag_phase(self, torch_signals):
-        X_in = torch.stft(torch_signals, self.fft_size, self.hop_size, window=self.window, return_complex=False)
+        X_in = torch.stft(torch_signals, self.fft_size, self.hop_size, window=self.window, return_complex=False, normalized=True)
         real, imag = X_in.unbind(-1)
         complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
         r_i = torch.view_as_complex(complex_n)
@@ -178,14 +178,14 @@ def main(conf):
         mix, sources = test_set[idx]
         # mean and std of magnitude spectrogram
         polar_mix = mix[0] * torch.cos(mix[1]) + mix[0] * torch.sin(mix[1]) * 1j
-        mix_audio = torch.istft(polar_mix, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True)
+        mix_audio = torch.istft(polar_mix, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True, normalized=True)
 
         mean = torch.mean(mix_audio)
         std = torch.std(mix_audio)
         mix_audio_norm = (mix_audio - mean) / std
         print("mix_audio", mix_audio_norm.shape)
         
-        X_in = torch.stft(mix_audio_norm, 1024, 441, window=torch.hamming_window(1024), return_complex=False)
+        X_in = torch.stft(mix_audio_norm, 1024, 441, window=torch.hamming_window(1024), return_complex=False, normalized=True)
         print("X_in", X_in.shape)
         real, imag = X_in.unbind(-1)
         print("real", real.shape)
@@ -205,15 +205,15 @@ def main(conf):
 
         # convert spectrograms to audio using mixture phase
         polar_sources = est_sources * torch.cos(mix[1]) + est_sources * torch.sin(mix[1]) * 1j
-        est_sources_audio = torch.istft(polar_sources, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True)
+        est_sources_audio = torch.istft(polar_sources, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True, normalized=True)
 
         # ground truth sources spectrograms to audio
         speech = sources[0]
         music = sources[1]
         polar_speech = speech[0] * torch.cos(speech[1]) + speech[0] * torch.sin(speech[1]) * 1j
         polar_music = music[0] * torch.cos(music[1]) + music[0] * torch.sin(music[1]) * 1j
-        speech_audio = torch.istft(polar_speech, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True)
-        music_audio = torch.istft(polar_music, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True)
+        speech_audio = torch.istft(polar_speech, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True, normalized=True)
+        music_audio = torch.istft(polar_music, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True, normalized=True)
 
         # unnormalize estimated sources:
         est_sources_audio = est_sources_audio * std + mean
