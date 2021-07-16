@@ -73,7 +73,7 @@ def my_import(name):
     return mod
 
 def compute_mag_phase(torch_signals, fft_size, hop_size, window):
-    X_in = torch.stft(torch_signals, fft_size=fft_size, hop_size=hop_size, window=window, return_complex=False, normalized=True)
+    X_in = torch.stft(torch_signals, fft_size, hop_size, window=window, return_complex=False, normalized=True)
     real, imag = X_in.unbind(-1)
     complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
     r_i = torch.view_as_complex(complex_n)
@@ -104,7 +104,7 @@ def main(conf):
     test_set = PodcastMixMulti(
         csv_dir=conf["test_dir"],
         sample_rate=conf["sample_rate"],
-        original_sample_rate=["original_sample_rate"],
+        original_sample_rate=conf["original_sample_rate"],
         segment=conf["segment"],
         domain='time',
         fft_size=conf["fft_size"],
@@ -144,11 +144,12 @@ def main(conf):
             
             # audio to spectrogram
             mix_audio_norm = mix_audio_norm.unsqueeze(0)
-            mix_norm = compute_mag_phase(mix_audio_norm, conf["fft_size"], conf["hop_size"], window=window)
-            mix_norm = mix_audio_norm.squeeze(0)
+            mix_norm = compute_mag_phase(mix_audio_norm, fft_size=conf["fft_size"], hop_size=conf["hop_size"], window=window)
+            mix_norm = mix_norm.squeeze(0)
             
-            sources = compute_mag_phase(sources, conf["fft_size"], conf["hop_size"], window=window)
+            # sources = compute_mag_phase(sources, conf["fft_size"], conf["hop_size"], window=window)
             m_norm, _ = tensors_to_device([mix_norm, sources], device=model_device)
+            print("mnorms shape", m_norm.shape)
             est_sources = model(m_norm.unsqueeze(0)).squeeze(0)
             
             # pass to cpu
@@ -175,6 +176,9 @@ def main(conf):
             mix_np = mix_out.cpu().data.numpy()
             sources_np = sources.data.numpy()
             est_sources_np = est_sources_audio.squeeze(0).cpu().data.numpy()        
+            print("mix_np", mix_np.shape)
+            print("sources_np", sources_np.shape)
+            print("est_sources_np", est_sources_np.shape)
         else:
             # get audio representations, normalize it, forward to convtasnet
             # unnormalize estimated sources and compare them with the
@@ -220,7 +224,7 @@ def main(conf):
                     conf["sample_rate"]
                 )
             for src_idx, est_src in enumerate(est_sources_np):
-                est_src *= np.max(np.abs(mix_np)) / np.max(np.abs(est_src))
+                # est_src *= np.max(np.abs(mix_np)) / np.max(np.abs(est_src))
                 sf.write(
                     local_save_dir + "s{}_estimate.wav".format(src_idx),
                     est_src,
@@ -275,6 +279,10 @@ if __name__ == "__main__":
         train_conf = yaml.safe_load(f)
     arg_dic["sample_rate"] = train_conf["data"]["sample_rate"]
     arg_dic["segment"] = train_conf["data"]["segment"]
+    arg_dic["fft_size"] = train_conf["data"]["fft_size"]
+    arg_dic["hop_size"] = train_conf["data"]["hop_size"]
+    arg_dic["window_size"] = train_conf["data"]["window_size"]
+    arg_dic["original_sample_rate"] = train_conf["data"]["original_sample_rate"]
     arg_dic["multi_speakers"] = train_conf["training"]["multi_speakers"]
     arg_dic["train_conf"] = train_conf
 
