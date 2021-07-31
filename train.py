@@ -87,15 +87,15 @@ def main(conf):
         )
         loss_func = LogL2Time()
         plugins = None
-    elif(conf["model"]["name"] == "UNet_model"):
+    elif(conf["model"]["name"] == "UNet"):
         # UNet with logl2 time loss and normalization inside model
         sys.path.append('UNet_model')
         from unet_model import UNet
         model = UNet(
             conf["data"]["sample_rate"],
-            conf["stft"]["fft_seize"],
-            conf["stft"]["hop_size"],
-            conf["stft"]["window_size"],
+            conf["data"]["fft_size"],
+            conf["data"]["hop_size"],
+            conf["data"]["window_size"],
             conf["convolution"]["kernel_size"],
             conf["convolution"]["stride"]
         )
