@@ -30,10 +30,6 @@ class PodcastMixMulti(Dataset):
         self.fft_size = fft_size
         self.window = torch.hann_window(window_size)
         self.hop_size = hop_size
-        self.n_items = 0
-        self.sum_accum_mean = 0
-        self.sum_accum_std = 0
-        self.mean_std_filepath = 'mean_std.json'
 
         if not self.sample_rate == self.original_sample_rate:
             self.resampler = Resampler(
@@ -42,13 +38,6 @@ class PodcastMixMulti(Dataset):
                 dtype=torch.float32,
                 filter='hann'
             )
-        if self.normalize and os.path.isfile(self.mean_std_filepath):
-            with open(self.mean_std_filepath) as json_file:
-                data = json.load(json_file)
-                self.n_items = data['n_items']
-                self.sum_accum_mean = data['sum_accum_mean']
-                self.sum_accum_std = data['sum_accum_std']
-
 
         # declare dataframes
         self.speech_csv_path = os.path.join(self.csv_dir, 'speech.csv')
@@ -80,8 +69,6 @@ class PodcastMixMulti(Dataset):
         torchaudio.set_audio_backend(backend='soundfile')
 
     def __len__(self):
-        # for now, its a full permutation
-        # return 200
         return min([len(self.df_speech), len(self.df_music)])
 
     def compute_rand_offset_duration(self, original_num_frames, segment_frames):
@@ -167,7 +154,6 @@ class PodcastMixMulti(Dataset):
     def rms(self, audio):
         """ computes the RMS of an audio signal
         """
-
         return torch.sqrt(torch.mean(audio ** 2))
 
     def load_speechs(self, speech_idx):
@@ -178,7 +164,6 @@ class PodcastMixMulti(Dataset):
         speech_mix = torch.zeros(0)
         speech_counter = 0
         while speech_counter < array_size:
-
             # file is shorter than segment, concatenate with more until
             # is at least the same length
             row_speech = self.speakers_dict[speaker_csv_id].sample()
@@ -229,20 +214,9 @@ class PodcastMixMulti(Dataset):
         ref = mixture
         mean = torch.mean(ref)
         std = torch.std(ref)
-        self.sum_accum_mean += mean
-        self.sum_accum_std += std
-        self.n_items += 1
-        mixture = (mixture - self.sum_accum_mean/self.n_items) / (self.sum_accum_std / self.n_items)
-        sources = (sources - self.sum_accum_mean/self.n_items) / (self.sum_accum_std / self.n_items)
-        with open(self.mean_std_filepath, 'w') as outfile:
-            json.dump(
-                {
-                    'n_items': int(self.n_items),
-                    'sum_accum_mean': float(self.sum_accum_mean),
-                    'sum_accum_std': float(self.sum_accum_std)
-                },
-                outfile
-            )
+        mixture = (mixture - mean) / std
+        sources = (sources - mean) / std
+        
         return sources, mixture
 
     def __getitem__(self, idx):
