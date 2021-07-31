@@ -2,29 +2,30 @@ model:
   name: UNetSpec
 # Training config
 training:
-  epochs: 500
-  batch_size: 2
+  epochs: 100
+  batch_size: 1
   num_workers: 12
   half_lr: yes
   early_stop: yes
   multi_speakers: yes
   normalize: yes
 # Optim config
-stft:
-  fft_size: 1024
-  window_size: 1024
-  hop_size: 441
 convolution:
   stride: 2
   kernel_size: 5
 optim:
   optimizer: adam
-  lr: 0.0005
+  lr: 0.0001
   weight_decay: 0.
 # Data config
 data:
+  original_sample_rate: 44100
+  domain: spectrogram
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
   sample_rate: 44100
   n_src: 2
   segment: 2
+  fft_size: 1024
+  window_size: 1024
+  hop_size: 441

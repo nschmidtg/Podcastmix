@@ -1,13 +1,10 @@
-from PodcastMixSpec import PodcastMixSpec
-import torch
-import torchaudio
-from pytorch_lightning import seed_everything
-seed_everything(1, workers=True)
-
-train_set = PodcastMixSpec(
-    csv_dir='podcastmix/metadata/test',
+from PodcastMixMulti import PodcastMixMulti;import torch;import torchaudio;from pytorch_lightning import seed_everything;seed_everything(1);
+train_set = PodcastMixMulti(
+    csv_dir='podcastmix/test_real/metadata',
+    original_sample_rate=44100,
     sample_rate=44100,
     segment=2,
+    domain='spectrogram',
     shuffle_tracks=True,
     multi_speakers=True,
     normalize=False,
@@ -22,5 +19,5 @@ std = torch.std(mix[0])
 mix[0] = (mix[0] - mean) / std
 mix[0] = (mix[0] * std) + mean
 polar_mix = mix[0] * torch.cos(mix[1]) + mix[0] * torch.sin(mix[1]) * 1j
-music = torch.istft(polar_mix, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True)
-torchaudio.save('podcast_fake.wav', music.unsqueeze(0), sample_rate=44100)
+music = torch.istft(polar_mix, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True, normalized=True)
+torchaudio.save('podcast_fake7.wav', music.unsqueeze(0), sample_rate=44100)

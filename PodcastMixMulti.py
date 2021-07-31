@@ -3,60 +3,72 @@ from torch.utils.data import Dataset
 import pandas as pd
 import torchaudio
 import os
+import json
 import numpy as np
 import random
 from resampler import Resampler
 
-class PodcastMix(Dataset):
-    """Dataset class for PodcastMix source separation tasks.
-    This dataset created Podcasts-like mixes on the fly consisting in
-    2 sources: background music and foreground speech
-    Args:
-        csv_dir (str): The path to the metadata files: speech.csv and music.csv
-        sample_rate (int) : The sample rate of the sources and mixtures.
-        segment (int) : The desired sources and mixtures length in s.
-    References
-        [1] "Jamendo....
-        [2] "VCTK...
+class PodcastMixMulti(Dataset):
+    """
     """
 
     dataset_name = "PodcastMix"
 
-    def __init__(self, csv_dir, sample_rate=44100, segment=2,
+    def __init__(self, csv_dir, sample_rate=44100, original_sample_rate= 44100, segment=2,
+                 domain='spectrogram', fft_size=1024, window_size=1024, hop_size=441,
                  shuffle_tracks=False, multi_speakers=False, normalize=True):
         self.csv_dir = csv_dir
-        self.speech_csv_path = os.path.join(self.csv_dir, 'speech.csv')
-        self.music_csv_path = os.path.join(self.csv_dir, 'music.csv')
         self.segment = segment
-        self.segment_total = 12
+        # sample_rate of the original files
+        self.original_sample_rate = original_sample_rate
+        # destination sample_rate for resample
         self.sample_rate = sample_rate
-        # print("sample_rate", self.sample_rate)
         self.normalize = normalize
-        # resampler
-        self.resampler = Resampler(input_sr = 44100, output_sr = self.sample_rate, dtype=torch.float32, filter='hann', num_zeros=6)
-        # self.solo_music_ratio = solo_music_ratio
         self.shuffle_tracks = shuffle_tracks
         self.multi_speakers = multi_speakers
-        # Open csv files
+        self.domain = domain
+        self.fft_size = fft_size
+        self.window = torch.hann_window(window_size)
+        self.hop_size = hop_size
+
+        if not self.sample_rate == self.original_sample_rate:
+            self.resampler = Resampler(
+                input_sr=self.original_sample_rate,
+                output_sr=self.sample_rate,
+                dtype=torch.float32,
+                filter='hann'
+            )
+
+        # declare dataframes
+        self.speech_csv_path = os.path.join(self.csv_dir, 'speech.csv')
+        self.music_csv_path = os.path.join(self.csv_dir, 'music.csv')
         self.df_speech = pd.read_csv(self.speech_csv_path, engine='python')
+
+        # dictionary of speakers
         self.speakers_dict = {}
         for speaker_id in self.df_speech.speaker_id.unique():
             self.speakers_dict[speaker_id] = self.df_speech.loc[
                 self.df_speech['speaker_id'] == speaker_id
             ]
         self.df_music = pd.read_csv(self.music_csv_path, engine='python')
-        # self.seg_len = int(self.segment * self.sample_rate)
+
         # initialize indexes
         self.speech_inxs = list(range(len(self.df_speech)))
         self.music_inxs = list(range(len(self.df_music)))
-        self.denominator_gain = 10000
+
+        # declare the resolution of the reduction factor.
+        # this will create N different gain values max
+        # 1/denominator_gain to multiply the music gain
+        self.denominator_gain = 20
         self.gain_ramp = np.array(range(1, self.denominator_gain, 1))/self.denominator_gain
+
+        # shuffle the static random gain to use it in testing
         np.random.shuffle(self.gain_ramp)
+
+        # use soundfile as backend
         torchaudio.set_audio_backend(backend='soundfile')
 
     def __len__(self):
-        # for now, its a full permutation
-        return 500
         return min([len(self.df_speech), len(self.df_music)])
 
     def compute_rand_offset_duration(self, original_num_frames, segment_frames):
@@ -118,20 +130,13 @@ class PodcastMix(Dataset):
         """
         # info = torchaudio.info(audio_path)
         # music sample_rate
-        sr = 44100
         length = int(row['length'])
-        audio_signal = torch.zeros(self.segment_total * sr)
+        audio_signal = torch.zeros(self.segment * self.original_sample_rate)
         # iterate until the segment is not silence
-        audio_signal = self.load_mono_random_segment(audio_signal, length, row['music_path'], self.segment_total * sr)
-        # print("music raw", audio_signal)
-        # resample if sr is different than the specified in dataloader
-        # print("audio signal", audio_signal.shape)
-        # if not sr == self.sample_rate:
-            # print("audiosignallll", audio_signal.shape)
-            # audio_signal = self.resampler.forward(audio_signal)
+        audio_signal = self.load_mono_random_segment(audio_signal, length, row['music_path'], self.segment * self.original_sample_rate)
 
         # zero pad if the size is smaller than seq_duration
-        seq_duration_samples = int(self.segment_total * sr)
+        seq_duration_samples = int(self.segment * self.original_sample_rate)
         total_samples = audio_signal.shape[-1]
         if seq_duration_samples > total_samples:
             # add zeros at beginning and at with random offset
@@ -149,58 +154,69 @@ class PodcastMix(Dataset):
     def rms(self, audio):
         """ computes the RMS of an audio signal
         """
-
         return torch.sqrt(torch.mean(audio ** 2))
 
     def load_speechs(self, speech_idx):
-        """ Loads the speaker mix. It could be a single speaker if
-        self.multi_speaker=False, or a random mix between 1 to 4
-        speakers
         """
-        speech_mix = []
-        # number_of_speakers = random.randint(1, 4) if self.multi_speakers else 1
+        """
         speaker_csv_id = self.df_speech.iloc[speech_idx].speaker_id
+        array_size = self.original_sample_rate * self.segment
+        speech_mix = torch.zeros(0)
         speech_counter = 0
-        sr = 44100
-        speech_signal = torch.zeros(1)
-        # original speech sample_rate
-        while speech_counter < (self.segment_total * sr): # have not resampled yet
+        while speech_counter < array_size:
+            # file is shorter than segment, concatenate with more until
+            # is at least the same length
             row_speech = self.speakers_dict[speaker_csv_id].sample()
-            audio_length = int(row_speech['length'])
             audio_path = row_speech['speech_path'].values[0]
-            speech_signal = self.load_mono_random_segment(speech_signal, audio_length, audio_path, (self.segment_total * sr) - speech_counter)
-            speech_mix.append(speech_signal)
+            speech_signal, _ = torchaudio.load(
+                audio_path
+            )
+            # add the speech to the buffer
+            speech_mix = torch.cat((speech_mix, speech_signal[0]))
             speech_counter += speech_signal.shape[-1]
-            # re-initialize empty audio signal
-            speech_signal = torch.zeros(self.segment_total * sr)
-        speech_mix = torch.cat((speech_mix), 1)
-        #speech_mix = speech_mix.squeeze(0)
+
+        # we have a segment of at least self.segment length speech audio
+        # from the same speaker
         if self.multi_speakers and speech_idx % 10 == 0:
             # every 10 iterations overlap another speaker
-            
-            speech_signal = torch.zeros(self.segment * sr)
             list_of_speakers = list(self.speakers_dict.keys())
             list_of_speakers.remove(speaker_csv_id)
             non_speaker_id = random.sample(list_of_speakers, 1)[0]
             row_speech = self.speakers_dict[non_speaker_id].sample()
-            audio_length = int(row_speech['length'])
             audio_path = row_speech['speech_path'].values[0]
-            speech_signal = self.load_mono_random_segment(speech_signal, audio_length, audio_path, self.segment * sr)
-            offset = random.randint(0, self.segment_total * sr - speech_signal.shape[-1])
-            speech_mix[..., offset:offset + speech_signal.shape[-1]] += speech_signal[...,:]
-        speech_mix = speech_mix.squeeze(1)
-        # resample if sr is different than the specified in dataloader
-        # if not sr == self.sample_rate:
-        #     speech_mix = self.resampler.forward(speech_mix)
-        return speech_mix
+            other_speech_signal, _ = torchaudio.load(
+                audio_path
+            )
+
+            other_speech_signal_length = other_speech_signal.shape[-1]
+            if len(speech_mix) < other_speech_signal.shape[-1]:
+                # the second speaker is longer than the original one
+                other_speech_signal_length = len(speech_mix)
+            offset = random.randint(0, len(speech_mix) - other_speech_signal_length)
+            speech_mix[offset:offset + other_speech_signal_length] += other_speech_signal[0][:other_speech_signal_length]
+            speech_mix = speech_mix / 2
+
+        # we have a segment with the two speakers, the second in a random start.
+        # now we randomly shift the array to pick the start
+        offset = random.randint(0, array_size)
+        zeros_aux = torch.zeros(len(speech_mix))
+        aux = speech_mix[:offset]
+        
+        zeros_aux[:len(speech_mix) - offset] = speech_mix[offset:len(speech_mix)]
+        zeros_aux[len(speech_mix) - offset:] = aux
+            
+        return zeros_aux[:array_size]
 
     def normalize_audio(self, sources, mixture):
         """
         Receives mono audio and the normalize it
         """
         ref = mixture
-        mixture = (mixture - torch.mean(ref)) / torch.std(ref)
-        sources = (sources - torch.mean(ref)) / torch.std(ref)
+        mean = torch.mean(ref)
+        std = torch.std(ref)
+        mixture = (mixture - mean) / std
+        sources = (sources - mean) / std
+        
         return sources, mixture
 
     def __getitem__(self, idx):
@@ -211,6 +227,7 @@ class PodcastMix(Dataset):
         # get corresponding index from the list
         music_idx = self.music_inxs[idx]
         speech_idx = self.speech_inxs[idx]
+
         # Get the row in speech dataframe
         row_music = self.df_music.iloc[music_idx]
         sources_list = []
@@ -219,21 +236,11 @@ class PodcastMix(Dataset):
         # in the sources_list
         speech_signal = self.load_speechs(speech_idx)
         music_signal = self.load_non_silent_random_music(row_music)
-        
-        target_resampled_number_samples = self.segment * self.sample_rate
-        speech_cropped = torch.zeros(target_resampled_number_samples)
-        music_cropped = torch.zeros(target_resampled_number_samples)
-        while (torch.count_nonzero(speech_cropped)) == 0 or (torch.count_nonzero(music_cropped) == 0):
-            offset_truncate = int(random.uniform(0, music_signal.shape[-1] - target_resampled_number_samples - 1))
-            speech_cropped = speech_signal[..., offset_truncate:offset_truncate + (target_resampled_number_samples)]
-            music_cropped = music_signal[..., offset_truncate:offset_truncate + (target_resampled_number_samples)]
-        speech_signal = speech_cropped
-        music_signal = music_cropped
-        if not self.sample_rate == 44100:
+
+        if not self.sample_rate == self.original_sample_rate:
             speech_signal = self.resampler.forward(speech_signal)
             music_signal = self.resampler.forward(music_signal)
-        # append speech
-        sources_list.append(speech_signal)
+
         # gain based on RMS in order to have RMS(speech_signal) >= RMS(music_singal)
         reduction_factor = self.rms(speech_signal) / self.rms(music_signal)
         # now we know that rms(r * music_signal) == rms(speech_signal)
@@ -246,19 +253,41 @@ class PodcastMix(Dataset):
 
         # multiply the music by the gain factor and add to the sources_list
         music_signal = music_gain * music_signal
-        # append music
+        
+        # append sources:
+        sources_list.append(speech_signal)
         sources_list.append(music_signal)
+
         # compute the mixture as the avg of both sources
         mixture = 0.5 * (sources_list[0] + sources_list[1])
         mixture = torch.squeeze(mixture)
+
         # Stack sources
         sources = np.vstack(sources_list)
+
         # Convert sources to tensor
         sources = torch.from_numpy(sources)
         if self.normalize:
             sources, mixture = self.normalize_audio(sources, mixture)
+        
+        if self.domain == 'spectrogram':
+            sources = self.compute_mag_phase(sources)
+            mixture = mixture.unsqueeze(0)
+            mixture = self.compute_mag_phase(mixture)
+            mixture = mixture.squeeze(0)
 
         return mixture, sources
+    
+    def compute_mag_phase(self, torch_signals):
+        X_in = torch.stft(torch_signals, self.fft_size, self.hop_size, window=self.window, return_complex=False, normalized=True)
+        real, imag = X_in.unbind(-1)
+        complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
+        r_i = torch.view_as_complex(complex_n)
+        phase = torch.angle(r_i)
+        X_in = torch.sqrt(real**2 + imag**2)
+        # concat mag and phase: [torch_signals, mag/phase, n_bins, n_frames]
+        torch_signals = torch.cat((X_in.unsqueeze(1), phase.unsqueeze(1)), dim=1)
+        return torch_signals
 
     def get_infos(self):
         """Get dataset infos (for publishing models).

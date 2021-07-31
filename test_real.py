@@ -20,15 +20,16 @@ seed_everything(1)
 
 class PodcastLoader(Dataset):
     dataset_name = "PodcastMix"
-    def __init__(self, csv_dir, sample_rate=44100):
+    def __init__(self, csv_dir, sample_rate=44100, segment=2):
         self.csv_dir = csv_dir
+        self.segment = segment
         self.sample_rate = sample_rate
         self.mix_csv_path = os.path.join(self.csv_dir, 'mix.csv')
         self.df_mix = pd.read_csv(self.mix_csv_path, engine='python')
         torchaudio.set_audio_backend(backend='soundfile')
 
     def __len__(self):
-        return len(self.mix_csv_path)
+        return len(self.df_mix)
     
     def __getitem__(self, index):
         row = self.df_mix.iloc[index]
@@ -36,22 +37,28 @@ class PodcastLoader(Dataset):
         speech_path = row['speech_path']
         music_path = row['music_path']
         sources_list = []
-        # breakpoint()
+        start_second = 1
         mixture, _ = torchaudio.load(
-            podcast_path
+            podcast_path,
+            frame_offset=start_second *  self.sample_rate,
+            num_frames=self.segment * self.sample_rate + start_second * start_second
         )
         speech, _ = torchaudio.load(
-            speech_path
+            speech_path,
+            frame_offset=start_second *  self.sample_rate,
+            num_frames=self.segment * self.sample_rate + start_second * start_second
         )
         music, _ = torchaudio.load(
-            music_path
+            music_path,
+            frame_offset=start_second *  self.sample_rate,
+            num_frames=self.segment * self.sample_rate + start_second * start_second
         )
-        sources_list.append(speech[0][88200*8:88200*9])
-        sources_list.append(music[0][88200*8:88200*9])
+        sources_list.append(speech[0])
+        sources_list.append(music[0])
         sources = np.vstack(sources_list)
         sources = torch.from_numpy(sources)
 
-        return mixture[0][88200*8:88200*9], sources
+        return mixture[0], sources
 
 
 
@@ -114,11 +121,7 @@ def main(conf):
         MockWERTracker()
     )
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
-    if conf["target_model"] == "UNet":
-        sys.path.append('UNet_model')
-        AsteroidModelModule = my_import("unet_model.UNet")
-    else:
-        AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
+    AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
     model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
     print("model_path", model_path)
     # model = ConvTasNet
@@ -128,7 +131,9 @@ def main(conf):
     model_device = next(model.parameters()).device
     test_set = PodcastLoader(
         conf["test_dir"],
-    )  # Uses all segment length
+        sample_rate=44100,
+        segment=2
+    )
     # Used to reorder sources only
 
     # Randomly choose the indexes of sentences to save.
@@ -144,13 +149,8 @@ def main(conf):
         # Forward the network on the mixture.
         mix, sources = test_set[idx]
         m_norm = (mix - torch.mean(mix)) / torch.std(mix)
-        # s0 = (sources[0] - torch.mean(mix)) / torch.std(mix)
-        # s1 = (sources[1] - torch.mean(mix)) / torch.std(mix)
         m_norm, _ = tensors_to_device([m_norm, sources], device=model_device)
-        if conf["target_model"] == "UNet":
-            est_sources = model(m_norm.unsqueeze(0)).squeeze(0)
-        else:
-            est_sources = model(m_norm)
+        est_sources = model(m_norm)
         # unnormalize
         est_sources = est_sources * torch.std(mix) + torch.mean(mix)
 
@@ -159,23 +159,16 @@ def main(conf):
         est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
         # For each utterance, we get a dictionary with the mixture path,
         # the input and output metrics
-        try:
-            utt_metrics = get_metrics(
-                mix_np,
-                sources_np,
-                est_sources_np,
-                sample_rate=conf["sample_rate"],
-                metrics_list=COMPUTE_METRICS,
-            )
-            series_list.append(pd.Series(utt_metrics))
-        except:
-            print("Error. Index", idx)
-            print(mix_np)
-            print(sources_np)
-            print(est_sources_np)
+        utt_metrics = get_metrics(
+            mix_np,
+            sources_np,
+            est_sources_np,
+            sample_rate=conf["sample_rate"],
+            metrics_list=COMPUTE_METRICS,
+        )
+        series_list.append(pd.Series(utt_metrics))
 
         # Save some examples in a folder. Wav files and metrics as text.
-        
         if idx in save_idx:
             local_save_dir = os.path.join(ex_save_dir, "ex_{}/".format(idx))
             os.makedirs(local_save_dir, exist_ok=True)
