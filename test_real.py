@@ -20,15 +20,16 @@ seed_everything(1)
 
 class PodcastLoader(Dataset):
     dataset_name = "PodcastMix"
-    def __init__(self, csv_dir, sample_rate=44100):
+    def __init__(self, csv_dir, sample_rate=44100, segment=2):
         self.csv_dir = csv_dir
+        self.segment = segment
         self.sample_rate = sample_rate
         self.mix_csv_path = os.path.join(self.csv_dir, 'mix.csv')
         self.df_mix = pd.read_csv(self.mix_csv_path, engine='python')
         torchaudio.set_audio_backend(backend='soundfile')
 
     def __len__(self):
-        return len(self.mix_csv_path)
+        return len(self.df_mix)
     
     def __getitem__(self, index):
         row = self.df_mix.iloc[index]
@@ -36,22 +37,28 @@ class PodcastLoader(Dataset):
         speech_path = row['speech_path']
         music_path = row['music_path']
         sources_list = []
-        # breakpoint()
+        start_second = 1
         mixture, _ = torchaudio.load(
-            podcast_path
+            podcast_path,
+            frame_offset=start_second *  self.sample_rate,
+            num_frames=self.segment * self.sample_rate + start_second * start_second
         )
         speech, _ = torchaudio.load(
-            speech_path
+            speech_path,
+            frame_offset=start_second *  self.sample_rate,
+            num_frames=self.segment * self.sample_rate + start_second * start_second
         )
         music, _ = torchaudio.load(
-            music_path
+            music_path,
+            frame_offset=start_second *  self.sample_rate,
+            num_frames=self.segment * self.sample_rate + start_second * start_second
         )
-        sources_list.append(speech[0][88200*8:88200*9])
-        sources_list.append(music[0][88200*8:88200*9])
+        sources_list.append(speech[0])
+        sources_list.append(music[0])
         sources = np.vstack(sources_list)
         sources = torch.from_numpy(sources)
 
-        return mixture[0][88200*8:88200*9], sources
+        return mixture[0], sources
 
 
 
@@ -128,7 +135,9 @@ def main(conf):
     model_device = next(model.parameters()).device
     test_set = PodcastLoader(
         conf["test_dir"],
-    )  # Uses all segment length
+        sample_rate=44100,
+        segment=2
+    )
     # Used to reorder sources only
 
     # Randomly choose the indexes of sentences to save.
@@ -150,6 +159,7 @@ def main(conf):
         if conf["target_model"] == "UNet":
             est_sources = model(m_norm.unsqueeze(0)).squeeze(0)
         else:
+            print(m_norm.shape)
             est_sources = model(m_norm)
         # unnormalize
         est_sources = est_sources * torch.std(mix) + torch.mean(mix)

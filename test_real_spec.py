@@ -20,7 +20,7 @@ seed_everything(1)
 
 class PodcastLoader(Dataset):
     dataset_name = "PodcastMix"
-    def __init__(self, csv_dir, sample_rate=44100, fft_size=1024, hop_size=441, window_size=1024, segment=3):
+    def __init__(self, csv_dir, sample_rate=44100, fft_size=1024, hop_size=441, window_size=1024, segment=2):
         self.csv_dir = csv_dir
         self.sample_rate = sample_rate
         self.fft_size = fft_size
@@ -31,7 +31,6 @@ class PodcastLoader(Dataset):
         self.mix_csv_path = os.path.join(self.csv_dir, 'mix.csv')
         self.df_mix = pd.read_csv(self.mix_csv_path, engine='python')
         torchaudio.set_audio_backend(backend='soundfile')
-        print("*****", self.df_mix.shape)
 
     def __len__(self):
         return self.df_mix.shape[0]
