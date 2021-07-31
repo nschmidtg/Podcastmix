@@ -47,15 +47,19 @@ class ConvTasNetNorm(ConvTasNet):
             sample_rate=sample_rate,
             **fb_kwargs,
         )
-
     def forward_encoder(self, wav: torch.Tensor) -> torch.Tensor:
         # pre filter
         self.mean = torch.mean(wav)
         self.std = torch.std(wav)
+
         wav = (wav - self.mean) / (1e-5 + self.std)
-        super().forward_encoder(self, wav)
+
+        return super(ConvTasNetNorm, self).forward_encoder(wav)
 
     def forward_decoder(self, masked_tf_rep: torch.Tensor) -> torch.Tensor:
-        waveforms = super().forward_decoder(self, masked_tf_rep)
+        waveforms = super(ConvTasNetNorm, self).forward_decoder(masked_tf_rep)
         waveforms = waveforms * self.std + self.mean
+
         return waveforms
+        # return super(ConvTasNetNorm, self).forward_decoder(masked_tf_rep)
+
