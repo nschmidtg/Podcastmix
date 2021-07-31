@@ -78,9 +78,10 @@ def main(conf):
     )
     
     if(conf["model"]["name"] == "ConvTasNet"):
-        from asteroid.models import ConvTasNet
+        sys.path.append('ConvTasNet_model')
+        from conv_tasnet_norm import ConvTasNetNorm
         conf["masknet"].update({"n_src": conf["data"]["n_src"]})
-        model = ConvTasNet(
+        model = ConvTasNetNorm(
             **conf["filterbank"],
             **conf["masknet"],
             sample_rate=conf["data"]["sample_rate"]
