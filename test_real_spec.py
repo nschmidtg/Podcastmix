@@ -175,28 +175,29 @@ def main(conf):
     torch.no_grad().__enter__()
     for idx in tqdm(range(len(test_set))):
         mix, sources = test_set[idx]
-        # mean and std of magnitude spectrogram
+        # back to audio to compute mean and std of magnitude spectrogram
         polar_mix = mix[0] * torch.cos(mix[1]) + mix[0] * torch.sin(mix[1]) * 1j
         mix_audio = torch.istft(polar_mix, 1024, 441, window=torch.hamming_window(1024), return_complex=False, onesided=True, center=True, normalized=True)
-
         mean = torch.mean(mix_audio)
         std = torch.std(mix_audio)
+
+        # normalize audio
         mix_audio_norm = (mix_audio - mean) / std
-        print("mix_audio", mix_audio_norm.shape)
         
+        # back to time-frequency
         X_in = torch.stft(mix_audio_norm, 1024, 441, window=torch.hamming_window(1024), return_complex=False, normalized=True)
-        print("X_in", X_in.shape)
         real, imag = X_in.unbind(-1)
-        print("real", real.shape)
         complex_n = torch.cat((real.unsqueeze(0), imag.unsqueeze(0)), dim=0).permute(1,2,0).contiguous()
-        print("complex_n", complex_n.shape)
         r_i = torch.view_as_complex(complex_n)
         phase = torch.angle(r_i)
+        # compute magnitude spectrogram
         X_in = torch.sqrt(real**2 + imag**2)
 
+        # concatenate with phase
         mix_norm = torch.cat((X_in.unsqueeze(0), phase.unsqueeze(0)), dim=0)
-
         m_norm, _ = tensors_to_device([mix_norm, sources], device=model_device)
+
+        # pass to the model
         est_sources = model(m_norm.unsqueeze(0)).squeeze(0)
         
         # pass to cpu
@@ -230,23 +231,16 @@ def main(conf):
         # For each utterance, we get a dictionary with the mixture path,
         # the input and output metrics
         
-        try:
-            utt_metrics = get_metrics(
-                mix_np,
-                sources_np,
-                est_sources_np,
-                sample_rate=conf["sample_rate"],
-                metrics_list=COMPUTE_METRICS,
-            )
-            series_list.append(pd.Series(utt_metrics))
-        except:
-            print("Error. Index", idx)
-            print(mix_np)
-            print(sources_np)
-            print(est_sources_np)
+        utt_metrics = get_metrics(
+            mix_np,
+            sources_np,
+            est_sources_np,
+            sample_rate=conf["sample_rate"],
+            metrics_list=COMPUTE_METRICS,
+        )
+        series_list.append(pd.Series(utt_metrics))
 
         # Save some examples in a folder. Wav files and metrics as text.
-        
         if idx in save_idx:
             local_save_dir = os.path.join(ex_save_dir, "ex_{}/".format(idx))
             os.makedirs(local_save_dir, exist_ok=True)

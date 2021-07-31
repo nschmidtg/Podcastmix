@@ -121,11 +121,7 @@ def main(conf):
         MockWERTracker()
     )
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
-    if conf["target_model"] == "UNet":
-        sys.path.append('UNet_model')
-        AsteroidModelModule = my_import("unet_model.UNet")
-    else:
-        AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
+    AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
     model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
     print("model_path", model_path)
     # model = ConvTasNet
@@ -153,14 +149,8 @@ def main(conf):
         # Forward the network on the mixture.
         mix, sources = test_set[idx]
         m_norm = (mix - torch.mean(mix)) / torch.std(mix)
-        # s0 = (sources[0] - torch.mean(mix)) / torch.std(mix)
-        # s1 = (sources[1] - torch.mean(mix)) / torch.std(mix)
         m_norm, _ = tensors_to_device([m_norm, sources], device=model_device)
-        if conf["target_model"] == "UNet":
-            est_sources = model(m_norm.unsqueeze(0)).squeeze(0)
-        else:
-            print(m_norm.shape)
-            est_sources = model(m_norm)
+        est_sources = model(m_norm)
         # unnormalize
         est_sources = est_sources * torch.std(mix) + torch.mean(mix)
 
@@ -169,23 +159,16 @@ def main(conf):
         est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
         # For each utterance, we get a dictionary with the mixture path,
         # the input and output metrics
-        try:
-            utt_metrics = get_metrics(
-                mix_np,
-                sources_np,
-                est_sources_np,
-                sample_rate=conf["sample_rate"],
-                metrics_list=COMPUTE_METRICS,
-            )
-            series_list.append(pd.Series(utt_metrics))
-        except:
-            print("Error. Index", idx)
-            print(mix_np)
-            print(sources_np)
-            print(est_sources_np)
+        utt_metrics = get_metrics(
+            mix_np,
+            sources_np,
+            est_sources_np,
+            sample_rate=conf["sample_rate"],
+            metrics_list=COMPUTE_METRICS,
+        )
+        series_list.append(pd.Series(utt_metrics))
 
         # Save some examples in a folder. Wav files and metrics as text.
-        
         if idx in save_idx:
             local_save_dir = os.path.join(ex_save_dir, "ex_{}/".format(idx))
             os.makedirs(local_save_dir, exist_ok=True)
