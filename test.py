@@ -12,7 +12,7 @@ import sys
 
 from asteroid.metrics import get_metrics
 from pytorch_lightning import seed_everything
-from PodcastMix import PodcastMix
+from PodcastMixMulti import PodcastMixMulti
 from asteroid.utils import tensors_to_device
 from asteroid.metrics import MockWERTracker
 
@@ -72,6 +72,17 @@ def my_import(name):
         mod = getattr(mod, comp)
     return mod
 
+def compute_mag_phase(torch_signals, fft_size, hop_size, window):
+    X_in = torch.stft(torch_signals, fft_size, hop_size, window=window, return_complex=False, normalized=True)
+    real, imag = X_in.unbind(-1)
+    complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
+    r_i = torch.view_as_complex(complex_n)
+    phase = torch.angle(r_i)
+    X_in = torch.sqrt(real**2 + imag**2)
+    # concat mag and phase: [torch_signals, mag/phase, n_bins, n_frames]
+    torch_signals = torch.cat((X_in.unsqueeze(1), phase.unsqueeze(1)), dim=1)
+    return torch_signals
+
 
 def main(conf):
     compute_metrics = COMPUTE_METRICS
@@ -79,26 +90,30 @@ def main(conf):
         MockWERTracker()
     )
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
-    if conf["target_model"] == "UNet":
-        sys.path.append('UNet_model')
+    if conf["target_model"] == "UNetSpec":
+        sys.path.append('UNetSpec_model')
         AsteroidModelModule = my_import("unet_model.UNet")
     else:
         AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
     model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
-    print("model_path", model_path)
     # model = ConvTasNet
     # Handle device placement
     if conf["use_gpu"]:
         model.cuda()
     model_device = next(model.parameters()).device
-    test_set = PodcastMix(
+    test_set = PodcastMixMulti(
         csv_dir=conf["test_dir"],
         sample_rate=conf["sample_rate"],
+        original_sample_rate=conf["original_sample_rate"],
         segment=conf["segment"],
+        domain='time',
+        fft_size=conf["fft_size"],
+        window_size=conf["window_size"],
+        hop_size=conf["hop_size"],
         shuffle_tracks=False,
         multi_speakers=conf["multi_speakers"],
-        normalize=False    # normalization occurs after dataloader here
-    )  # Uses all segment length
+        normalize=False
+    )
     # Used to reorder sources only
 
     # Randomly choose the indexes of sentences to save.
@@ -109,26 +124,74 @@ def main(conf):
     save_idx = random.sample(range(len(test_set)), conf["n_save_ex"])
     series_list = []
 
+    # # read mean and std from json
+    with open('mean_std.json') as json_file:
+        data = json.load(json_file)
+        mean = data['sum_accum_mean'] / data['n_items']
+        std = data['sum_accum_std'] / data['n_items']
+    window = torch.hamming_window(conf["window_size"])
+
     torch.no_grad().__enter__()
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
         mix, sources = test_set[idx]
-        m_norm = (mix - torch.mean(mix)) / torch.std(mix)
-        # s0 = (sources[0] - torch.mean(mix)) / torch.std(mix)
-        # s1 = (sources[1] - torch.mean(mix)) / torch.std(mix)
-        m_norm, _ = tensors_to_device([m_norm, sources], device=model_device)
-        if conf["target_model"] == "UNet":
+        if conf["target_model"] == "UNetSpec":
+            # get audio from dataloader, normalize mix, pass to spectrogram
+            # forward spectrogram to model, transform spectrograms to audio
+            # using mix phase, unnormalize estimated sources and
+            # compare them with the ground truth sources 
+            mix_audio_norm = (mix - mean) / std
+            
+            # audio to spectrogram
+            mix_audio_norm = mix_audio_norm.unsqueeze(0)
+            mix_norm = compute_mag_phase(mix_audio_norm, fft_size=conf["fft_size"], hop_size=conf["hop_size"], window=window)
+            mix_norm = mix_norm.squeeze(0)
+            
+            # sources = compute_mag_phase(sources, conf["fft_size"], conf["hop_size"], window=window)
+            m_norm, _ = tensors_to_device([mix_norm, sources], device=model_device)
+            print("mnorms shape", m_norm.shape)
             est_sources = model(m_norm.unsqueeze(0)).squeeze(0)
-        else:
-            est_sources = model(m_norm)
-        # unnormalize
-        est_sources = est_sources * torch.std(mix) + torch.mean(mix)
+            
+            # pass to cpu
+            est_sources = est_sources.cpu()
 
-        mix_np = mix.cpu().data.numpy()
-        sources_np = sources.cpu().data.numpy()
-        est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
-        # For each utterance, we get a dictionary with the mixture path,
-        # the input and output metrics
+            # convert spectrograms to audio using mixture phase
+            polar_sources = est_sources * torch.cos(mix_norm[1]) + est_sources * torch.sin(mix_norm[1]) * 1j
+            est_sources_audio = torch.istft(polar_sources, conf["fft_size"], conf["hop_size"], window=window, return_complex=False, onesided=True, center=True, normalized=True)
+
+            # ground truth sources spectrograms to audio
+            speech = sources[0]
+            music = sources[1]
+            
+            # unnormalize estimated sources:
+            est_sources_audio = est_sources_audio * std + mean
+
+            # remove additional dimention
+            speech_out = speech.squeeze(0)
+            music_out = music.squeeze(0)
+            mix_out = mix.squeeze(0)
+            # add both sources to a tensor to return them
+            sources = torch.stack([speech_out, music_out], dim=0)
+
+            mix_np = mix_out.cpu().data.numpy()
+            sources_np = sources.data.numpy()
+            est_sources_np = est_sources_audio.squeeze(0).cpu().data.numpy()        
+            print("mix_np", mix_np.shape)
+            print("sources_np", sources_np.shape)
+            print("est_sources_np", est_sources_np.shape)
+        else:
+            # get audio representations, normalize it, forward to convtasnet
+            # unnormalize estimated sources and compare them with the
+            # ground truth
+            m_norm = (mix - mean) / std
+            m_norm, _ = tensors_to_device([m_norm, sources], device=model_device)
+            est_sources = model(m_norm)
+            # unnormalize
+            est_sources = est_sources * std + mean
+
+            mix_np = mix.cpu().data.numpy()
+            sources_np = sources.cpu().data.numpy()
+            est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
         try:
             utt_metrics = get_metrics(
                 mix_np,
@@ -161,7 +224,7 @@ def main(conf):
                     conf["sample_rate"]
                 )
             for src_idx, est_src in enumerate(est_sources_np):
-                est_src *= np.max(np.abs(mix_np)) / np.max(np.abs(est_src))
+                # est_src *= np.max(np.abs(mix_np)) / np.max(np.abs(est_src))
                 sf.write(
                     local_save_dir + "s{}_estimate.wav".format(src_idx),
                     est_src,
@@ -216,6 +279,10 @@ if __name__ == "__main__":
         train_conf = yaml.safe_load(f)
     arg_dic["sample_rate"] = train_conf["data"]["sample_rate"]
     arg_dic["segment"] = train_conf["data"]["segment"]
+    arg_dic["fft_size"] = train_conf["data"]["fft_size"]
+    arg_dic["hop_size"] = train_conf["data"]["hop_size"]
+    arg_dic["window_size"] = train_conf["data"]["window_size"]
+    arg_dic["original_sample_rate"] = train_conf["data"]["original_sample_rate"]
     arg_dic["multi_speakers"] = train_conf["training"]["multi_speakers"]
     arg_dic["train_conf"] = train_conf
 

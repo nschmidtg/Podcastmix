@@ -2,17 +2,17 @@ model:
   name: ConvTasNet
 # filterbank config
 filterbank:
-  n_filters: 512
+  n_filters: 1024
   kernel_size: 16
   stride: 4
 # Network config
 masknet:
-  n_blocks: 14
+  n_blocks: 6
   n_repeats: 3
   mask_act: relu
-  bn_chan: 256
-  skip_chan: 256
-  hid_chan: 256
+  bn_chan: 512
+  skip_chan: 512
+  hid_chan: 512
 # Training config
 training:
   epochs: 100
@@ -25,12 +25,17 @@ training:
 # Optim config
 optim:
   optimizer: adam
-  lr: 0.0005
+  lr: 0.0001
   weight_decay: 0.
 # Data config
 data:
+  original_sample_rate: 44100
+  domain: time
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
   sample_rate: 44100
   n_src: 2
   segment: 2
+  fft_size: no
+  hop_size: no
+  window_size: 1024
