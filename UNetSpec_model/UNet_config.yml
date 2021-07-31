@@ -4,7 +4,7 @@ model:
 training:
   epochs: 100
   batch_size: 1
-  num_workers: 0
+  num_workers: 12
   half_lr: yes
   early_stop: yes
   multi_speakers: yes
@@ -15,7 +15,7 @@ convolution:
   kernel_size: 5
 optim:
   optimizer: adam
-  lr: 0.0005
+  lr: 0.0001
   weight_decay: 0.
 # Data config
 data:
