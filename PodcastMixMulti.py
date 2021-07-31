@@ -70,7 +70,7 @@ class PodcastMixMulti(Dataset):
         # declare the resolution of the reduction factor.
         # this will create N different gain values max
         # 1/denominator_gain to multiply the music gain
-        self.denominator_gain = 100
+        self.denominator_gain = 20
         self.gain_ramp = np.array(range(1, self.denominator_gain, 1))/self.denominator_gain
 
         # shuffle the static random gain to use it in testing
