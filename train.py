@@ -87,6 +87,20 @@ def main(conf):
         )
         loss_func = LogL2Time()
         plugins = None
+    elif(conf["model"]["name"] == "UNet_model"):
+        # UNet with logl2 time loss and normalization inside model
+        sys.path.append('UNet_model')
+        from unet_model import UNet
+        model = UNet(
+            conf["data"]["sample_rate"],
+            conf["stft"]["fft_seize"],
+            conf["stft"]["hop_size"],
+            conf["stft"]["window_size"],
+            conf["convolution"]["kernel_size"],
+            conf["convolution"]["stride"]
+        )
+        loss_func = LogL2Time()
+        plugins = DDPPlugin(find_unused_parameters=False)
     else:
         sys.path.append('UNetSpec_model')
         from unet_model import UNet

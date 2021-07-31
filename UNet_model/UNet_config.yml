@@ -8,11 +8,11 @@ training:
   half_lr: yes
   early_stop: yes
   multi_speakers: yes
-  normalize: yes
+  normalize: no # the model will normalize, not the dataloader
 # Optim config
 stft:
-  fft_size: 1024
-  window_size: 1024
+  fft_size: 2048
+  window_size: 2048
   hop_size: 441
 convolution:
   stride: 2
@@ -23,6 +23,8 @@ optim:
   weight_decay: 0.
 # Data config
 data:
+  original_sample_rate: 44100
+  domain: time
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
   sample_rate: 44100

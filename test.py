@@ -123,23 +123,20 @@ def main(conf):
         conf["n_save_ex"] = len(test_set)
     save_idx = random.sample(range(len(test_set)), conf["n_save_ex"])
     series_list = []
-
-    # # read mean and std from json
-    with open('mean_std.json') as json_file:
-        data = json.load(json_file)
-        mean = data['sum_accum_mean'] / data['n_items']
-        std = data['sum_accum_std'] / data['n_items']
     window = torch.hamming_window(conf["window_size"])
 
     torch.no_grad().__enter__()
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
         mix, sources = test_set[idx]
+        mean = torch.mean(mix)
+        std = torch.std(mix)
         if conf["target_model"] == "UNetSpec":
             # get audio from dataloader, normalize mix, pass to spectrogram
             # forward spectrogram to model, transform spectrograms to audio
             # using mix phase, unnormalize estimated sources and
             # compare them with the ground truth sources 
+            
             mix_audio_norm = (mix - mean) / std
             
             # audio to spectrogram
@@ -179,8 +176,17 @@ def main(conf):
             print("mix_np", mix_np.shape)
             print("sources_np", sources_np.shape)
             print("est_sources_np", est_sources_np.shape)
+        elif conf["target_model"] == "UNet":
+            # get audio representations, normalize it, forward to convtasnet or unet
+            # unnormalize estimated sources and compare them with the
+            # ground truth
+            est_sources = model(mix)
+
+            mix_np = mix.cpu().data.numpy()
+            sources_np = sources.cpu().data.numpy()
+            est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
         else:
-            # get audio representations, normalize it, forward to convtasnet
+            # get audio representations, normalize it, forward to convtasnet or unet
             # unnormalize estimated sources and compare them with the
             # ground truth
             m_norm = (mix - mean) / std
