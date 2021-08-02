@@ -1,9 +1,7 @@
-import os
 import csv
 import torchaudio
 
-
-with open('podcastmix/metadata/test/speech.csv', 'r') as read_obj:
+with open('../podcastmix/metadata/test/speech.csv', 'r') as read_obj:
     csv_reader = csv.reader(read_obj)
     header = next(csv_reader)
     # Check file as empty
@@ -13,9 +11,7 @@ with open('podcastmix/metadata/test/speech.csv', 'r') as read_obj:
             # row variable is a list that represents a row in csv
             file_path = row[5]
             info = torchaudio.info(file_path)
-            print(info.sample_rate, info.bits_per_sample)
             if((not info.sample_rate == 44100) or (not info.bits_per_sample == 16)):
-                print(file_path)
                 destination = file_path
                 audio, original_sf = torchaudio.load(
                      file_path,

@@ -9,6 +9,7 @@ from asteroid.utils import tensors_to_device
 import numpy as np
 from tqdm import tqdm
 import torchaudio
+from utils.my_import import my_import
 
 class PodcastLoader(Dataset):
     dataset_name = "PodcastMix"
@@ -80,14 +81,6 @@ parser.add_argument(
     required=True,
     help="Sample rate",
 )
-
-def my_import(name):
-    components = name.split('.')
-    mod = __import__(components[0])
-    for comp in components[1:]:
-        mod = getattr(mod, comp)
-    return mod
-
 
 def main(conf):
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
