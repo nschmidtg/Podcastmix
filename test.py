@@ -90,11 +90,12 @@ def main(conf):
         MockWERTracker()
     )
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
-    if conf["target_model"] == "UNetSpec":
-        sys.path.append('UNetSpec_model')
+    if conf["target_model"] == "UNet":
+        sys.path.append('UNet_model')
         AsteroidModelModule = my_import("unet_model.UNet")
     else:
-        AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
+        sys.path.append('ConvTasNet_model')
+        AsteroidModelModule = my_import("conv_tasnet_norm.ConvTasNetNorm")
     model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
     # model = ConvTasNet
     # Handle device placement
@@ -176,24 +177,10 @@ def main(conf):
             print("mix_np", mix_np.shape)
             print("sources_np", sources_np.shape)
             print("est_sources_np", est_sources_np.shape)
-        elif conf["target_model"] == "UNet":
-            # get audio representations, normalize it, forward to convtasnet or unet
-            # unnormalize estimated sources and compare them with the
-            # ground truth
+        elif conf["target_model"] == "UNet" or conf["target_model"] == "ConvTasNet":
+            # get audio representations, pass the mix to the unet, it will normalize
+            # it, create the masks, pass them to audio, unnormalize them and return
             est_sources = model(mix)
-
-            mix_np = mix.cpu().data.numpy()
-            sources_np = sources.cpu().data.numpy()
-            est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
-        else:
-            # get audio representations, normalize it, forward to convtasnet or unet
-            # unnormalize estimated sources and compare them with the
-            # ground truth
-            m_norm = (mix - mean) / std
-            m_norm, _ = tensors_to_device([m_norm, sources], device=model_device)
-            est_sources = model(m_norm)
-            # unnormalize
-            est_sources = est_sources * std + mean
 
             mix_np = mix.cpu().data.numpy()
             sources_np = sources.cpu().data.numpy()
