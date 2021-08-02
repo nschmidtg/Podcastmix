@@ -44,8 +44,7 @@ def main(conf):
         window_size=conf["data"]["window_size"],
         hop_size=conf["data"]["hop_size"],
         shuffle_tracks=True,
-        multi_speakers=conf["training"]["multi_speakers"],
-        normalize=conf["training"]["normalize"]
+        multi_speakers=conf["training"]["multi_speakers"]
     )
     val_set = PodcastMixMulti(
         csv_dir=conf["data"]["valid_dir"],
@@ -57,8 +56,7 @@ def main(conf):
         window_size=conf["data"]["window_size"],
         hop_size=conf["data"]["hop_size"],
         shuffle_tracks=True,
-        multi_speakers=conf["training"]["multi_speakers"],
-        normalize=conf["training"]["normalize"]
+        multi_speakers=conf["training"]["multi_speakers"]
     )
     train_loader = DataLoader(
         train_set,
@@ -101,16 +99,6 @@ def main(conf):
             conf["convolution"]["stride"]
         )
         loss_func = LogL2Time()
-        plugins = DDPPlugin(find_unused_parameters=False)
-    else:
-        sys.path.append('UNetSpec_model')
-        from unet_model import UNet
-        model = UNet(
-            conf["data"]["sample_rate"],
-            conf["convolution"]["kernel_size"],
-            conf["convolution"]["stride"]
-        )
-        loss_func = LogL2Spec()
         plugins = DDPPlugin(find_unused_parameters=False)
     optimizer = make_optimizer(model.parameters(), **conf["optim"])
     if conf["training"]["half_lr"]:

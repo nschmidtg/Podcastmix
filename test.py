@@ -9,11 +9,11 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import sys
+from utils.my_import import my_import
 
 from asteroid.metrics import get_metrics
 from pytorch_lightning import seed_everything
 from PodcastMixMulti import PodcastMixMulti
-from asteroid.utils import tensors_to_device
 from asteroid.metrics import MockWERTracker
 
 seed_everything(1, workers=True)
@@ -64,26 +64,6 @@ parser.add_argument(
 
 COMPUTE_METRICS = ["si_sdr", "sdr", "sir", "sar", "stoi"]
 
-
-def my_import(name):
-    components = name.split('.')
-    mod = __import__(components[0])
-    for comp in components[1:]:
-        mod = getattr(mod, comp)
-    return mod
-
-def compute_mag_phase(torch_signals, fft_size, hop_size, window):
-    X_in = torch.stft(torch_signals, fft_size, hop_size, window=window, return_complex=False, normalized=True)
-    real, imag = X_in.unbind(-1)
-    complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
-    r_i = torch.view_as_complex(complex_n)
-    phase = torch.angle(r_i)
-    X_in = torch.sqrt(real**2 + imag**2)
-    # concat mag and phase: [torch_signals, mag/phase, n_bins, n_frames]
-    torch_signals = torch.cat((X_in.unsqueeze(1), phase.unsqueeze(1)), dim=1)
-    return torch_signals
-
-
 def main(conf):
     compute_metrics = COMPUTE_METRICS
     wer_tracker = (
@@ -112,8 +92,7 @@ def main(conf):
         window_size=conf["window_size"],
         hop_size=conf["hop_size"],
         shuffle_tracks=False,
-        multi_speakers=conf["multi_speakers"],
-        normalize=False
+        multi_speakers=conf["multi_speakers"]
     )
     # Used to reorder sources only
 
@@ -130,61 +109,14 @@ def main(conf):
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
         mix, sources = test_set[idx]
-        mean = torch.mean(mix)
-        std = torch.std(mix)
-        if conf["target_model"] == "UNetSpec":
-            # get audio from dataloader, normalize mix, pass to spectrogram
-            # forward spectrogram to model, transform spectrograms to audio
-            # using mix phase, unnormalize estimated sources and
-            # compare them with the ground truth sources 
-            
-            mix_audio_norm = (mix - mean) / std
-            
-            # audio to spectrogram
-            mix_audio_norm = mix_audio_norm.unsqueeze(0)
-            mix_norm = compute_mag_phase(mix_audio_norm, fft_size=conf["fft_size"], hop_size=conf["hop_size"], window=window)
-            mix_norm = mix_norm.squeeze(0)
-            
-            # sources = compute_mag_phase(sources, conf["fft_size"], conf["hop_size"], window=window)
-            m_norm, _ = tensors_to_device([mix_norm, sources], device=model_device)
-            print("mnorms shape", m_norm.shape)
-            est_sources = model(m_norm.unsqueeze(0)).squeeze(0)
-            
-            # pass to cpu
-            est_sources = est_sources.cpu()
 
-            # convert spectrograms to audio using mixture phase
-            polar_sources = est_sources * torch.cos(mix_norm[1]) + est_sources * torch.sin(mix_norm[1]) * 1j
-            est_sources_audio = torch.istft(polar_sources, conf["fft_size"], conf["hop_size"], window=window, return_complex=False, onesided=True, center=True, normalized=True)
+        # get audio representations, pass the mix to the unet, it will normalize
+        # it, create the masks, pass them to audio, unnormalize them and return
+        est_sources = model(mix)
 
-            # ground truth sources spectrograms to audio
-            speech = sources[0]
-            music = sources[1]
-            
-            # unnormalize estimated sources:
-            est_sources_audio = est_sources_audio * std + mean
-
-            # remove additional dimention
-            speech_out = speech.squeeze(0)
-            music_out = music.squeeze(0)
-            mix_out = mix.squeeze(0)
-            # add both sources to a tensor to return them
-            sources = torch.stack([speech_out, music_out], dim=0)
-
-            mix_np = mix_out.cpu().data.numpy()
-            sources_np = sources.data.numpy()
-            est_sources_np = est_sources_audio.squeeze(0).cpu().data.numpy()        
-            print("mix_np", mix_np.shape)
-            print("sources_np", sources_np.shape)
-            print("est_sources_np", est_sources_np.shape)
-        elif conf["target_model"] == "UNet" or conf["target_model"] == "ConvTasNet":
-            # get audio representations, pass the mix to the unet, it will normalize
-            # it, create the masks, pass them to audio, unnormalize them and return
-            est_sources = model(mix)
-
-            mix_np = mix.cpu().data.numpy()
-            sources_np = sources.cpu().data.numpy()
-            est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
+        mix_np = mix.cpu().data.numpy()
+        sources_np = sources.cpu().data.numpy()
+        est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
         try:
             utt_metrics = get_metrics(
                 mix_np,

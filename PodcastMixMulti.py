@@ -16,14 +16,13 @@ class PodcastMixMulti(Dataset):
 
     def __init__(self, csv_dir, sample_rate=44100, original_sample_rate= 44100, segment=2,
                  domain='spectrogram', fft_size=1024, window_size=1024, hop_size=441,
-                 shuffle_tracks=False, multi_speakers=False, normalize=True):
+                 shuffle_tracks=False, multi_speakers=False):
         self.csv_dir = csv_dir
         self.segment = segment
         # sample_rate of the original files
         self.original_sample_rate = original_sample_rate
         # destination sample_rate for resample
         self.sample_rate = sample_rate
-        self.normalize = normalize
         self.shuffle_tracks = shuffle_tracks
         self.multi_speakers = multi_speakers
         self.domain = domain
@@ -207,18 +206,6 @@ class PodcastMixMulti(Dataset):
             
         return zeros_aux[:array_size]
 
-    def normalize_audio(self, sources, mixture):
-        """
-        Receives mono audio and the normalize it
-        """
-        ref = mixture
-        mean = torch.mean(ref)
-        std = torch.std(ref)
-        mixture = (mixture - mean) / std
-        sources = (sources - mean) / std
-        
-        return sources, mixture
-
     def __getitem__(self, idx):
         if(idx == 0 and self.shuffle_tracks):
             # shuffle on first epochs of training and validation. Not testing
@@ -267,27 +254,8 @@ class PodcastMixMulti(Dataset):
 
         # Convert sources to tensor
         sources = torch.from_numpy(sources)
-        if self.normalize:
-            sources, mixture = self.normalize_audio(sources, mixture)
-        
-        if self.domain == 'spectrogram':
-            sources = self.compute_mag_phase(sources)
-            mixture = mixture.unsqueeze(0)
-            mixture = self.compute_mag_phase(mixture)
-            mixture = mixture.squeeze(0)
 
         return mixture, sources
-    
-    def compute_mag_phase(self, torch_signals):
-        X_in = torch.stft(torch_signals, self.fft_size, self.hop_size, window=self.window, return_complex=False, normalized=True)
-        real, imag = X_in.unbind(-1)
-        complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
-        r_i = torch.view_as_complex(complex_n)
-        phase = torch.angle(r_i)
-        X_in = torch.sqrt(real**2 + imag**2)
-        # concat mag and phase: [torch_signals, mag/phase, n_bins, n_frames]
-        torch_signals = torch.cat((X_in.unsqueeze(1), phase.unsqueeze(1)), dim=1)
-        return torch_signals
 
     def get_infos(self):
         """Get dataset infos (for publishing models).

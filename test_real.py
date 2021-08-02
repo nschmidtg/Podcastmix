@@ -11,9 +11,10 @@ from tqdm import tqdm
 from torch.utils.data.dataset import Dataset
 import torchaudio
 import sys
+from utils.my_import import my_import
+
 from asteroid.metrics import get_metrics
 from pytorch_lightning import seed_everything
-from asteroid.utils import tensors_to_device
 from asteroid.metrics import MockWERTracker
 
 seed_everything(1)
@@ -104,16 +105,7 @@ parser.add_argument(
     help="Compute WER using ESPNet's pretrained model"
 )
 
-COMPUTE_METRICS = ["sdr", "sir", "sar"]
-
-
-def my_import(name):
-    components = name.split('.')
-    mod = __import__(components[0])
-    for comp in components[1:]:
-        mod = getattr(mod, comp)
-    return mod
-
+COMPUTE_METRICS = ["si_sdr", "sdr", "sir", "sar", "stoi"]
 
 def main(conf):
     compute_metrics = COMPUTE_METRICS
@@ -121,7 +113,12 @@ def main(conf):
         MockWERTracker()
     )
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
-    AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
+    if conf["target_model"] == "UNet":
+        sys.path.append('UNet_model')
+        AsteroidModelModule = my_import("unet_model.UNet")
+    else:
+        sys.path.append('ConvTasNet_model')
+        AsteroidModelModule = my_import("conv_tasnet_norm.ConvTasNetNorm")
     model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
     print("model_path", model_path)
     # model = ConvTasNet
@@ -148,11 +145,10 @@ def main(conf):
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
         mix, sources = test_set[idx]
-        m_norm = (mix - torch.mean(mix)) / torch.std(mix)
-        m_norm, _ = tensors_to_device([m_norm, sources], device=model_device)
-        est_sources = model(m_norm)
-        # unnormalize
-        est_sources = est_sources * torch.std(mix) + torch.mean(mix)
+        
+        # get audio representations, pass the mix to the unet, it will normalize
+        # it, create the masks, pass them to audio, unnormalize them and return
+        est_sources = model(mix)
 
         mix_np = mix.cpu().data.numpy()
         sources_np = sources.cpu().data.numpy()
