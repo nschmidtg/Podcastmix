@@ -88,7 +88,8 @@ def main(conf):
         sys.path.append('UNet_model')
         AsteroidModelModule = my_import("unet_model.UNet")
     else:
-        AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
+        sys.path.append('ConvTasNet_model')
+        AsteroidModelModule = my_import("conv_tasnet_norm.ConvTasNetNorm")
     model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
 
     if conf["use_gpu"]:
@@ -105,15 +106,11 @@ def main(conf):
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
         mix = test_set[idx]
-        m_norm = (mix - torch.mean(mix)) / torch.std(mix)
         m_norm = tensors_to_device(m_norm, device=model_device)
         if conf["target_model"] == "UNet":
             est_sources = model(mix.unsqueeze(0)).squeeze(0)
         else:
             est_sources = model(mix)
-        
-        est_sources = est_sources * torch.std(mix) + torch.mean(mix)
-
         mix_np = mix.cpu().data.numpy()
         est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
 
