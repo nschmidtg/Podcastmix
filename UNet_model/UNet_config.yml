@@ -6,7 +6,7 @@ training:
   batch_size: 1
   num_workers: 12
   half_lr: yes
-  early_stop: yes
+  early_stop: no
   multi_speakers: yes
   normalize: no # the model will normalize, not the dataloader
 convolution:
