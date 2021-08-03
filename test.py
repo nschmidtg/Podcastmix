@@ -81,7 +81,6 @@ def main(conf):
     # Handle device placement
     if conf["use_gpu"]:
         model.cuda()
-    model_device = next(model.parameters()).device
     test_set = PodcastMixMulti(
         csv_dir=conf["test_dir"],
         sample_rate=conf["sample_rate"],

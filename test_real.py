@@ -54,6 +54,10 @@ class PodcastLoader(Dataset):
             frame_offset=start_second *  self.sample_rate,
             num_frames=self.segment * self.sample_rate + start_second * start_second
         )
+        max_val = torch.max(torch.abs(mixture))
+        mixture = mixture / max_val
+        speech = speech / max_val
+        music = music / max_val
         sources_list.append(speech[0])
         sources_list.append(music[0])
         sources = np.vstack(sources_list)
