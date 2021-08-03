@@ -106,7 +106,7 @@ def main(conf):
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
         mix = test_set[idx]
-        m_norm = tensors_to_device(m_norm, device=model_device)
+        mix = tensors_to_device(mix, device=model_device)
         if conf["target_model"] == "UNet":
             est_sources = model(mix.unsqueeze(0)).squeeze(0)
         else:

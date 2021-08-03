@@ -42,17 +42,17 @@ class PodcastLoader(Dataset):
         mixture, _ = torchaudio.load(
             podcast_path,
             frame_offset=start_second *  self.sample_rate,
-            num_frames=self.segment * self.sample_rate + start_second * start_second
+            num_frames=self.segment * self.sample_rate
         )
         speech, _ = torchaudio.load(
             speech_path,
             frame_offset=start_second *  self.sample_rate,
-            num_frames=self.segment * self.sample_rate + start_second * start_second
+            num_frames=self.segment * self.sample_rate
         )
         music, _ = torchaudio.load(
             music_path,
             frame_offset=start_second *  self.sample_rate,
-            num_frames=self.segment * self.sample_rate + start_second * start_second
+            num_frames=self.segment * self.sample_rate
         )
         max_val = torch.max(torch.abs(mixture))
         mixture = mixture / max_val
@@ -150,13 +150,18 @@ def main(conf):
         # Forward the network on the mixture.
         mix, sources = test_set[idx]
         
+        if conf["target_model"] == "UNet":
+            mix = mix.unsqueeze(0)
         # get audio representations, pass the mix to the unet, it will normalize
         # it, create the masks, pass them to audio, unnormalize them and return
         est_sources = model(mix)
 
         mix_np = mix.cpu().data.numpy()
+        if conf["target_model"] == "UNet":
+            mix_np = mix_np.squeeze(0)
         sources_np = sources.cpu().data.numpy()
         est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
+
         # For each utterance, we get a dictionary with the mixture path,
         # the input and output metrics
         utt_metrics = get_metrics(
