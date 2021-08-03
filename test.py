@@ -116,8 +116,12 @@ def main(conf):
         est_sources = model(mix)
 
         mix_np = mix.cpu().data.numpy()
+        if conf["target_model"] == "UNet":
+            mix_np = mix_np.squeeze(0)
+
         sources_np = sources.cpu().data.numpy()
         est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
+
         try:
             utt_metrics = get_metrics(
                 mix_np,
@@ -137,6 +141,7 @@ def main(conf):
         if idx in save_idx:
             local_save_dir = os.path.join(ex_save_dir, "ex_{}/".format(idx))
             os.makedirs(local_save_dir, exist_ok=True)
+            print(mix_np.shape)
             sf.write(
                 local_save_dir + "mixture.wav",
                 mix_np,
