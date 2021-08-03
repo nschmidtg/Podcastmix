@@ -140,7 +140,7 @@ def main(conf):
         callbacks.append(EarlyStopping(
             monitor="val_loss",
             mode="min",
-            patience=50,
+            patience=100,
             verbose=True
         ))
 
