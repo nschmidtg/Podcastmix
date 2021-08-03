@@ -109,6 +109,8 @@ def main(conf):
         # Forward the network on the mixture.
         mix, sources = test_set[idx]
 
+        if conf["target_model"] == "UNet":
+            mix = mix.unsqueeze(0)
         # get audio representations, pass the mix to the unet, it will normalize
         # it, create the masks, pass them to audio, unnormalize them and return
         est_sources = model(mix)
