@@ -156,6 +156,15 @@ class PodcastMixMulti(Dataset):
 
     def load_speechs(self, speech_idx):
         """
+        concatenates random speech files from the same speaker as speech_idx until
+        obtaining a buffer with a length of at least the lenght of the
+        input segment.
+        If multispeaker is used, a single audio file from a different
+        speaker is overlapped in a random position of the buffer, to emulate
+        speakers interruptions once every 10 items.
+        The buffer is shifted in a random position to prevent always getting
+        buffers that starts with the beginning of a speech.
+        Returns the shifted buffer with a length equal to segment.
         """
         speaker_csv_id = self.df_speech.iloc[speech_idx].speaker_id
         array_size = self.original_sample_rate * self.segment
