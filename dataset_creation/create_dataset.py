@@ -19,15 +19,15 @@ using the VCTK and the JamendoPopular datasets, an augmented
 podcast/radioshow like dataset is created
 """
 # modify if necesary:
-speech_path = "VCTK/wav48_silence_trimmed"
-speech_metadata_path = "VCTK/speaker-info.txt"
+speech_path = "../VCTK/wav48_silence_trimmed"
+speech_metadata_path = "../VCTK/speaker-info.txt"
 
-music_path = "Jamendo/music"
-music_metadata_path = "Jamendo/metadata.json"
+music_path = "../Jamendo/music"
+music_metadata_path = "../Jamendo/metadata.json"
 
 # create files structure
-if not os.path.exists('podcastmix'):
-    os.makedirs('podcastmix')
+if not os.path.exists('../podcastmix'):
+    os.makedirs('../podcastmix')
 
 
 def create_folder_structure(path):
@@ -40,24 +40,24 @@ def create_folder_structure(path):
 
 
 # create files structure
-train_path = "podcastmix/train"
+train_path = "../podcastmix/train"
 create_folder_structure(train_path)
 
-val_path = "podcastmix/val"
+val_path = "../podcastmix/val"
 create_folder_structure(val_path)
 
-test_path = "podcastmix/test"
+test_path = "../podcastmix/test"
 create_folder_structure(test_path)
 
 # create the metadata directory
-if not os.path.exists('podcastmix/metadata'):
-    os.makedirs('podcastmix/metadata')
-if not os.path.exists('podcastmix/metadata/train'):
-    os.makedirs('podcastmix/metadata/train')
-if not os.path.exists('podcastmix/metadata/val'):
-    os.makedirs('podcastmix/metadata/val')
-if not os.path.exists('podcastmix/metadata/test'):
-    os.makedirs('podcastmix/metadata/test')
+if not os.path.exists('../podcastmix/metadata'):
+    os.makedirs('../podcastmix/metadata')
+if not os.path.exists('../podcastmix/metadata/train'):
+    os.makedirs('../podcastmix/metadata/train')
+if not os.path.exists('../podcastmix/metadata/val'):
+    os.makedirs('../podcastmix/metadata/val')
+if not os.path.exists('../podcastmix/metadata/test'):
+    os.makedirs('../podcastmix/metadata/test')
 
 
 def create_csv_metadata(csv_path, headers):
@@ -96,12 +96,12 @@ music_headers = [
     "length"
 ]
 
-csv_path_tr_s = 'podcastmix/metadata/train/speech.csv'
-csv_path_tr_m = 'podcastmix/metadata/train/music.csv'
-csv_path_va_s = 'podcastmix/metadata/val/speech.csv'
-csv_path_va_m = 'podcastmix/metadata/val/music.csv'
-csv_path_te_s = 'podcastmix/metadata/test/speech.csv'
-csv_path_te_m = 'podcastmix/metadata/test/music.csv'
+csv_path_tr_s = '../podcastmix/metadata/train/speech.csv'
+csv_path_tr_m = '../podcastmix/metadata/train/music.csv'
+csv_path_va_s = '../podcastmix/metadata/val/speech.csv'
+csv_path_va_m = '../podcastmix/metadata/val/music.csv'
+csv_path_te_s = '../podcastmix/metadata/test/speech.csv'
+csv_path_te_m = '../podcastmix/metadata/test/music.csv'
 
 create_csv_metadata(csv_path_tr_s, speech_headers)
 create_csv_metadata(csv_path_tr_m, music_headers)
@@ -164,7 +164,7 @@ for song_id in keys:
                 song['local_path'] = destination
                 print('3', current_file_path)
                 music_train_set.append(song)
-                csv_path = 'podcastmix/metadata/train/music.csv'
+                csv_path = '../podcastmix/metadata/train/music.csv'
             elif counter >= int(train_prop * len(keys)) and counter < int((train_prop + val_prop) * len(keys)):
                 # val
                 destination = val_path + '/music/' + song['id'] + '.flac'
@@ -178,7 +178,7 @@ for song_id in keys:
                     exists = True
                 song['local_path'] = destination
                 music_val_set.append(song)
-                csv_path = 'podcastmix/metadata/val/music.csv'
+                csv_path = '../podcastmix/metadata/val/music.csv'
             else:
                 # test
                 destination = test_path + '/music/' + song['id'] + '.flac'
@@ -192,7 +192,7 @@ for song_id in keys:
                     exists = True
                 song['local_path'] = destination
                 music_test_set.append(song)
-                csv_path = 'podcastmix/metadata/test/music.csv'
+                csv_path = '../podcastmix/metadata/test/music.csv'
             if not exists:
                 with open(csv_path, 'a', newline='') as file:
                     writer = csv.writer(file)
@@ -282,7 +282,7 @@ for speech_path_dir in speech_files:
             # )
         # copyfile(speech_path_dir, destination)
         speech_train_set.append(destination)
-        csv_path = 'podcastmix/metadata/train/speech.csv'
+        csv_path = '../podcastmix/metadata/train/speech.csv'
     elif counter >= int(train_prop * len(speech_files)) and counter < int((train_prop + val_prop) * len(speech_files)):
         # val
         destination = val_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
@@ -302,7 +302,7 @@ for speech_path_dir in speech_files:
             # )
         # copyfile(speech_path_dir, destination)
         speech_val_set.append(destination)
-        csv_path = 'podcastmix/metadata/val/speech.csv'
+        csv_path = '../podcastmix/metadata/val/speech.csv'
     else:
         # test
         destination = test_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
@@ -322,7 +322,7 @@ for speech_path_dir in speech_files:
             # )
         # copyfile(speech_path_dir, destination)
         speech_test_set.append(destination)
-        csv_path = 'podcastmix/metadata/test/speech.csv'
+        csv_path = '../podcastmix/metadata/test/speech.csv'
 #    if not exists:
     with open(csv_path, 'a', newline='') as file:
         writer = csv.writer(file)

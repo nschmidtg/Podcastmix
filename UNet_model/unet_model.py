@@ -61,6 +61,7 @@ class UNet(BaseModel):
         mean = torch.mean(x_in)
         std = torch.std(x_in)
         x_in = (x_in - mean) / (1e-5 + std)
+        x_in = x_in.cuda()
 
         # compute normalized spectrogram
         window = torch.hamming_window(self.window_size, device=x_in.get_device())
