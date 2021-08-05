@@ -14,10 +14,8 @@ import sys
 from PodcastMixMulti import PodcastMixMulti
 from asteroid.engine.optimizers import make_optimizer
 from asteroid.engine.system import System
-#from l2 import L2Time
 from logl2 import LogL2Time
-from logl2 import LogL2Spec
-#from torch.nn import L1Loss
+
 seed_everything(1, workers=True)
 
 # Keys which are not in the conf.yml file can be added here.
