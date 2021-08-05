@@ -46,26 +46,26 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
 
     print('format errors:', format_error)
 # check consistency of the dataset:
-files_path = 'podcastmix/test/music'
-csv_path = 'podcastmix/metadata/test/music.csv'
+files_path = '../podcastmix/test/music'
+csv_path = '../podcastmix/metadata/test/music.csv'
 check_files_against_csv(csv_path, files_path, 14)
 
-files_path = 'podcastmix/val/music'
-csv_path = 'podcastmix/metadata/val/music.csv'
+files_path = '../podcastmix/val/music'
+csv_path = '../podcastmix/metadata/val/music.csv'
 check_files_against_csv(csv_path, files_path, 14)
 
-files_path = 'podcastmix/train/music'
-csv_path = 'podcastmix/metadata/train/music.csv'
+files_path = '../podcastmix/train/music'
+csv_path = '../podcastmix/metadata/train/music.csv'
 check_files_against_csv(csv_path, files_path, 14)
 
-files_path = 'podcastmix/train/speech'
-csv_path = 'podcastmix/metadata/train/speech.csv'
+files_path = '../podcastmix/train/speech'
+csv_path = '../podcastmix/metadata/train/speech.csv'
 check_files_against_csv(csv_path, files_path, 5)
 
-files_path = 'podcastmix/val/speech'
-csv_path = 'podcastmix/metadata/val/speech.csv'
+files_path = '../podcastmix/val/speech'
+csv_path = '../podcastmix/metadata/val/speech.csv'
 check_files_against_csv(csv_path, files_path, 5)
 
-files_path = 'podcastmix/test/speech'
-csv_path = 'podcastmix/metadata/test/speech.csv'
+files_path = '../podcastmix/test/speech'
+csv_path = '../podcastmix/metadata/test/speech.csv'
 check_files_against_csv(csv_path, files_path, 5)

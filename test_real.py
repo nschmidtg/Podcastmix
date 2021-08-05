@@ -11,9 +11,10 @@ from tqdm import tqdm
 from torch.utils.data.dataset import Dataset
 import torchaudio
 import sys
+from utils.my_import import my_import
+
 from asteroid.metrics import get_metrics
 from pytorch_lightning import seed_everything
-from asteroid.utils import tensors_to_device
 from asteroid.metrics import MockWERTracker
 
 seed_everything(1)
@@ -41,17 +42,17 @@ class PodcastLoader(Dataset):
         mixture, _ = torchaudio.load(
             podcast_path,
             frame_offset=start_second *  self.sample_rate,
-            num_frames=self.segment * self.sample_rate + start_second * start_second
+            num_frames=self.segment * self.sample_rate
         )
         speech, _ = torchaudio.load(
             speech_path,
             frame_offset=start_second *  self.sample_rate,
-            num_frames=self.segment * self.sample_rate + start_second * start_second
+            num_frames=self.segment * self.sample_rate
         )
         music, _ = torchaudio.load(
             music_path,
             frame_offset=start_second *  self.sample_rate,
-            num_frames=self.segment * self.sample_rate + start_second * start_second
+            num_frames=self.segment * self.sample_rate
         )
         sources_list.append(speech[0])
         sources_list.append(music[0])
@@ -104,16 +105,7 @@ parser.add_argument(
     help="Compute WER using ESPNet's pretrained model"
 )
 
-COMPUTE_METRICS = ["sdr", "sir", "sar"]
-
-
-def my_import(name):
-    components = name.split('.')
-    mod = __import__(components[0])
-    for comp in components[1:]:
-        mod = getattr(mod, comp)
-    return mod
-
+COMPUTE_METRICS = ["si_sdr", "sdr", "sir", "sar", "stoi"]
 
 def main(conf):
     compute_metrics = COMPUTE_METRICS
@@ -121,7 +113,12 @@ def main(conf):
         MockWERTracker()
     )
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
-    AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
+    if conf["target_model"] == "UNet":
+        sys.path.append('UNet_model')
+        AsteroidModelModule = my_import("unet_model.UNet")
+    else:
+        sys.path.append('ConvTasNet_model')
+        AsteroidModelModule = my_import("conv_tasnet_norm.ConvTasNetNorm")
     model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
     print("model_path", model_path)
     # model = ConvTasNet
@@ -148,15 +145,19 @@ def main(conf):
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
         mix, sources = test_set[idx]
-        m_norm = (mix - torch.mean(mix)) / torch.std(mix)
-        m_norm, _ = tensors_to_device([m_norm, sources], device=model_device)
-        est_sources = model(m_norm)
-        # unnormalize
-        est_sources = est_sources * torch.std(mix) + torch.mean(mix)
+        
+        if conf["target_model"] == "UNet":
+            mix = mix.unsqueeze(0)
+        # get audio representations, pass the mix to the unet, it will normalize
+        # it, create the masks, pass them to audio, unnormalize them and return
+        est_sources = model(mix)
 
         mix_np = mix.cpu().data.numpy()
+        if conf["target_model"] == "UNet":
+            mix_np = mix_np.squeeze(0)
         sources_np = sources.cpu().data.numpy()
         est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
+
         # For each utterance, we get a dictionary with the mixture path,
         # the input and output metrics
         utt_metrics = get_metrics(

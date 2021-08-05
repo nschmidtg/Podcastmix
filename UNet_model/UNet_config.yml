@@ -3,26 +3,26 @@ model:
 # Training config
 training:
   epochs: 100
-  batch_size: 2
+  batch_size: 1
   num_workers: 12
   half_lr: yes
-  early_stop: yes
+  early_stop: no
   multi_speakers: yes
-  normalize: yes
-# Optim config
-stft:
-  fft_size: 1024
-  window_size: 1024
-  hop_size: 441
+  normalize: no # the model will normalize, not the dataloader
 convolution:
   stride: 2
   kernel_size: 5
 optim:
   optimizer: adam
-  lr: 0.0005
+  lr: 0.0001
   weight_decay: 0.
 # Data config
 data:
+  original_sample_rate: 44100
+  domain: time
+  fft_size: 2048
+  window_size: 2048
+  hop_size: 441
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
   sample_rate: 44100

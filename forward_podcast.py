@@ -9,6 +9,7 @@ from asteroid.utils import tensors_to_device
 import numpy as np
 from tqdm import tqdm
 import torchaudio
+from utils.my_import import my_import
 
 class PodcastLoader(Dataset):
     dataset_name = "PodcastMix"
@@ -81,21 +82,14 @@ parser.add_argument(
     help="Sample rate",
 )
 
-def my_import(name):
-    components = name.split('.')
-    mod = __import__(components[0])
-    for comp in components[1:]:
-        mod = getattr(mod, comp)
-    return mod
-
-
 def main(conf):
     model_path = os.path.join(conf["exp_dir"], "best_model.pth")
     if conf["target_model"] == "UNet":
         sys.path.append('UNet_model')
         AsteroidModelModule = my_import("unet_model.UNet")
     else:
-        AsteroidModelModule = my_import("asteroid.models." + conf["target_model"])
+        sys.path.append('ConvTasNet_model')
+        AsteroidModelModule = my_import("conv_tasnet_norm.ConvTasNetNorm")
     model = AsteroidModelModule.from_pretrained(model_path, sample_rate=conf["sample_rate"])
 
     if conf["use_gpu"]:
@@ -112,15 +106,11 @@ def main(conf):
     for idx in tqdm(range(len(test_set))):
         # Forward the network on the mixture.
         mix = test_set[idx]
-        m_norm = (mix - torch.mean(mix)) / torch.std(mix)
-        m_norm = tensors_to_device(m_norm, device=model_device)
+        mix = tensors_to_device(mix, device=model_device)
         if conf["target_model"] == "UNet":
             est_sources = model(mix.unsqueeze(0)).squeeze(0)
         else:
             est_sources = model(mix)
-        
-        est_sources = est_sources * torch.std(mix) + torch.mean(mix)
-
         mix_np = mix.cpu().data.numpy()
         est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
 
