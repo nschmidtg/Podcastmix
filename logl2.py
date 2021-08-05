@@ -8,7 +8,7 @@ class LogL2Time(_Loss):
             raise TypeError(
                 f"Inputs must be of shape [batch, *], got {targets.size()} and {est_targets.size()} instead"
             )
-        batch, number_of_sources, length_of_sources = est_targets.shape
+        _, number_of_sources, length_of_sources = est_targets.shape
         squared_abs_dif = torch.abs((est_targets - targets) ** 2)
         sum_of_squared_abs_dif = torch.sum(squared_abs_dif, dim=2)
         sum_of_log = torch.sum(torch.log10(sum_of_squared_abs_dif), dim=1)

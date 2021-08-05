@@ -3,19 +3,19 @@ from torch.utils.data import Dataset
 import pandas as pd
 import torchaudio
 import os
-import json
 import numpy as np
 import random
-from resampler import Resampler
+from utils.resampler import Resampler
 
 class PodcastMixMulti(Dataset):
     """
+    TODO
     """
 
     dataset_name = "PodcastMix"
 
     def __init__(self, csv_dir, sample_rate=44100, original_sample_rate= 44100, segment=2,
-                 domain='spectrogram', fft_size=1024, window_size=1024, hop_size=441,
+                 fft_size=1024, window_size=1024, hop_size=441,
                  shuffle_tracks=False, multi_speakers=False):
         self.csv_dir = csv_dir
         self.segment = segment
@@ -25,7 +25,6 @@ class PodcastMixMulti(Dataset):
         self.sample_rate = sample_rate
         self.shuffle_tracks = shuffle_tracks
         self.multi_speakers = multi_speakers
-        self.domain = domain
         self.fft_size = fft_size
         self.window = torch.hann_window(window_size)
         self.hop_size = hop_size

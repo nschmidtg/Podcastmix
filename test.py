@@ -86,7 +86,6 @@ def main(conf):
         sample_rate=conf["sample_rate"],
         original_sample_rate=conf["original_sample_rate"],
         segment=conf["segment"],
-        domain='time',
         fft_size=conf["fft_size"],
         window_size=conf["window_size"],
         hop_size=conf["hop_size"],
@@ -218,11 +217,3 @@ if __name__ == "__main__":
     arg_dic["train_conf"] = train_conf
 
     main(arg_dic)
-
-
-"""
-usage:
-CUDA_VISIBLE_DEVICES=1 python test.py --target_model ConvTasNet \
-    --test_dir augmented_dataset/metadata/test/ --task linear_mono \
-        --out_dir=ConvTasNet_model/eval/tmp --exp_dir=ConvTasNet_model/exp/tmp
-"""
