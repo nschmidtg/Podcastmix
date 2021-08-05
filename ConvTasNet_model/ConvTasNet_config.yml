@@ -21,7 +21,7 @@ training:
   half_lr: yes
   early_stop: yes
   multi_speakers: yes
-  normalize: yes
+  normalize: no
 # Optim config
 optim:
   optimizer: adam

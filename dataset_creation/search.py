@@ -1,7 +1,7 @@
 import requests
 import json
 import os
-client_id = '08bac555'
+client_id = 'YOUR JAMENDO CLIENT ID'
 
 json_keys = {}
 last_offset = 1
@@ -25,9 +25,9 @@ for i in range(n_pages):
             last_offset += 1
             counter += 1
 
-if not os.path.isdir('Jamendo'):
-    os.mkdir('Jamendo')
+if not os.path.isdir('../Jamendo'):
+    os.mkdir('../Jamendo')
 
-file_name = 'Jamendo/metadata.json'
+file_name = '../Jamendo/metadata.json'
 with open(file_name, 'w') as outfile:
     json.dump(json_keys, outfile)
