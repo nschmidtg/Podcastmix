@@ -37,7 +37,6 @@ def main(conf):
         sample_rate=conf["data"]["sample_rate"],
         original_sample_rate=conf["data"]["original_sample_rate"],
         segment=conf["data"]["segment"],
-        domain=conf["data"]["domain"],
         fft_size=conf["data"]["fft_size"],
         window_size=conf["data"]["window_size"],
         hop_size=conf["data"]["hop_size"],
@@ -49,7 +48,6 @@ def main(conf):
         sample_rate=conf["data"]["sample_rate"],
         original_sample_rate=conf["data"]["original_sample_rate"],
         segment=conf["data"]["segment"],
-        domain=conf["data"]["domain"],
         fft_size=conf["data"]["fft_size"],
         window_size=conf["data"]["window_size"],
         hop_size=conf["data"]["hop_size"],
@@ -202,10 +200,3 @@ if __name__ == "__main__":
     # have it so we included it here but it is not used.
     arg_dic, plain_args = parse_args_as_dict(parser, return_plain_args=True)
     main(arg_dic)
-
-"""
-usage:
-CUDA_VISIBLE_DEVICES=1 python train.py --config_model \
-    ConvTasNet_model/ConvTasNet_config.yml \
-       --resume_from=DPTNet_model/exp/tmp/checkpoints/epoch\=28-step\=224691.ckpt
-"""

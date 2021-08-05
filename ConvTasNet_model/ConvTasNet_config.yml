@@ -30,7 +30,6 @@ optim:
 # Data config
 data:
   original_sample_rate: 44100
-  domain: time
   train_dir: podcastmix/metadata/train
   valid_dir: podcastmix/metadata/val
   sample_rate: 44100

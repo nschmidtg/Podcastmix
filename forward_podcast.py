@@ -143,10 +143,3 @@ if __name__ == "__main__":
     arg_dic["train_conf"] = train_conf
 
     main(arg_dic)
-
-"""
-usage: 
-python forward_podcast.py --test_dir=podcasts --target_model=ConvTasNet \
-    --exp_dir=../../Downloads/exp_25_may/tmp --out_dir=podcasts/ConvTasNet\
-         --segment=15
-"""

@@ -125,7 +125,6 @@ def main(conf):
     # Handle device placement
     if conf["use_gpu"]:
         model.cuda()
-    model_device = next(model.parameters()).device
     test_set = PodcastLoader(
         conf["test_dir"],
         sample_rate=44100,
@@ -246,8 +245,3 @@ if __name__ == "__main__":
 
     main(arg_dic)
 
-
-"""
-usage:
-python test_real.py --target_model ConvTasNet --test_dir podcastmix/test-real/metadata --out_dir=ConvTasNet/eval/tmp --exp_dir=../../Desktop/experiments-defense-epochs/ConvTasNet_model/exp-92-epochs-LogL1/tmp/ --use_gpu=0
-"""
