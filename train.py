@@ -37,9 +37,6 @@ def main(conf):
         sample_rate=conf["data"]["sample_rate"],
         original_sample_rate=conf["data"]["original_sample_rate"],
         segment=conf["data"]["segment"],
-        fft_size=conf["data"]["fft_size"],
-        window_size=conf["data"]["window_size"],
-        hop_size=conf["data"]["hop_size"],
         shuffle_tracks=True,
         multi_speakers=conf["training"]["multi_speakers"]
     )
@@ -48,9 +45,6 @@ def main(conf):
         sample_rate=conf["data"]["sample_rate"],
         original_sample_rate=conf["data"]["original_sample_rate"],
         segment=conf["data"]["segment"],
-        fft_size=conf["data"]["fft_size"],
-        window_size=conf["data"]["window_size"],
-        hop_size=conf["data"]["hop_size"],
         shuffle_tracks=True,
         multi_speakers=conf["training"]["multi_speakers"]
     )

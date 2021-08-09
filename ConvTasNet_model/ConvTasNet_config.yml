@@ -21,7 +21,6 @@ training:
   half_lr: yes
   early_stop: yes
   multi_speakers: yes
-  normalize: no
 # Optim config
 optim:
   optimizer: adam
@@ -35,6 +34,3 @@ data:
   sample_rate: 44100
   n_src: 2
   segment: 2
-  fft_size: no
-  hop_size: no
-  window_size: 1024

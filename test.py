@@ -86,9 +86,6 @@ def main(conf):
         sample_rate=conf["sample_rate"],
         original_sample_rate=conf["original_sample_rate"],
         segment=conf["segment"],
-        fft_size=conf["fft_size"],
-        window_size=conf["window_size"],
-        hop_size=conf["hop_size"],
         shuffle_tracks=False,
         multi_speakers=conf["multi_speakers"]
     )
@@ -209,9 +206,6 @@ if __name__ == "__main__":
         train_conf = yaml.safe_load(f)
     arg_dic["sample_rate"] = train_conf["data"]["sample_rate"]
     arg_dic["segment"] = train_conf["data"]["segment"]
-    arg_dic["fft_size"] = train_conf["data"]["fft_size"]
-    arg_dic["hop_size"] = train_conf["data"]["hop_size"]
-    arg_dic["window_size"] = train_conf["data"]["window_size"]
     arg_dic["original_sample_rate"] = train_conf["data"]["original_sample_rate"]
     arg_dic["multi_speakers"] = train_conf["training"]["multi_speakers"]
     arg_dic["train_conf"] = train_conf
