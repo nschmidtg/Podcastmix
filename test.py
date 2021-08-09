@@ -98,7 +98,6 @@ def main(conf):
         conf["n_save_ex"] = len(test_set)
     save_idx = random.sample(range(len(test_set)), conf["n_save_ex"])
     series_list = []
-    window = torch.hamming_window(conf["window_size"])
 
     torch.no_grad().__enter__()
     for idx in tqdm(range(len(test_set))):
