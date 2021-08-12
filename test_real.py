@@ -25,8 +25,8 @@ class PodcastLoader(Dataset):
         self.csv_dir = csv_dir
         self.segment = segment
         self.sample_rate = sample_rate
-        self.mix_csv_path = os.path.join(self.csv_dir, 'mix.csv')
-        self.df_mix = pd.read_csv(self.mix_csv_path, engine='python')
+        self.mix_csv_path = os.path.join(self.csv_dir, 'metadata.csv')
+        self.df_mix = pd.read_csv(self.mix_csv_path, engine='python', delimiter=';')
         torchaudio.set_audio_backend(backend='soundfile')
 
     def __len__(self):
@@ -128,7 +128,7 @@ def main(conf):
     test_set = PodcastLoader(
         conf["test_dir"],
         sample_rate=44100,
-        segment=2
+        segment=18
     )
     # Used to reorder sources only
 
@@ -170,7 +170,7 @@ def main(conf):
 
         # Save some examples in a folder. Wav files and metrics as text.
         if idx in save_idx:
-            local_save_dir = os.path.join(ex_save_dir, "ex_{}/".format(idx))
+            local_save_dir = os.path.join(ex_save_dir, "ex_{}/".format(idx + 1))
             os.makedirs(local_save_dir, exist_ok=True)
             sf.write(
                 local_save_dir + "mixture.wav",
