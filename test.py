@@ -134,7 +134,7 @@ def main(conf):
 
         # Save some examples in a folder. Wav files and metrics as text.
         if idx in save_idx:
-            local_save_dir = os.path.join(ex_save_dir, "ex_{}/".format(idx))
+            local_save_dir = os.path.join(ex_save_dir, "ex_{}/".format(idx + 1))
             os.makedirs(local_save_dir, exist_ok=True)
             print(mix_np.shape)
             sf.write(
