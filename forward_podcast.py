@@ -17,6 +17,7 @@ class PodcastLoader(Dataset):
         self.segment = segment
         self.sample_rate = sample_rate
         self.paths = [os.path.join(csv_dir, f) for f in os.listdir(csv_dir) if (os.path.isfile(os.path.join(csv_dir, f)) and '.wav' in f)]
+        self.paths = sorted(self.paths, key=lambda i: int(os.path.splitext(os.path.basename(i))[0]))
         torchaudio.set_audio_backend(backend='soundfile')
 
     def __len__(self):
@@ -115,7 +116,7 @@ def main(conf):
         est_sources_np = est_sources.squeeze(0).cpu().data.numpy()
 
         # Save some examples in a folder. Wav files and metrics as text.
-        local_save_dir = os.path.join(ex_save_dir, "ex_{}/".format(idx))
+        local_save_dir = os.path.join(ex_save_dir, "ex_{}/".format(idx + 1))
         os.makedirs(local_save_dir, exist_ok=True)
         sf.write(
             local_save_dir + "mixture.wav",
