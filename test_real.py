@@ -192,10 +192,10 @@ def main(conf):
                     est_src,
                     conf["sample_rate"],
                 )
-            import pdb;pdb.set_trace()
-            # Write local metrics to the example folder.
-            with open(local_save_dir + "metrics.json", "w") as f:
-                json.dump(utt_metrics, f, indent=0)
+        #import pdb;pdb.set_trace()
+        # Write local metrics to the example folder.
+        with open(local_save_dir + "metrics.json", "w") as f:
+            json.dump({k:v.tolist() for k,v in utt_metrics.items()}, f, indent=0)
 
 
     # Save all metrics to the experiment folder.
