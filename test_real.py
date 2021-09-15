@@ -165,6 +165,7 @@ def main(conf):
             est_sources_np,
             sample_rate=conf["sample_rate"],
             metrics_list=COMPUTE_METRICS,
+            average=False
         )
         series_list.append(pd.Series(utt_metrics))
 
