@@ -1,4 +1,4 @@
-# Master Thesis
+# Podcastmixx: A dataset for separating music and speech in podcasts
 
 ## Installation
 Create a conda environment:
