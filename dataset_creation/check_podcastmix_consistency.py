@@ -45,27 +45,29 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
     print('List in csv minus list of files:', len(diff2))
 
     print('format errors:', format_error)
+    
 # check consistency of the dataset:
-files_path = '../podcastmix/test/music'
-csv_path = '../podcastmix/metadata/test/music.csv'
+root_dir = '../podcastmix-correct/podcastmix-synth'
+files_path = os.path.join(root_dir, 'test/music')
+csv_path = os.path.join(root_dir, 'metadata/test/music.csv')
 check_files_against_csv(csv_path, files_path, 14)
 
-files_path = '../podcastmix/val/music'
-csv_path = '../podcastmix/metadata/val/music.csv'
+files_path = os.path.join(root_dir, 'val/music')
+csv_path = os.path.join(root_dir, 'metadata/val/music.csv')
 check_files_against_csv(csv_path, files_path, 14)
 
-files_path = '../podcastmix/train/music'
-csv_path = '../podcastmix/metadata/train/music.csv'
+files_path = os.path.join(root_dir, 'train/music')
+csv_path = os.path.join(root_dir, 'metadata/train/music.csv')
 check_files_against_csv(csv_path, files_path, 14)
 
-files_path = '../podcastmix/train/speech'
-csv_path = '../podcastmix/metadata/train/speech.csv'
+files_path = os.path.join(root_dir, 'train/speech')
+csv_path = os.path.join(root_dir, 'metadata/train/speech.csv')
 check_files_against_csv(csv_path, files_path, 5)
 
-files_path = '../podcastmix/val/speech'
-csv_path = '../podcastmix/metadata/val/speech.csv'
+files_path = os.path.join(root_dir, 'val/speech')
+csv_path = os.path.join(root_dir, 'metadata/val/speech.csv')
 check_files_against_csv(csv_path, files_path, 5)
 
-files_path = '../podcastmix/test/speech'
-csv_path = '../podcastmix/metadata/test/speech.csv'
+files_path = os.path.join(root_dir, 'test/speech')
+csv_path = os.path.join(root_dir, 'metadata/test/speech.csv')
 check_files_against_csv(csv_path, files_path, 5)

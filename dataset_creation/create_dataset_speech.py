@@ -11,6 +11,7 @@ import sys
 import json
 import csv
 import torchaudio
+from ..utils.resample_and_copy import resample_and_copy
 
 """
 Create the augmented dataset
@@ -74,38 +75,14 @@ speech_headers = [
     "speech_path",
     "length"
     ]
-music_headers = [
-    "music_ID",
-    "jamendo_id",
-    "name",
-    "artist_name",
-    "album_name",
-    "license_ccurl",
-    "releasedate",
-    "image",
-    "vocalinstrumental",
-    "lang",
-    "gender",
-    "acousticelectric",
-    "speed",
-    "tags",
-    "music_path",
-    "length"
-]
 
 csv_path_tr_s = os.path.join(metadata_path, 'train/speech.csv')
-csv_path_tr_m = os.path.join(metadata_path, 'train/music.csv')
 csv_path_va_s = os.path.join(metadata_path, 'val/speech.csv')
-csv_path_va_m = os.path.join(metadata_path, 'val/music.csv')
 csv_path_te_s = os.path.join(metadata_path, 'test/speech.csv')
-csv_path_te_m = os.path.join(metadata_path, 'test/music.csv')
 
 create_csv_metadata(csv_path_tr_s, speech_headers)
-create_csv_metadata(csv_path_tr_m, music_headers)
 create_csv_metadata(csv_path_va_s, speech_headers)
-create_csv_metadata(csv_path_va_m, music_headers)
 create_csv_metadata(csv_path_te_s, speech_headers)
-create_csv_metadata(csv_path_te_m, music_headers)
 
 # initialize the random seed
 random.seed(1)
@@ -137,56 +114,30 @@ for line in lines:
 # The new 44.1hKz versions are then written in the respective directory
 # inside the podcastmix. the metadata csv for the podcastmix is also filled
 
-
-def resample_and_copy(destination, destination_sr):
-    # print(destination)
-    exists = True
-    if not os.path.exists(destination):
-        # resample from 48kHz -> 44.1kHz
-        exists = False
-        audio, original_sr = torchaudio.load(speech_path_dir, normalize=True)
-        if not original_sr == destination_sr:
-            audio = torchaudio.transforms.Resample(
-                original_sr,
-                destination_sr
-            )(audio)
-        torchaudio.save(
-            filepath=destination,
-            src=audio,
-            sample_rate=destination_sr,
-            bits_per_sample=16
-        )
-    # copyfile(speech_path_dir, destination)
-
-    return audio, exists
-
 # list all subdirectories in VCTK:
 speakers = [f for f in listdir(speech_path)]
 destination_sr = 44100
 counter = 0
 for i, speaker in enumerate(speakers):
     print(i, '/', len(speakers), 'speakers')
-    # speech_files = []
     for path, subdirs, files in os.walk(os.path.join(speech_path, speaker)):
         for name in files:
-            # print(counter, '/', len(files))
             speech_path_dir = os.path.join(path, name)
-            print(speech_path_dir)
-            if i < int(train_prop * len(speakers)):
-                # train
-                destination = train_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
-                csv_path = csv_path_tr_s
-            elif i >= int(train_prop * len(speakers)) and i < int((train_prop + val_prop) * len(speakers)):
-                # val
-                destination = val_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
-                csv_path = csv_path_va_s
-            else:
-                # test
-                destination = test_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
-                csv_path = csv_path_te_s
-            audio, exists = resample_and_copy(destination, destination_sr)
-            # print(destination)
-            if True:
+            # arbitrarily pick mic1
+            if 'mic1' in speech_path_dir:
+                if i < int(train_prop * len(speakers)):
+                    # train
+                    destination = train_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
+                    csv_path = csv_path_tr_s
+                elif i >= int(train_prop * len(speakers)) and i < int((train_prop + val_prop) * len(speakers)):
+                    # val
+                    destination = val_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
+                    csv_path = csv_path_va_s
+                else:
+                    # test
+                    destination = test_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
+                    csv_path = csv_path_te_s
+                audio = resample_and_copy(speech_path_dir, destination, destination_sr)
                 with open(csv_path, 'a', newline='') as file:
                     writer = csv.writer(file)
                     element_length = audio.shape[-1]
@@ -204,4 +155,4 @@ for i, speaker in enumerate(speakers):
                             element_length
                         ]
                     )
-            counter += 1
+                counter += 1
