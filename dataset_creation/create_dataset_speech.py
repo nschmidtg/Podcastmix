@@ -51,10 +51,10 @@ create_folder_structure(test_path)
 
 # create the metadata directory
 metadata_path = os.path.join(root_dir, 'metadata')
-os.makedirs(metadata_path, exist_ok=False)
-os.makedirs(os.path.join(metadata_path, 'train'), exist_ok=False)
-os.makedirs(os.path.join(metadata_path, 'test'), exist_ok=False)
-os.makedirs(os.path.join(metadata_path, 'val'), exist_ok=False)
+os.makedirs(metadata_path, exist_ok=True)
+os.makedirs(os.path.join(metadata_path, 'train'), exist_ok=True)
+os.makedirs(os.path.join(metadata_path, 'test'), exist_ok=True)
+os.makedirs(os.path.join(metadata_path, 'val'), exist_ok=True)
 
 
 def create_csv_metadata(csv_path, headers):
@@ -139,6 +139,7 @@ for line in lines:
 
 
 def resample_and_copy(destination, destination_sr):
+    # print(destination)
     exists = True
     if not os.path.exists(destination):
         # resample from 48kHz -> 44.1kHz
@@ -156,37 +157,40 @@ def resample_and_copy(destination, destination_sr):
             bits_per_sample=16
         )
     # copyfile(speech_path_dir, destination)
-    
+
     return audio, exists
 
 # list all subdirectories in VCTK:
-speakers = [f for f in listdir(speech_path)][10]
+speakers = [f for f in listdir(speech_path)]
 destination_sr = 44100
 counter = 0
 for i, speaker in enumerate(speakers):
     print(i, '/', len(speakers), 'speakers')
-    speech_files = []
+    # speech_files = []
     for path, subdirs, files in os.walk(os.path.join(speech_path, speaker)):
         for name in files:
+            # print(counter, '/', len(files))
             speech_path_dir = os.path.join(path, name)
-            if counter < int(train_prop * len(speakers)):
+            print(speech_path_dir)
+            if i < int(train_prop * len(speakers)):
                 # train
                 destination = train_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
-                csv_path = '../podcastmix/metadata/train/speech.csv'
-            elif counter >= int(train_prop * len(speakers)) and counter < int((train_prop + val_prop) * len(speakers)):
+                csv_path = csv_path_tr_s
+            elif i >= int(train_prop * len(speakers)) and i < int((train_prop + val_prop) * len(speakers)):
                 # val
                 destination = val_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
-                csv_path = '../podcastmix/metadata/val/speech.csv'
+                csv_path = csv_path_va_s
             else:
                 # test
                 destination = test_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
-                csv_path = '../podcastmix/metadata/test/speech.csv'
+                csv_path = csv_path_te_s
             audio, exists = resample_and_copy(destination, destination_sr)
-            # copyfile(speech_path_dir, destination)
-            if not exists:
+            # print(destination)
+            if True:
                 with open(csv_path, 'a', newline='') as file:
                     writer = csv.writer(file)
-                    element_length = audio.num_frames
+                    element_length = audio.shape[-1]
+                    # print(element_length)
                     speech_cmp = destination.split('/')[-1].split('_')
                     params = speaker_params[speech_cmp[0]]
                     writer.writerow(
@@ -200,4 +204,4 @@ for i, speaker in enumerate(speakers):
                             element_length
                         ]
                     )
-                counter += 1
+            counter += 1
