@@ -10,8 +10,6 @@ import re
 import sys
 import json
 import csv
-import torchaudio
-import librosa
 
 """
 Create the augmented dataset
