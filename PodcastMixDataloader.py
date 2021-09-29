@@ -7,11 +7,7 @@ import numpy as np
 import random
 from utils.resampler import Resampler
 
-class PodcastMixMulti(Dataset):
-    """
-    TODO
-    """
-
+class PodcastMixDataloader(Dataset):
     dataset_name = "PodcastMix"
 
     def __init__(self, csv_dir, sample_rate=44100, original_sample_rate= 44100, segment=2,
