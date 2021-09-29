@@ -11,7 +11,7 @@ import sys
 import json
 import csv
 import torchaudio
-sys.path.append('../utils')
+sys.path.append('utils')
 from resample_and_copy import resample_and_copy
 
 """
@@ -20,11 +20,11 @@ using the VCTK and the JamendoPopular datasets, an augmented
 podcast/radioshow like dataset is created
 """
 # modify if necesary:
-music_path = "../Jamendo/music"
-music_metadata_path = "../Jamendo/metadata.json"
+music_path = "Jamendo/music"
+music_metadata_path = "Jamendo/metadata.json"
 
 # create files structure
-root_dir = '../podcastmix-correct/podcastmix-synth'
+root_dir = 'podcastmix/podcastmix-synth'
 if not os.path.exists(root_dir):
     os.makedirs(root_dir)
 

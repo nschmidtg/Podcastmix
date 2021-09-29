@@ -24,7 +24,7 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
                 # print(path)
                 # add to array to check metadata against list of files
                 if os.path.isfile(path):
-                    not_missing.append(path.split('/')[5])
+                    not_missing.append(path.split('/')[4])
                 else:
                     print("im not file", path)
                 # check channels sr and bit depth
@@ -46,14 +46,14 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
     print('List of files minus list in csv:', len(diff))
     diff2 = list(set(not_missing) - set(onlyfiles))
     print('List in csv minus list of files:', len(diff2))
-    print('Number of lines in csv', list(set(not_missing)))
-    print('Number of files in folder', set(onlyfiles))
+    print('Number of lines in csv', len(list(set(not_missing))))
+    print('Number of files in folder', len(set(onlyfiles)))
     print('Number of hours', samples_sum/44100/60/60)
 
     print('format errors:', format_error)
 
 # check consistency of the dataset:
-root_dir = '../podcastmix/podcastmix-synth'
+root_dir = 'podcastmix/podcastmix-synth'
 files_path = os.path.join(root_dir, 'test/music')
 csv_path = os.path.join(root_dir, 'metadata/test/music.csv')
 check_files_against_csv(csv_path, files_path, 14)
