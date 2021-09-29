@@ -11,6 +11,7 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
     format_error['sr'] = []
     format_error['bits_per_sample'] = []
     format_error['num_channels'] = []
+    samples_sum = 0
     with open(csv_path, 'r') as read_obj:
         csv_reader = reader(read_obj)
         header = next(csv_reader)
@@ -37,6 +38,7 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
                     format_error['num_channels_music'].append(path)
                 if(('speech' in path) and (not info.num_channels == 1)):
                     format_error['num_channels_speech'].append(path)
+                samples_sum += info.num_frames
 
     onlyfiles = [f for f in listdir(files_path) if isfile(join(files_path, f))]
     print('Check diff between:', files_path, csv_path)
@@ -44,11 +46,14 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
     print('List of files minus list in csv:', len(diff))
     diff2 = list(set(not_missing) - set(onlyfiles))
     print('List in csv minus list of files:', len(diff2))
+    print('Number of lines in csv', list(set(not_missing)))
+    print('Number of files in folder', set(onlyfiles))
+    print('Number of hours', samples_sum/44100/60/60)
 
     print('format errors:', format_error)
 
 # check consistency of the dataset:
-root_dir = '../podcastmix-correct/podcastmix-synth'
+root_dir = '../podcastmix/podcastmix-synth'
 files_path = os.path.join(root_dir, 'test/music')
 csv_path = os.path.join(root_dir, 'metadata/test/music.csv')
 check_files_against_csv(csv_path, files_path, 14)
