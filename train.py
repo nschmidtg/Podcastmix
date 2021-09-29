@@ -11,7 +11,7 @@ from pytorch_lightning import seed_everything
 from pytorch_lightning.plugins import DDPPlugin
 import sys
 
-from PodcastMixMulti import PodcastMixMulti
+from PodcastMixDataloader import PodcastMixDataloader
 from asteroid.engine.optimizers import make_optimizer
 from asteroid.engine.system import System
 from logl2 import LogL2Time
@@ -32,7 +32,7 @@ parser.add_argument(
 )
 
 def main(conf):
-    train_set = PodcastMixMulti(
+    train_set = PodcastMixDataloader(
         csv_dir=conf["data"]["train_dir"],
         sample_rate=conf["data"]["sample_rate"],
         original_sample_rate=conf["data"]["original_sample_rate"],
@@ -40,7 +40,7 @@ def main(conf):
         shuffle_tracks=True,
         multi_speakers=conf["training"]["multi_speakers"]
     )
-    val_set = PodcastMixMulti(
+    val_set = PodcastMixDataloader(
         csv_dir=conf["data"]["valid_dir"],
         sample_rate=conf["data"]["sample_rate"],
         original_sample_rate=conf["data"]["original_sample_rate"],
