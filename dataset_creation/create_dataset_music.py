@@ -11,7 +11,8 @@ import sys
 import json
 import csv
 import torchaudio
-from ..utils.resample_and_copy import resample_and_copy
+sys.path.append('../utils')
+from resample_and_copy import resample_and_copy
 
 """
 Create the augmented dataset
@@ -123,7 +124,10 @@ destination_sr = 44100
 # read the json and start copying the files to the respective directory.
 # at the same time the csv files are being filled.
 artists_counter = 0
-for artist_id, song_id_array in artists:
+# print(artists)
+
+for artist_id in artists.keys():
+    song_id_array = artists[artist_id]
     for song_id in song_id_array:
         song = json_file.get(song_id)
         try:
@@ -137,17 +141,17 @@ for artist_id, song_id_array in artists:
                     # train
                     destination = train_path + '/music/' + song['id'] + '.flac'
                     song['local_path'] = destination
-                    csv_path = '../podcastmix/metadata/train/music.csv'
+                    csv_path = csv_path_tr_m
                 elif artists_counter >= int(train_prop * len(artists)) and artists_counter < int((train_prop + val_prop) * len(artists)):
                     # val
                     destination = val_path + '/music/' + song['id'] + '.flac'
                     song['local_path'] = destination
-                    csv_path = '../podcastmix/metadata/val/music.csv'
+                    csv_path = csv_path_va_m
                 else:
                     # test
                     destination = test_path + '/music/' + song['id'] + '.flac'
                     song['local_path'] = destination
-                    csv_path = '../podcastmix/metadata/test/music.csv'
+                    csv_path = csv_path_te_m
                 audio = resample_and_copy(current_file_path, destination, destination_sr)
                 with open(csv_path, 'a', newline='') as file:
                     writer = csv.writer(file)

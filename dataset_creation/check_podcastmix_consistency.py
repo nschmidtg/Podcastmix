@@ -20,9 +20,10 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
             for row in csv_reader:
                 # row variable is a list that represents a row in csv
                 path = row[index_of_path_in_csv]
+                # print(path)
                 # add to array to check metadata against list of files
                 if os.path.isfile(path):
-                    not_missing.append(path.split('/')[3])
+                    not_missing.append(path.split('/')[5])
                 else:
                     print("im not file", path)
                 # check channels sr and bit depth
@@ -45,7 +46,7 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
     print('List in csv minus list of files:', len(diff2))
 
     print('format errors:', format_error)
-    
+
 # check consistency of the dataset:
 root_dir = '../podcastmix-correct/podcastmix-synth'
 files_path = os.path.join(root_dir, 'test/music')

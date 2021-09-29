@@ -11,7 +11,8 @@ import sys
 import json
 import csv
 import torchaudio
-from ..utils.resample_and_copy import resample_and_copy
+sys.path.append('../utils')
+from resample_and_copy import resample_and_copy
 
 """
 Create the augmented dataset
