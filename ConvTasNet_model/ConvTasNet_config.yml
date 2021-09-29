@@ -29,8 +29,8 @@ optim:
 # Data config
 data:
   original_sample_rate: 44100
-  train_dir: podcastmix/metadata/train
-  valid_dir: podcastmix/metadata/val
+  train_dir: podcastmix/podcastmix-synth/metadata/train
+  valid_dir: podcastmix/podcastmix-synth/metadata/val
   sample_rate: 44100
   n_src: 2
   segment: 2
