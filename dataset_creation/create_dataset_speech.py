@@ -112,6 +112,8 @@ for line in lines:
 
 # list all subdirectories in VCTK:
 speakers = [f for f in listdir(speech_path)]
+random.shuffle(speakers)
+
 destination_sr = 44100
 counter = 0
 for i, speaker in enumerate(speakers):
@@ -133,11 +135,11 @@ for i, speaker in enumerate(speakers):
                     # test
                     destination = test_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
                     csv_path = csv_path_te_s
-                audio = resample_and_copy(speech_path_dir, destination, destination_sr)
+                audio, exists = resample_and_copy(speech_path_dir, destination, destination_sr)
                 with open(csv_path, 'a', newline='') as file:
                     writer = csv.writer(file)
                     element_length = audio.shape[-1]
-                    # print(element_length)
+                    print(element_length)
                     speech_cmp = destination.split('/')[-1].split('_')
                     params = speaker_params[speech_cmp[0]]
                     writer.writerow(
