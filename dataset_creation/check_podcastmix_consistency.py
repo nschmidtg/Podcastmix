@@ -28,6 +28,7 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
                 else:
                     print("im not file", path)
                 # check channels sr and bit depth
+                # print(path)
                 info = torchaudio.info(path)
                 # print(info.sample_rate, info.bits_per_sample, info.num_channels)
                 if(not info.sample_rate == 44100):
@@ -44,6 +45,9 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
     print('Check diff between:', files_path, csv_path)
     diff = list(set(onlyfiles) - set(not_missing))
     print('List of files minus list in csv:', len(diff))
+
+    print(list(set(onlyfiles)- set(not_missing)))
+
     diff2 = list(set(not_missing) - set(onlyfiles))
     print('List in csv minus list of files:', len(diff2))
     print('Number of lines in csv', len(list(set(not_missing))))
@@ -56,15 +60,15 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
 root_dir = 'podcastmix/podcastmix-synth'
 files_path = os.path.join(root_dir, 'test/music')
 csv_path = os.path.join(root_dir, 'metadata/test/music.csv')
-check_files_against_csv(csv_path, files_path, 14)
+check_files_against_csv(csv_path, files_path, 15)
 
 files_path = os.path.join(root_dir, 'val/music')
 csv_path = os.path.join(root_dir, 'metadata/val/music.csv')
-check_files_against_csv(csv_path, files_path, 14)
+check_files_against_csv(csv_path, files_path, 15)
 
 files_path = os.path.join(root_dir, 'train/music')
 csv_path = os.path.join(root_dir, 'metadata/train/music.csv')
-check_files_against_csv(csv_path, files_path, 14)
+check_files_against_csv(csv_path, files_path, 15)
 
 files_path = os.path.join(root_dir, 'train/speech')
 csv_path = os.path.join(root_dir, 'metadata/train/speech.csv')

@@ -63,6 +63,7 @@ music_headers = [
     "jamendo_id",
     "name",
     "artist_name",
+    "artist_id",
     "album_name",
     "license_ccurl",
     "releasedate",
@@ -125,18 +126,21 @@ destination_sr = 44100
 # at the same time the csv files are being filled.
 artists_counter = 0
 # print(artists)
+artists_keys = list(set(artists.keys()))
+random.shuffle(artists_keys)
 
-for artist_id in artists.keys():
+
+for artist_id in artists_keys:
     song_id_array = artists[artist_id]
     for song_id in song_id_array:
         song = json_file.get(song_id)
         try:
             current_file_path = music_path + '/' + song['id'] + '.flac'
-            audio_info = torchaudio.info(current_file_path)
+            # audio_info = torchaudio.info(current_file_path)
             print(counter, '/', len(keys))
             exists = False
-            channels = audio_info.num_channels
-            if channels == 2:
+            # channels = audio_info.num_channels
+            if True:
                 if artists_counter < int(train_prop * len(artists)):
                     # train
                     destination = train_path + '/music/' + song['id'] + '.flac'
@@ -152,30 +156,32 @@ for artist_id in artists.keys():
                     destination = test_path + '/music/' + song['id'] + '.flac'
                     song['local_path'] = destination
                     csv_path = csv_path_te_m
-                audio = resample_and_copy(current_file_path, destination, destination_sr)
-                with open(csv_path, 'a', newline='') as file:
-                    writer = csv.writer(file)
-                    song_length = audio.shape[-1]
-                    # flatten tags
-                    tags = json.dumps(song["musicinfo"]["tags"])
-                    writer.writerow(
-                        [
-                            song['id'],
-                            song['id'],
-                            song['name'].replace(',', ''),
-                            song['artist_name'].replace(',', ''),
-                            song['album_name'].replace(',', ''),
-                            song['license_ccurl'],
-                            song['releasedate'],
-                            song["image"],
-                            song["musicinfo"]["vocalinstrumental"],
-                            song["musicinfo"]["lang"],
-                            song["musicinfo"]["gender"],
-                            song["musicinfo"]["acousticelectric"],
-                            song["musicinfo"]["speed"],
-                            tags.replace(',', '/'),
-                            song['local_path'],
-                            song_length])
+                audio, exists = resample_and_copy(current_file_path, destination, destination_sr)
+                if exists == False and audio.shape[0] == 2:
+                    with open(csv_path, 'a', newline='') as file:
+                        writer = csv.writer(file)
+                        song_length = audio.shape[-1]
+                        # flatten tags
+                        tags = json.dumps(song["musicinfo"]["tags"])
+                        writer.writerow(
+                            [
+                                song['id'],
+                                song['id'],
+                                song['name'].replace(',', ''),
+                                song['artist_name'].replace(',', ''),
+                                song['artist_id'],
+                                song['album_name'].replace(',', ''),
+                                song['license_ccurl'],
+                                song['releasedate'],
+                                song["image"],
+                                song["musicinfo"]["vocalinstrumental"],
+                                song["musicinfo"]["lang"],
+                                song["musicinfo"]["gender"],
+                                song["musicinfo"]["acousticelectric"],
+                                song["musicinfo"]["speed"],
+                                tags.replace(',', '/'),
+                                song['local_path'],
+                                song_length])
             else:
                 errors.append(song_id)
         except Exception as e:
