@@ -61,10 +61,10 @@ class UNet(BaseModel):
         mean = torch.mean(x_in)
         std = torch.std(x_in)
         x_in = (x_in - mean) / (1e-5 + std)
-        x_in = x_in
+        x_in = x_in.cuda()
 
         # compute normalized spectrogram
-        window = torch.hamming_window(self.window_size)
+        window = torch.hamming_window(self.window_size, device='cuda')
         X_in = torch.stft(x_in, self.fft_size, self.hop_size, window=window, normalized=True)
         real, imag = X_in.unbind(-1)
         complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
