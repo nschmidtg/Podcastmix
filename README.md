@@ -47,7 +47,7 @@ CUDA_VISIBLE_DEVICES=0,1 python train.py \
 ``` 
 CUDA_VISIBLE_DEVICES=0,1 python test.py --target_model [MODEL] \
     --test_dir podcastmix/metadata/test/ \
-    --out_dir=<where-to-save-separations> --exp_dir=<path to best_model.pth>
+    --out_dir=<where-to-save-separations> --exp_dir=<path to best_model.pth> --use_gpu=1
 ```
 ### Evaluate over real podcasts:
 ```
@@ -61,7 +61,7 @@ CUDA_VISIBLE_DEVICES=0,1 python test_real.py --target_model [MODEL] \
 CUDA_VISIBLE_DEVICES=0,1 python forward_podcast.py \
     --test_dir=podcastsmix/podcasts_no_reference --target_model=[MODEL] \
     --exp_dir=<path to best_model.pth> --out_dir=<where-to-save-separations> \
-    --segment=18 --sample_rate=44100
+    --segment=18 --sample_rate=44100 --use_gpu=1
 ```
 
 ## Download examples from the synthetic, real and no-reference test sets:
