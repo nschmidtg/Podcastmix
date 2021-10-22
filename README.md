@@ -1,4 +1,19 @@
-# Podcastmixx: A dataset for separating music and speech in podcasts
+# Podcastmix: A dataset for separating music and speech in podcasts
+
+Repository containing the code and precedure to reproduce the [Master Thesis](https://zenodo.org/record/5552353) and [ICASSP publication](TODO).
+All links to download the dataset, train, evaluate and separate Podcasts are included here.
+Feel free to use the dataset for any other purposes.
+
+## Download the dataset:
+
+The dataset is hosted [here](https://drive.google.com/drive/folders/1tpg9WXkl4L0zU84AwLQjrFqnP-jw1t7z)
+
+you can download all the dataset (~480Gb) using
+
+```
+./download_dataset.sh
+```
+
 
 ## Installation
 Create a conda environment:
