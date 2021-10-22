@@ -13,7 +13,7 @@ from utils.my_import import my_import
 
 from asteroid.metrics import get_metrics
 from pytorch_lightning import seed_everything
-from PodcastMixMulti import PodcastMixMulti
+from PodcastMixDataloader import PodcastMixDataloader
 from asteroid.metrics import MockWERTracker
 
 seed_everything(1, workers=True)
@@ -81,7 +81,7 @@ def main(conf):
     # Handle device placement
     if conf["use_gpu"]:
         model.cuda()
-    test_set = PodcastMixMulti(
+    test_set = PodcastMixDataloader(
         csv_dir=conf["test_dir"],
         sample_rate=conf["sample_rate"],
         original_sample_rate=conf["original_sample_rate"],

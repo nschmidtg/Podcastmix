@@ -11,6 +11,7 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
     format_error['sr'] = []
     format_error['bits_per_sample'] = []
     format_error['num_channels'] = []
+    samples_sum = 0
     with open(csv_path, 'r') as read_obj:
         csv_reader = reader(read_obj)
         header = next(csv_reader)
@@ -20,12 +21,14 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
             for row in csv_reader:
                 # row variable is a list that represents a row in csv
                 path = row[index_of_path_in_csv]
+                # print(path)
                 # add to array to check metadata against list of files
                 if os.path.isfile(path):
-                    not_missing.append(path.split('/')[3])
+                    not_missing.append(path.split('/')[4])
                 else:
                     print("im not file", path)
                 # check channels sr and bit depth
+                # print(path)
                 info = torchaudio.info(path)
                 # print(info.sample_rate, info.bits_per_sample, info.num_channels)
                 if(not info.sample_rate == 44100):
@@ -36,36 +39,45 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
                     format_error['num_channels_music'].append(path)
                 if(('speech' in path) and (not info.num_channels == 1)):
                     format_error['num_channels_speech'].append(path)
+                samples_sum += info.num_frames
 
     onlyfiles = [f for f in listdir(files_path) if isfile(join(files_path, f))]
     print('Check diff between:', files_path, csv_path)
     diff = list(set(onlyfiles) - set(not_missing))
     print('List of files minus list in csv:', len(diff))
+
+    print(list(set(onlyfiles)- set(not_missing)))
+
     diff2 = list(set(not_missing) - set(onlyfiles))
     print('List in csv minus list of files:', len(diff2))
+    print('Number of lines in csv', len(list(set(not_missing))))
+    print('Number of files in folder', len(set(onlyfiles)))
+    print('Number of hours', samples_sum/44100/60/60)
 
     print('format errors:', format_error)
+
 # check consistency of the dataset:
-files_path = '../podcastmix/test/music'
-csv_path = '../podcastmix/metadata/test/music.csv'
-check_files_against_csv(csv_path, files_path, 14)
+root_dir = 'podcastmix/podcastmix-synth'
+files_path = os.path.join(root_dir, 'test/music')
+csv_path = os.path.join(root_dir, 'metadata/test/music.csv')
+check_files_against_csv(csv_path, files_path, 15)
 
-files_path = '../podcastmix/val/music'
-csv_path = '../podcastmix/metadata/val/music.csv'
-check_files_against_csv(csv_path, files_path, 14)
+files_path = os.path.join(root_dir, 'val/music')
+csv_path = os.path.join(root_dir, 'metadata/val/music.csv')
+check_files_against_csv(csv_path, files_path, 15)
 
-files_path = '../podcastmix/train/music'
-csv_path = '../podcastmix/metadata/train/music.csv'
-check_files_against_csv(csv_path, files_path, 14)
+files_path = os.path.join(root_dir, 'train/music')
+csv_path = os.path.join(root_dir, 'metadata/train/music.csv')
+check_files_against_csv(csv_path, files_path, 15)
 
-files_path = '../podcastmix/train/speech'
-csv_path = '../podcastmix/metadata/train/speech.csv'
+files_path = os.path.join(root_dir, 'train/speech')
+csv_path = os.path.join(root_dir, 'metadata/train/speech.csv')
 check_files_against_csv(csv_path, files_path, 5)
 
-files_path = '../podcastmix/val/speech'
-csv_path = '../podcastmix/metadata/val/speech.csv'
+files_path = os.path.join(root_dir, 'val/speech')
+csv_path = os.path.join(root_dir, 'metadata/val/speech.csv')
 check_files_against_csv(csv_path, files_path, 5)
 
-files_path = '../podcastmix/test/speech'
-csv_path = '../podcastmix/metadata/test/speech.csv'
+files_path = os.path.join(root_dir, 'test/speech')
+csv_path = os.path.join(root_dir, 'metadata/test/speech.csv')
 check_files_against_csv(csv_path, files_path, 5)

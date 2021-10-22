@@ -8,7 +8,6 @@ training:
   half_lr: yes
   early_stop: no
   multi_speakers: yes
-  normalize: no # the model will normalize, not the dataloader
 convolution:
   stride: 2
   kernel_size: 5
@@ -22,8 +21,8 @@ data:
   fft_size: 2048
   window_size: 2048
   hop_size: 441
-  train_dir: podcastmix/metadata/train
-  valid_dir: podcastmix/metadata/val
+  train_dir: podcastmix/podcastmix-synth/metadata/train
+  valid_dir: podcastmix/podcastmix-synth/metadata/val
   sample_rate: 44100
   n_src: 2
   segment: 2
