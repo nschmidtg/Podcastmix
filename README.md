@@ -11,9 +11,12 @@ The dataset is hosted [here](https://drive.google.com/drive/folders/1tpg9WXkl4L0
 you can download all the dataset (~480Gb) using
 
 ```
-./download_dataset.sh
+/bin/sh download_dataset.sh
 ```
-
+Then unzip it
+```
+unzip podcastmix-synth.tar.gzaa
+```
 
 ## Installation
 Create a conda environment:
