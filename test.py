@@ -124,6 +124,7 @@ def main(conf):
                 est_sources_np,
                 sample_rate=conf["sample_rate"],
                 metrics_list=COMPUTE_METRICS,
+                average=False
             )
             series_list.append(pd.Series(utt_metrics))
         except:
@@ -156,9 +157,9 @@ def main(conf):
                     est_src,
                     conf["sample_rate"],
                 )
-            # Write local metrics to the example folder.
-            with open(local_save_dir + "metrics.json", "w") as f:
-                json.dump(utt_metrics, f, indent=0)
+        # Write local metrics to the example folder.
+        with open(local_save_dir + "metrics.json", "w") as f:
+            json.dump({k:v.tolist() for k,v in utt_metrics.items()}, f, indent=0)
 
     # Save all metrics to the experiment folder.
     all_metrics_df = pd.DataFrame(series_list)
@@ -183,7 +184,7 @@ def main(conf):
             f.write(wer_card)
 
     with open(os.path.join(eval_save_dir, "final_metrics.json"), "w") as f:
-        json.dump(final_results, f, indent=0)
+        json.dump({k:v.tolist() for k,v in final_results.items()}, f, indent=0)
 
     # for publishing the model:
     # model_dict = torch.load(model_path, map_location="cpu")
