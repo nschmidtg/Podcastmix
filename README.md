@@ -9,7 +9,7 @@ Feel free to use the dataset for any other purposes.
 Download the directory structure with the test sets (podcastmix-real-no-reference and podcastmix-real-with-reference):
 
 ```
-./download_podcastmix.sh
+/bin/bash download_podcastmix.sh
 ```
 
 The train set of the dataset is hosted [here](https://drive.google.com/drive/folders/1tpg9WXkl4L0zU84AwLQjrFqnP-jw1t7z) (~480Gb)
@@ -21,7 +21,7 @@ We provide a script to download each of the files quickly, but it requires that 
 - Click “Authorize APIs” and then “Exchange authorization code for tokens”. Copy the “Access token”.
 - Run the following script using the "Access token" as a parameter:
 ```
-./download_podcastmix_synth_set.sh <Access token>
+/bin/bash download_podcastmix_synth_set.sh <Access token>
 ```
 
 ## Install
