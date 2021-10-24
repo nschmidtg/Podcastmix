@@ -10,7 +10,7 @@ for key in "${!name_id[@]}" ; do
     # echo "$VALUE"
     if [ -f "$KEY" ]; then
         echo "$KEY exists."
-        ERROR=$(sed -n '7p' asdasd.asd)
+        ERROR=$(sed -n '7p' $KEY)
         echo $ERROR
         if [[ $ERROR == *"Invalid Credentials"* ]]; then
             echo "Token has expired, please click on Refresh access token, copy the new code and re-run the command"
