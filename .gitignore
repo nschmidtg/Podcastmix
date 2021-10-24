@@ -1,5 +1,5 @@
 podcasts/*
-# podcastmix/*
+podcastmix/*
 PodcastMix.zip
 OpenUnmix_model/exp/*
 UNet_model/exp/*
@@ -9,9 +9,6 @@ asteroid/*
 UNet_model/exp/*
 ConvTasNet_model/exp/*
 DPTNet_model/exp/*
-# podcastmix/podcastmix-synth/test
-# podcastmix/podcastmix-synth/val
-# podcastmix/podcastmix-synth/train
 __pycache__/*
 VCTK/*
 Jamendo/*
