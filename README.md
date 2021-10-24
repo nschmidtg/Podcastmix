@@ -20,9 +20,17 @@ We provide a script to download each of the files quickly, but it requires that 
 - In the “Select the Scope” box, scroll down, expand “Drive API v3”, and select https://www.googleapis.com/auth/drive.readonly
 - Click “Authorize APIs” and then “Exchange authorization code for tokens”. Copy the “Access token”.
 - Run the following script using the "Access token" as a parameter:
+
+
 ```
 /bin/bash download_podcastmix_synth_set.sh <Access token>
 ```
+
+---
+> **NOTE:**
+> The Access Token has an expiration time (1 hour), so if your connection is not fast enough to download all the compressed files within one hour, you will have to refresh the Access Token and re-run the script using the new Access Token. The script will only download the remaining files and not all of them again.
+
+---
 
 ## Install
 Create a conda environment:
