@@ -1,48 +1,52 @@
 # Podcastmix: A dataset for separating music and speech in podcasts
 
-Repository containing the code and precedure to reproduce the [Master Thesis](https://zenodo.org/record/5552353) and [ICASSP publication](TODO).
+Repository containing the code and precedures to reproduce the [ICASSP publication](TODO) Podcastmix: A dataset for separating music and speech in podcasts.
 All links to download the dataset, train, evaluate and separate Podcasts are included here.
 Feel free to use the dataset for any other purposes.
 
 ## Download the dataset:
 
-The dataset is hosted [here](https://drive.google.com/drive/folders/1tpg9WXkl4L0zU84AwLQjrFqnP-jw1t7z)
+If you only want to download the test sets, you can download them from [here](https://zenodo.org/record/5552353)
 
-you can download all the dataset (~480Gb) using
+The train set of the dataset is hosted [here](https://drive.google.com/drive/folders/1tpg9WXkl4L0zU84AwLQjrFqnP-jw1t7z) (~480Gb)
 
+We provide a script to download each of the files quickly, but it requires that you obtain a OAuth2 ApiKey from the Google Developers Console:
+
+- Go to [OAuth 2.0 Playground](https://developers.google.com/oauthplayground/)
+- In the “Select the Scope” box, scroll down, expand “Drive API v3”, and select https://www.googleapis.com/auth/drive.readonly
+- Click “Authorize APIs” and then “Exchange authorization code for tokens”. Copy the “Access token”.
+- Run the following script using the "Access token" as a parameter:
 ```
-/bin/sh download_dataset.sh
-```
-Then unzip it
-```
-unzip podcastmix-synth.tar.gzaa
+/bin/sh download_dataset.sh <Access token>
 ```
 
-## Installation
+## Install
 Create a conda environment:
-```conda create --name thesis python=3.7```
 
-```conda activate thesis```
+```
+conda env create -f environment.yml
+```
 
-```pip install -r requirements.txt```
+Activate the environment:
 
-Download the dataset:
-
-```wget --no-check-certificate 'https://podcastmix.s3.eu-west-3.amazonaws.com/podcastmix.zip' -O podcastmix.zip```
-
-Unzip it:
-
-```unzip podcastmix.zip```
+```
+conda activate Podcastmix
+```
 
 ## Train network:
 The batch number in the ```[MODEL]_model/[MODEL]_config.yml``` file must match the number of GPUs that you want to train with.
 
-```[MODEL]``` can be any of the following:
+```
+[MODEL]
+```
+
+can be any of the following:
 
 - ConvTasNet
 - UNet
 
 ### Train
+
 ```
 CUDA_VISIBLE_DEVICES=0,1 python train.py \
     --config_model [MODEL]_model/[MODEL]_config.yml
@@ -50,9 +54,12 @@ CUDA_VISIBLE_DEVICES=0,1 python train.py \
 
 ### Or download the pretrained models
 
-```wget --no-check-certificate 'https://podcastmix.s3.eu-west-3.amazonaws.com/pretrained_models.zip' -O pretrained_models.zip```
+```
+wget --no-check-certificate 'https://podcastmix.s3.eu-west-3.amazonaws.com/pretrained_models.zip' -O pretrained_models.zip
+```
 
 ### Continue training from checkpoint
+
 ```
 CUDA_VISIBLE_DEVICES=0,1 python train.py \
     --config_model [MODEL]_model/[MODEL]_config.yml \

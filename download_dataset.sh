@@ -1,3 +1,4 @@
+cd podcastmix
 curl -H "Authorization: Bearer $1" https://www.googleapis.com/drive/v3/files/1KNax5A4MyitNQn7xCka8IVVnVE-XdqdM?alt=media -o podcastmix-synth.tar.gzaa
 curl -H "Authorization: Bearer $1" https://www.googleapis.com/drive/v3/files/1PnmLUT6GcmI5GAHr-NDWlqY61OqBk_Ny?alt=media -o podcastmix-synth.tar.gzab
 curl -H "Authorization: Bearer $1" https://www.googleapis.com/drive/v3/files/1RhB1Sg4jxHruHMBTa9yhtLXcdpliaxWP?alt=media -o podcastmix-synth.tar.gzac
