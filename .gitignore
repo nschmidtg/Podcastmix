@@ -1,4 +1,6 @@
 podcasts/*
+podcastmix/*
+PodcastMix.zip
 OpenUnmix_model/exp/*
 UNet_model/exp/*
 .ipynb_checkpoints/
