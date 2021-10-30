@@ -54,6 +54,14 @@ class UNet(BaseModel):
         self.last_layer_speech = last_layer(16, 1, self.kernel_size, self.stride, (0, 0))
         self.last_layer_music = last_layer(16, 1, self.kernel_size, self.stride, (0, 0))
 
+        # cuda config
+        self.device_used='cpu'
+        self.has_gpu = torch.cuda.is_available()
+        if self.has_gpu:
+            self.device_used = 'cuda'
+        self.window = torch.hamming_window(self.window_size, device=self.device_used)
+
+
 
 
     def forward(self, x_in):
@@ -61,15 +69,11 @@ class UNet(BaseModel):
         mean = torch.mean(x_in)
         std = torch.std(x_in)
         x_in = (x_in - mean) / (1e-5 + std)
-        device_used='cpu'
-        has_gpu = torch.cuda.is_available()
-        if has_gpu:
+        if self.has_gpu:
             x_in = x_in.cuda()
-            device_used = 'cuda'
-
+        
         # compute normalized spectrogram
-        window = torch.hamming_window(self.window_size, device=device_used)
-        X_in = torch.stft(x_in, self.fft_size, self.hop_size, window=window, normalized=True)
+        X_in = torch.stft(x_in, self.fft_size, self.hop_size, window=self.window, normalized=True)
         real, imag = X_in.unbind(-1)
         complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
         r_i = torch.view_as_complex(complex_n)
