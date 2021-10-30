@@ -6,24 +6,24 @@ declare -A name_id=(["podcastmix-synth.tar.gzaa"]="1KNax5A4MyitNQn7xCka8IVVnVE-X
 for key in "${!name_id[@]}" ; do
     KEY="${key}"
     VALUE="${name_id[${key}]}"
-    # echo "$KEY"
-    # echo "$VALUE"
     if [ -f "$KEY" ]; then
         echo "$KEY exists."
-        ERROR=$(sed -n '7p' $KEY)
-        echo $ERROR
-        if [[ $ERROR == *"Invalid Credentials"* ]]; then
-            echo "Token has expired, please click on Refresh access token, copy the new code and re-run the command"
-            rm $KEY
-        else 
+        {
+            ERROR="$(sed "7q;d" $KEY | iconv -f utf-8 -t us-ascii//TRANSLIT)"
+            echo $ERROR
+            if [[ $ERROR == *"Invalid Credentials"* ]]; then
+                rm $KEY
+                echo "corrupted file deleted, please run the command again"
+            fi
+        } || {
             echo "$KEY is valid, wont download again."
-        fi
-    else 
+        }
+    else
         echo "$KEY does not exist. Proceed to download"
         curl -H "Authorization: Bearer $1" https://www.googleapis.com/drive/v3/files/${VALUE}?alt=media -o ${KEY}
     fi
 done
 # uncompress them
-gunzip podcastmix-synth.tar.gzaa
+cat podcastmix-synth.tar.gz* | tar xzvf -
 # # delete compressed files to save space
 # rm podcastmix-synth.tar.gz* -rf

@@ -4,6 +4,9 @@ Repository containing the code and precedures to reproduce the [ICASSP publicati
 All links to download the dataset, train, evaluate and separate Podcasts are included here.
 Feel free to use the dataset for any other purposes.
 
+## Pretrained models
+If you don't want to train and evaluate the network, but only use the pretrained models, we have uploaded them to a [separated repository](https://github.com/MTG/Podcastmix-inference), so you don't have to download the dataset and could jump right to separate your podcasts.
+
 ## Download the dataset:
 
 Download the directory structure with the test sets (podcastmix-real-no-reference and podcastmix-real-with-reference):
@@ -17,7 +20,7 @@ The train set of the dataset is hosted [here](https://drive.google.com/drive/fol
 We provide a script to download each of the files quickly, but it requires that you obtain a OAuth2 ApiKey from the Google Developers Console:
 
 - Go to [OAuth 2.0 Playground](https://developers.google.com/oauthplayground/)
-- In the “Select the Scope” box, scroll down, expand “Drive API v3”, and select https://www.googleapis.com/auth/drive.readonly
+- In the “Select the Scope” box, scroll down, expand “Drive API v3”, and select `https://www.googleapis.com/auth/drive.readonly`
 - Click “Authorize APIs” and then “Exchange authorization code for tokens”. Copy the “Access token”.
 - Run the following script using the "Access token" as a parameter:
 
@@ -64,12 +67,6 @@ CUDA_VISIBLE_DEVICES=0,1 python train.py \
     --config_model [MODEL]_model/[MODEL]_config.yml
 ```
 
-### Or download the pretrained models
-
-```
-wget --no-check-certificate 'https://podcastmix.s3.eu-west-3.amazonaws.com/pretrained_models.zip' -O pretrained_models.zip
-```
-
 ### Continue training from checkpoint
 
 ```
@@ -100,7 +97,3 @@ CUDA_VISIBLE_DEVICES=0,1 python forward_podcast.py \
     --exp_dir=<path to best_model.pth> --out_dir=<where-to-save-separations> \
     --segment=18 --sample_rate=44100 --use_gpu=1
 ```
-
-## Download examples from the synthetic, real and no-reference test sets:
-
-```wget --no-check-certificate 'https://podcastmix.s3.eu-west-3.amazonaws.com/evaluations.zip' -O evaluations.zip```
