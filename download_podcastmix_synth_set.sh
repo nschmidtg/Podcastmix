@@ -10,7 +10,7 @@ for key in "${!name_id[@]}" ; do
         echo "$KEY exists."
         {
             ERROR="$(sed "7q;d" $KEY | iconv -f utf-8 -t us-ascii//TRANSLIT)"
-            echo $ERROR
+            # echo $ERROR
             if [[ $ERROR == *"Invalid Credentials"* ]]; then
                 rm $KEY
                 echo "corrupted file deleted, please run the command again"
