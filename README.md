@@ -1,6 +1,6 @@
 # Podcastmix: A dataset for separating music and speech in podcasts
 
-Repository containing the code and precedures to reproduce the [ICASSP publication](TODO) Podcastmix: A dataset for separating music and speech in podcasts.
+Repository containing the code and precedures to reproduce the ICASSP 2021 submission "Podcastmix: A dataset for separating music and speech in podcasts".
 All links to download the dataset, train, evaluate and separate Podcasts are included here.
 Feel free to use the dataset for any other purposes.
 
