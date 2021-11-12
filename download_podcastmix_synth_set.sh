@@ -1,3 +1,5 @@
+# create directory if test-set download script (download_podcastmix.sh)
+# has not been run before
 mkdir -p podcastmix
 cd podcastmix
 # delete podcastmix-synth directory with its metadata
