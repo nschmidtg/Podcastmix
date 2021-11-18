@@ -15,7 +15,7 @@ Download the directory structure with the test sets (podcastmix-real-no-referenc
 /bin/bash download_podcastmix.sh
 ```
 
-The train set of the dataset is hosted [here](https://drive.google.com/drive/folders/1tpg9WXkl4L0zU84AwLQjrFqnP-jw1t7z) (~480Gb)
+The train set of the dataset is hosted [here](https://drive.google.com/file/d/1jouTryUzC9u3SNzwHiMN7kjQigXt-PPG/view?usp=sharing) (~480Gb)
 
 We provide a script to download each of the files quickly, but it requires that you obtain a OAuth2 ApiKey from the Google Developers Console:
 
