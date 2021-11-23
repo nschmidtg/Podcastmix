@@ -54,17 +54,23 @@ class UNet(BaseModel):
         self.last_layer_speech = last_layer(16, 1, self.kernel_size, self.stride, (0, 0))
         self.last_layer_music = last_layer(16, 1, self.kernel_size, self.stride, (0, 0))
 
+        # # cuda config
+        # self.device_used='cpu'
+        # self.has_gpu = torch.cuda.is_available()
+        # if self.has_gpu:
+        #     self.device_used = 'cuda'
+        # self.window = torch.hamming_window(self.window_size, device=self.device_used)
+
+
+
+
+    def forward(self, x_in):
         # cuda config
         self.device_used='cpu'
         self.has_gpu = torch.cuda.is_available()
         if self.has_gpu:
             self.device_used = 'cuda'
         self.window = torch.hamming_window(self.window_size, device=self.device_used)
-
-
-
-
-    def forward(self, x_in):
         # normalize audio
         mean = torch.mean(x_in)
         std = torch.std(x_in)

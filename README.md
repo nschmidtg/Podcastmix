@@ -49,7 +49,6 @@ conda activate Podcastmix
 ```
 
 ## Train network:
-The batch number in the ```[MODEL]_model/[MODEL]_config.yml``` file must match the number of GPUs that you want to train with.
 
 ```
 [MODEL]
