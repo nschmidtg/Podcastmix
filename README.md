@@ -78,21 +78,18 @@ CUDA_VISIBLE_DEVICES=0,1 python train.py \
 ## Evaluate network:
 ### Evaluate over the test partition:
 ``` 
-CUDA_VISIBLE_DEVICES=0,1 python test.py --target_model [MODEL] \
-    --test_dir podcastmix/metadata/test/ \
-    --out_dir=<where-to-save-separations> --exp_dir=<path to best_model.pth> --use_gpu=1
+CUDA_VISIBLE_DEVICES=0,1 python test.py --target_model [MODEL] --test_dir podcastmix/podcastmix-synth/metadata/test/ --out_dir=separations --exp_dir=[MODEL]_model/exp/tmp/ --n_save_ex=20 --use_gpu=1
 ```
 ### Evaluate over real podcasts:
 ```
-CUDA_VISIBLE_DEVICES=0,1 python test_real.py --target_model [MODEL] \
-    --test_dir podcastmix/real_podcasts/metadata --out_dir=<where-to-save-separations> \
-    --exp_dir=<path to best_model.pth> --use_gpu=1 --n_save_ex=-1
+CUDA_VISIBLE_DEVICES=0,1 python test_real.py --target_model [MODEL] --test_dir podcastmix/podcastmix-real-with-reference/metadata --out_dir=separations --exp_dir=[MODEL]_model/exp/tmp/ --n_save_ex=-1 --use_gpu=1
 ```
 
 ## Use the model to separate podcasts:
+You can use your previously trained model or use the [other repository](https://github.com/MTG/Podcastmix-inference) to download pre-trained models and separate them
 ```
 CUDA_VISIBLE_DEVICES=0,1 python forward_podcast.py \
-    --test_dir=podcastsmix/podcasts_no_reference --target_model=[MODEL] \
-    --exp_dir=<path to best_model.pth> --out_dir=<where-to-save-separations> \
+    --test_dir=<directory-of-the-podcastmix-real-no-reference-or-your-own-files> --target_model=[MODEL] \
+    --exp_dir=[MODEL]_model/exp/tmp --out_dir=separations \
     --segment=18 --sample_rate=44100 --use_gpu=1
 ```
