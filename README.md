@@ -50,28 +50,36 @@ conda activate Podcastmix
 
 ## Train network:
 
-```
-[MODEL]
-```
-
-can be any of the following:
-
-- ConvTasNet
-- UNet
+```[MODEL]``` could be any of the following ```ConvTasNet``` or ```UNet```
 
 ### Train
+
+You can specify the GPUs to train, by useing CUDA_VISIBLE_DEVICES.
+
+---
+> **NOTE**
+> If you want to train the ConvTasNet using 44100 as ```sample_rate```, you will probably need to use at least 2 GPUs for memory limitations.
+---
 
 ```
 CUDA_VISIBLE_DEVICES=0,1 python train.py \
     --config_model [MODEL]_model/[MODEL]_config.yml
 ```
+After each epoch, the system will evaluate the best 10 models so far and save them as checkpoints inside exp/tmp/checkpoints.
 
 ### Continue training from checkpoint
+If you want to resume the training from a previously saved checkpoint, you can do it using the ```--resume_from``` option:
 
 ```
 CUDA_VISIBLE_DEVICES=0,1 python train.py \
     --config_model [MODEL]_model/[MODEL]_config.yml \
-    --resume_from=<path-to-checkout-file>
+    --resume_from=<path-to-checkpoint-file>
+```
+eg:
+```
+CUDA_VISIBLE_DEVICES=0,1 python train.py \
+    --config_model UNet_model/UNet_config.yml \
+    --resume_from=UNet_model/exp/tmp/checkpoints/epoch\=1-step\=30985.ckpt
 ```
 
 
