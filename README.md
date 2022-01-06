@@ -50,15 +50,15 @@ conda activate Podcastmix
 
 ## Train network:
 
-```[MODEL]``` could be any of the following ```ConvTasNet``` or ```UNet```
+```[MODEL]``` could be ```ConvTasNet``` or ```UNet```
 
 ### Train
 
-You can specify the GPUs to train, by useing CUDA_VISIBLE_DEVICES.
+You can specify the GPUs to train, by using CUDA_VISIBLE_DEVICES. 
 
 ---
 > **NOTE**
-> If you want to train the ConvTasNet using 44100 as ```sample_rate```, you will probably need to use at least 2 GPUs for memory limitations.
+> If you want to train the ConvTasNet using 44100 as ```sample_rate```, you will probably need to use at least 2 GPUs due to memory limitations.
 ---
 
 ```
@@ -68,14 +68,14 @@ CUDA_VISIBLE_DEVICES=0,1 python train.py \
 After each epoch, the system will evaluate the best 10 models so far and save them as checkpoints inside exp/tmp/checkpoints.
 
 ### Continue training from checkpoint
-If you want to resume the training from a previously saved checkpoint, you can do it using the ```--resume_from``` option:
+If you want to resume the training from a previously saved checkpoint, you can do it using the ```--resume_from``` flag:
 
 ```
 CUDA_VISIBLE_DEVICES=0,1 python train.py \
     --config_model [MODEL]_model/[MODEL]_config.yml \
     --resume_from=<path-to-checkpoint-file>
 ```
-eg:
+Example:
 ```
 CUDA_VISIBLE_DEVICES=0,1 python train.py \
     --config_model UNet_model/UNet_config.yml \
@@ -88,12 +88,17 @@ CUDA_VISIBLE_DEVICES=0,1 python train.py \
 ``` 
 CUDA_VISIBLE_DEVICES=0,1 python test.py --target_model [MODEL] --test_dir podcastmix/podcastmix-synth/metadata/test/ --out_dir=separations --exp_dir=[MODEL]_model/exp/tmp/ --n_save_ex=20 --use_gpu=1
 ```
-### Evaluate over real podcasts:
+### Evaluate over real podcasts with reference:
+This script will separate the podcastmix-real-with-reference which consists of the mix and the ground thuth files for music and speech. It will forward the mixes to the network, estimate the separated sources and evaluate the objetive metrics against the ground truth.
 ```
 CUDA_VISIBLE_DEVICES=0,1 python test_real.py --target_model [MODEL] --test_dir podcastmix/podcastmix-real-with-reference/metadata --out_dir=separations --exp_dir=[MODEL]_model/exp/tmp/ --n_save_ex=-1 --use_gpu=1
 ```
 
-## Use the model to separate podcasts:
+### Notes: ###
+- ```--out_dir```: Name of the folder where the separated audios will be saved. The folder will be created inside the ```--exp_dir``` directory.
+- ```--n_save_ex```: Integer to indicate the number of examples to be actually saved on the local directory. If -1, then all the examples will be saved.
+
+## Use the model to separate your own podcasts or the real-no-reference set:
 You can use your previously trained model or use the [other repository](https://github.com/MTG/Podcastmix-inference) to download pre-trained models and separate them
 ```
 CUDA_VISIBLE_DEVICES=0,1 python forward_podcast.py \
@@ -101,3 +106,7 @@ CUDA_VISIBLE_DEVICES=0,1 python forward_podcast.py \
     --exp_dir=[MODEL]_model/exp/tmp --out_dir=separations \
     --segment=18 --sample_rate=44100 --use_gpu=1
 ```
+
+### Notes: ###
+- ```--segment```: size of the audio to be input to the network and separated in seconds. Due to the size of the convolutions, the UNet only supports 2 + 16*i seconds segments (2, 18, 34, 50, ...). ConvTasNet supports segments of any size.
+- ```--out_dir```: Name of the folder where the separated audios will be saved. The folder will be created inside the ```--exp_dir``` directory.
