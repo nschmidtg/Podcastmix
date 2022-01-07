@@ -1,3 +1,2 @@
-curl https://zenodo.org/record/5552353/files/PodcastMix.zip -o PodcastMix.zip
-unzip PodcastMix.zip
-mv PodcastMix podcastmix
+curl https://zenodo.org/record/5597047/files/podcastmix.zip -o podcastmix.zip
+unzip podcastmix.zip
