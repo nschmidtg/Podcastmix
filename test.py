@@ -97,6 +97,7 @@ def main(conf):
     if conf["n_save_ex"] == -1:
         conf["n_save_ex"] = len(test_set)
     save_idx = random.sample(range(len(test_set)), conf["n_save_ex"])
+    # pdb.set_trace()
     series_list = []
 
     torch.no_grad().__enter__()
@@ -158,7 +159,7 @@ def main(conf):
                     conf["sample_rate"],
                 )
         # Write local metrics to the example folder.
-        with open(local_save_dir + "metrics.json", "w") as f:
+        with open(eval_save_dir + "metrics.json", "w") as f:
             json.dump({k:v.tolist() for k,v in utt_metrics.items()}, f, indent=0)
 
     # Save all metrics to the experiment folder.

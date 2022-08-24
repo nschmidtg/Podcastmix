@@ -54,18 +54,32 @@ class UNet(BaseModel):
         self.last_layer_speech = last_layer(16, 1, self.kernel_size, self.stride, (0, 0))
         self.last_layer_music = last_layer(16, 1, self.kernel_size, self.stride, (0, 0))
 
+        # # cuda config
+        # self.device_used='cpu'
+        # self.has_gpu = torch.cuda.is_available()
+        # if self.has_gpu:
+        #     self.device_used = 'cuda'
+        # self.window = torch.hamming_window(self.window_size, device=self.device_used)
+
+
 
 
     def forward(self, x_in):
+        # cuda config
+        self.device_used='cpu'
+        self.has_gpu = torch.cuda.is_available()
+        if self.has_gpu:
+            self.device_used = 'cuda'
+        self.window = torch.hamming_window(self.window_size, device=self.device_used)
         # normalize audio
         mean = torch.mean(x_in)
         std = torch.std(x_in)
         x_in = (x_in - mean) / (1e-5 + std)
-        x_in = x_in.cuda()
-
+        if self.has_gpu:
+            x_in = x_in.cuda()
+        
         # compute normalized spectrogram
-        window = torch.hamming_window(self.window_size, device='cuda')
-        X_in = torch.stft(x_in, self.fft_size, self.hop_size, window=window, normalized=True)
+        X_in = torch.stft(x_in, self.fft_size, self.hop_size, window=self.window, normalized=True)
         real, imag = X_in.unbind(-1)
         complex_n = torch.cat((real.unsqueeze(1), imag.unsqueeze(1)), dim=1).permute(0,2,3,1).contiguous()
         r_i = torch.view_as_complex(complex_n)
@@ -142,8 +156,8 @@ class UNet(BaseModel):
         # istft
         polar_speech = speech * torch.cos(phase) + speech * torch.sin(phase) * 1j
         polar_music = music * torch.cos(phase) + music * torch.sin(phase) * 1j
-        speech_out = torch.istft(polar_speech, self.fft_size, hop_length=self.hop_size, window=window, return_complex=False, onesided=True, center=True, normalized=True)
-        music_out = torch.istft(polar_music, self.fft_size, hop_length=self.hop_size, window=window, return_complex=False, onesided=True, center=True, normalized=True)
+        speech_out = torch.istft(polar_speech, self.fft_size, hop_length=self.hop_size, window=self.window, return_complex=False, onesided=True, center=True, normalized=True)
+        music_out = torch.istft(polar_music, self.fft_size, hop_length=self.hop_size, window=self.window, return_complex=False, onesided=True, center=True, normalized=True)
 
         # remove additional dimention
         speech_out = speech_out.squeeze(1)
