@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "SCHMIDT"
+  given-names: "NICOLAS"
+- family-names: "PONS"
+  given-names: "JORDI"
+- family-names: "MIRON"
+  given-names: "MARIUS"
+title: "Podcastmix: A dataset for separating music and speech in podcasts"
+version: 1.0.0
+doi: 10.48550/arXiv.2207.07403
+date-released: 2022-15-07
+url: "https://github.com/MTG/Podcastmix"
