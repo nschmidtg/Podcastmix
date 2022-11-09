@@ -56,6 +56,7 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
 
     print('format errors:', format_error)
 
+
 # check consistency of the dataset:
 root_dir = 'podcastmix/podcastmix-synth'
 files_path = os.path.join(root_dir, 'test/music')

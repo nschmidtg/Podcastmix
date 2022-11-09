@@ -1,18 +1,11 @@
 import sys
-import soundfile as sf
-from shutil import copyfile
 import os
-from os import listdir
-from os.path import isfile, join
 import random
-import numpy as np
-import re
-import sys
 import json
 import csv
-import torchaudio
-sys.path.append('utils')
-from resample_and_copy import resample_and_copy
+sys.path.append(os.path.dirname('../utils'))
+from utils.resample_and_copy import resample_and_copy  # noqa
+
 
 """
 Create the augmented dataset
@@ -20,17 +13,19 @@ using the VCTK and the JamendoPopular datasets, an augmented
 podcast/radioshow like dataset is created
 """
 # modify if necesary:
-music_path = "Jamendo/music"
-music_metadata_path = "Jamendo/metadata.json"
+music_path = "../Jamendo/music"
+music_metadata_path = "../Jamendo/metadata.json"
 
 # create files structure
 root_dir = 'podcastmix/podcastmix-synth'
 if not os.path.exists(root_dir):
     os.makedirs(root_dir)
 
+
 def create_folder_structure(path):
     os.makedirs(path, exist_ok=True)
     os.makedirs(path + '/music', exist_ok=True)
+
 
 # create files structure
 train_path = os.path.join(root_dir, 'train')
@@ -146,7 +141,10 @@ for artist_id in artists_keys:
                     destination = train_path + '/music/' + song['id'] + '.flac'
                     song['local_path'] = destination
                     csv_path = csv_path_tr_m
-                elif artists_counter >= int(train_prop * len(artists)) and artists_counter < int((train_prop + val_prop) * len(artists)):
+                elif (artists_counter >= int(train_prop * len(artists))
+                      and artists_counter < int(
+                        (train_prop + val_prop) * len(artists)
+                      )):
                     # val
                     destination = val_path + '/music/' + song['id'] + '.flac'
                     song['local_path'] = destination
@@ -156,8 +154,12 @@ for artist_id in artists_keys:
                     destination = test_path + '/music/' + song['id'] + '.flac'
                     song['local_path'] = destination
                     csv_path = csv_path_te_m
-                audio, exists = resample_and_copy(current_file_path, destination, destination_sr)
-                if exists == False and audio.shape[0] == 2:
+                audio, exists = resample_and_copy(
+                    current_file_path,
+                    destination,
+                    destination_sr
+                )
+                if exists is False and audio.shape[0] == 2:
                     with open(csv_path, 'a', newline='') as file:
                         writer = csv.writer(file)
                         song_length = audio.shape[-1]
