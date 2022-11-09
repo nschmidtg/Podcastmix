@@ -7,7 +7,7 @@ unzip vctk.zip .
 ## Download the music
 
 ```
-python3 download.py
+python download.py
 ```
 
 ### on MacOS:
