@@ -1,3 +1,16 @@
+## Install dependencies
+Create a conda environment:
+
+```
+conda env create -f ../environment.yml
+```
+
+Activate the environment:
+
+```
+conda activate Podcastmix
+```
+
 ## Download the VCTK dataset:
 
 ```
