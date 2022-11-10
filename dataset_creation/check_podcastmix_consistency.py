@@ -21,23 +21,21 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
             for row in csv_reader:
                 # row variable is a list that represents a row in csv
                 path = row[index_of_path_in_csv]
-                # print(path)
                 # add to array to check metadata against list of files
                 if os.path.isfile(path):
                     not_missing.append(path.split('/')[4])
                 else:
                     print("im not file", path)
                 # check channels sr and bit depth
-                # print(path)
                 info = torchaudio.info(path)
-                # print(info.sample_rate, info.bits_per_sample, info.num_channels)
-                if(not info.sample_rate == 44100):
+                if (not info.sample_rate == 44100):
                     format_error['sr'].append(path)
-                if(not info.bits_per_sample == 16):
+                if (not info.bits_per_sample == 16):
                     format_error['bits_per_sample'].append(path)
-                if(('music' in path) and (not info.num_channels == 2)):
+                if (('music' in path) and (not info.num_channels == 2)):
                     format_error['num_channels_music'].append(path)
-                if(('speech' in path) and (not info.num_channels == 1)):
+                if (('speech' in path)
+                   and (not info.num_channels == 1)):
                     format_error['num_channels_speech'].append(path)
                 samples_sum += info.num_frames
 
@@ -46,7 +44,7 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
     diff = list(set(onlyfiles) - set(not_missing))
     print('List of files minus list in csv:', len(diff))
 
-    print(list(set(onlyfiles)- set(not_missing)))
+    print(list(set(onlyfiles)-set(not_missing)))
 
     diff2 = list(set(not_missing) - set(onlyfiles))
     print('List in csv minus list of files:', len(diff2))
@@ -55,6 +53,7 @@ def check_files_against_csv(csv_path, files_path, index_of_path_in_csv=7):
     print('Number of hours', samples_sum/44100/60/60)
 
     print('format errors:', format_error)
+
 
 # check consistency of the dataset:
 root_dir = 'podcastmix/podcastmix-synth'

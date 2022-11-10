@@ -1,6 +1,7 @@
 import json
 import os.path
-import wget
+from urllib.request import urlopen
+
 
 if not os.path.isdir('../Jamendo/music'):
     os.mkdir('../Jamendo/music')
@@ -17,7 +18,11 @@ for song_id in json_file.keys():
     url = song['audiodownload']
     if not os.path.isfile('../Jamendo/music/' + file_name):
         try:
-            filename = wget.download(url, out='../Jamendo/music/' + file_name)
+            with urlopen(url) as file:
+                content = file.read()
+            # Save to file
+            with open('../Jamendo/music/' + file_name, 'wb') as download:
+                download.write(content)
         except Exception as e:
             print(e)
             errors[song['id']] = song

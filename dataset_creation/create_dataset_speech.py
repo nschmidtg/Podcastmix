@@ -1,18 +1,11 @@
 import sys
-import soundfile as sf
-from shutil import copyfile
 import os
 from os import listdir
-from os.path import isfile, join
 import random
-import numpy as np
 import re
-import sys
-import json
 import csv
-import torchaudio
-sys.path.append('utils')
-from resample_and_copy import resample_and_copy
+sys.path.append(os.path.dirname('../utils'))
+from utils.resample_and_copy import resample_and_copy  # noqa
 
 """
 Create the augmented dataset
@@ -20,8 +13,8 @@ using the VCTK and the JamendoPopular datasets, an augmented
 podcast/radioshow like dataset is created
 """
 # modify if necesary:
-speech_path = "VCTK/wav48_silence_trimmed"
-speech_metadata_path = "VCTK/speaker-info.txt"
+speech_path = "VCTK-Corpus/wav48"
+speech_metadata_path = "VCTK-Corpus/speaker-info.txt"
 
 # create files structure
 root_dir = 'podcastmix/podcastmix-synth'
@@ -97,13 +90,14 @@ count = 0
 for line in lines:
     if count != 0:
         # skip headers
-        cols = re.split('\s+', line)
-        speaker_params[cols[0]] = {
+        cols = re.split('\s+', line)  # noqa
+        speaker_params['p' + cols[0]] = {
             'speaker_id': cols[0],
             'speaker_age': cols[1],
             'speaker_gender': cols[2],
             'speaker_accent': cols[3]
         }
+        # print(cols)
     count += 1
 
 # iterate over the speakers downsampling and normalizing the audio.
@@ -121,36 +115,41 @@ for i, speaker in enumerate(speakers):
     for path, subdirs, files in os.walk(os.path.join(speech_path, speaker)):
         for name in files:
             speech_path_dir = os.path.join(path, name)
-            # arbitrarily pick mic1
-            if 'mic1' in speech_path_dir:
-                if i < int(train_prop * len(speakers)):
-                    # train
-                    destination = train_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
-                    csv_path = csv_path_tr_s
-                elif i >= int(train_prop * len(speakers)) and i < int((train_prop + val_prop) * len(speakers)):
-                    # val
-                    destination = val_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
-                    csv_path = csv_path_va_s
-                else:
-                    # test
-                    destination = test_path + '/speech/' + speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
-                    csv_path = csv_path_te_s
-                audio, exists = resample_and_copy(speech_path_dir, destination, destination_sr)
-                with open(csv_path, 'a', newline='') as file:
-                    writer = csv.writer(file)
-                    element_length = audio.shape[-1]
-                    print(element_length)
-                    speech_cmp = destination.split('/')[-1].split('_')
-                    params = speaker_params[speech_cmp[0]]
-                    writer.writerow(
-                        [
-                            speech_cmp[0] + '_' + speech_cmp[1] + '_' + speech_cmp[2].split('.')[0],
-                            speech_cmp[0],
-                            params['speaker_age'],
-                            params['speaker_gender'],
-                            params['speaker_accent'].replace(',', ''),
-                            destination,
-                            element_length
-                        ]
-                    )
-                counter += 1
+            if i < int(train_prop * len(speakers)):
+                # train
+                destination = train_path + '/speech/' + \
+                    speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
+                csv_path = csv_path_tr_s
+            elif (i >= int(train_prop * len(speakers))
+                    and i < int((train_prop + val_prop) * len(speakers))):
+                # val
+                destination = val_path + '/speech/' + \
+                    speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
+                csv_path = csv_path_va_s
+            else:
+                # test
+                destination = test_path + '/speech/' + \
+                    speech_path_dir.split('/')[-1].split('.')[0] + '.flac'
+                csv_path = csv_path_te_s
+            audio, exists = resample_and_copy(
+                speech_path_dir,
+                destination,
+                destination_sr
+            )
+            with open(csv_path, 'a', newline='') as file:
+                writer = csv.writer(file)
+                element_length = audio.shape[-1]
+                speech_cmp = destination.split('/')[-1].split('_')
+                params = speaker_params[speech_cmp[0]]
+                writer.writerow(
+                    [
+                        speech_cmp[0] + '_' + speech_cmp[1].split('.')[0], # noqa
+                        speech_cmp[0],
+                        params['speaker_age'],
+                        params['speaker_gender'],
+                        params['speaker_accent'].replace(',', ''),
+                        destination,
+                        element_length
+                    ]
+                )
+            counter += 1

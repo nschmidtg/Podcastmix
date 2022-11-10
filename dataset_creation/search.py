@@ -1,7 +1,10 @@
 import requests
 import json
 import os
-client_id = 'YOUR JAMENDO CLIENT ID'
+
+
+CLIENT_ID = 'YOUR_JAMENDO_CLIENT_ID'
+
 
 json_keys = {}
 last_offset = 1
@@ -11,15 +14,13 @@ for i in range(n_pages):
     offset = (i * 200)
     print(counter, '/', n_pages * 200)
     r = requests.get(
-        'https://api.jamendo.com/v3.0/tracks/?client_id=' +
-        client_id +
+        f'https://api.jamendo.com/v3.0/tracks/?CLIENT_ID={CLIENT_ID}'
         '&format=json&order=popularity_total&audiodlformat='
         'flac&limit=200&offset=' + str(offset) + '&include=musicinfo'
-        ''
     )
     songs = json.loads(r.text)['results']
     for song in songs:
-        if(song['audiodownload_allowed']):
+        if (song['audiodownload_allowed']):
             id = song['id']
             json_keys[id] = song
             last_offset += 1

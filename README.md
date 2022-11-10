@@ -15,6 +15,10 @@ Download the directory structure with the test sets (podcastmix-real-no-referenc
 /bin/bash download_podcastmix.sh
 ```
 
+This will download the podcastmix-real-no-reference and podcastmix-real-with-reference evaluation partitions. To downloat the podcastmix-synth (synthetically created podcasts from the music and speech files) you have 2 options:
+
+#### Option 1: Download from Google Drive
+
 The train set of the dataset is hosted [here](https://drive.google.com/file/d/1jouTryUzC9u3SNzwHiMN7kjQigXt-PPG/view?usp=sharing) (~480Gb)
 
 We provide a script to download each of the files quickly, but it requires that you obtain a OAuth2 ApiKey from the Google Developers Console:
@@ -34,6 +38,14 @@ We provide a script to download each of the files quickly, but it requires that 
 > The Access Token has an expiration time (1 hour), so if your connection is not fast enough to download all the compressed files within one hour, you will have to refresh the Access Token and re-run the script using the new Access Token. The script will only download the remaining files and not all of them again.
 
 ---
+
+#### Option 2: Create the dataset from scratch using the VCTK dataset and the Jamendo/metadata.json file
+
+This option will allow you to recreate the whole dataset starting from the VCTK dataset and the music files specified on the metadata.json. Since it will download the audio, this method does not guarantee that all the audios will still exists either on Jamendo or the VCTK hosting web page.
+
+You will also be able to edit the Jamendo/metadata.json file to, for example, exclude some songs and create a reduced version of the Dataset.
+
+follow [this README](dataset_creation/README.md) to create the podcastmix from scratch.
 
 ## Install
 Create a conda environment:
