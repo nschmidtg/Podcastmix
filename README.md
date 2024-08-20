@@ -1,3 +1,6 @@
+# Note:
+This repository is the starting point of the PodcastMix dataset. The main branch is now the forked repo of the [Pompeu Fabra University's Music Technology Group repository](https://github.com/MTG/Podcastmix), where all the most recent updates were uploaded.
+
 # Podcastmix: A dataset for separating music and speech in podcasts
 
 Repository containing the code and precedures to reproduce the ICASSP 2022 submission "Podcastmix: A dataset for separating music and speech in podcasts".
