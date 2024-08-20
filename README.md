@@ -3,7 +3,7 @@ This repository is the starting point of the PodcastMix dataset. The main branch
 
 # Podcastmix: A dataset for separating music and speech in podcasts
 
-Repository containing the code and precedures to reproduce the ICASSP 2022 submission "Podcastmix: A dataset for separating music and speech in podcasts".
+Repository containing the code and precedures to reproduce the [Interspeech 2022 accepted publication "Podcastmix: A dataset for separating music and speech in podcasts"](https://www.isca-archive.org/interspeech_2022/schmidt22_interspeech.html).
 All links to download the dataset, train, evaluate and separate Podcasts are included here.
 Feel free to use the dataset for any other purposes.
 
